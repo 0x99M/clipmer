@@ -9,6 +9,17 @@ VERSION=$(node -p "require('$REPO_ROOT/linux/package.json').version")
 TAG="v$VERSION"
 echo "Version: $VERSION (tag: $TAG)"
 
+# ── Require a changelog entry ─────────────────────────────────────────
+# The site's /changelog reads web/lib/changelog.ts, which is hand-maintained.
+# Refusing to publish without an entry is what stops it going stale.
+CHANGELOG_TS="$REPO_ROOT/web/lib/changelog.ts"
+if ! grep -q "version: \"$VERSION\"" "$CHANGELOG_TS"; then
+  echo "ERROR: No changelog entry for $VERSION in web/lib/changelog.ts"
+  echo "Add a Release entry at the top of CHANGELOG, then re-run."
+  exit 1
+fi
+echo "Changelog entry for $VERSION found."
+
 # ── Locate dist files ─────────────────────────────────────────────────
 DEB="$REPO_ROOT/linux/dist/clipmer_${VERSION}_amd64.deb"
 APPIMAGE="$REPO_ROOT/linux/dist/Clipmer-${VERSION}.AppImage"
