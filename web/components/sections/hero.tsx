@@ -1,162 +1,316 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Download, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { MotionConfig } from "framer-motion";
+import {
+  Download,
+  Eye,
+  EyeOff,
+  Folder,
+  ListFilter,
+  Lock,
+  Search,
+  StickyNote,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FadeUp } from "@/components/fade-up";
-import { AnimatedGrid } from "@/components/magicui/animated-grid";
-import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-/* ---- Infinite scrolling clipboard ticker ---- */
-const tickerItems = [
-  "git push origin main",
-  "192.168.1.42",
-  "SELECT * FROM users",
-  "sk_live_4eC39HqLy…",
-  "docker compose up -d",
-  "https://api.example.com",
-  "export NODE_ENV=prod",
-  "ssh deploy@server-01",
-  "npm run build",
-  "PGPASSWORD=s3cure!",
+/* Byte-identical to the shipping renderer: linux/renderer/app.js:569 replaces a
+   hidden entry's whole preview with exactly ten bullets — it never masks a
+   substring, so neither do we. */
+const MASK = "•".repeat(10);
+
+type Row = {
+  /** What the entry actually holds. Revealed only when the visitor un-masks it. */
+  plain: string;
+  folder?: string;
+  time: string;
+  /** Resting state — rendered on the server, correct with JS off. */
+  hidden: boolean;
+};
+
+/* Every row is something an SRE copied today. Two folders appear twice with one
+   entry masked and one not (Stripe: 2/5, Prod: 3/4) — masking is per entry, not
+   a mode. Every plain value is transparently synthetic. */
+const ROWS: Row[] = [
+  {
+    plain: "ssh deploy@10.42.7.15 -p 2222",
+    folder: "Servers",
+    time: "12s ago",
+    hidden: false,
+  },
+  {
+    plain: "sk_live_51H8xEXAMPLEKEYdontuse",
+    folder: "Stripe",
+    time: "1m ago",
+    hidden: true,
+  },
+  {
+    plain: "postgres://api:hunter2-example@db-prod-01:5432/orders",
+    folder: "Prod",
+    time: "4m ago",
+    hidden: true,
+  },
+  {
+    plain: "kubectl -n payments rollout restart deploy/api",
+    folder: "Prod",
+    time: "9m ago",
+    hidden: false,
+  },
+  {
+    plain: "stripe listen --forward-to localhost:4242/webhook",
+    folder: "Stripe",
+    time: "14m ago",
+    hidden: false,
+  },
+  {
+    plain: "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI",
+    folder: "AWS",
+    time: "22m ago",
+    hidden: true,
+  },
 ];
 
-function ClipboardTicker() {
-  const doubled = [...tickerItems, ...tickerItems];
+const CAPABILITIES = [
+  { icon: EyeOff, label: "Mask before you present", tier: "Free" },
+  { icon: StickyNote, label: "Annotate entries with notes", tier: "Pro" },
+  { icon: Folder, label: "File them into folders", tier: "Pro" },
+] as const;
+
+function GithubMark({ className }: { className?: string }) {
   return (
-    <div className="relative overflow-hidden py-4">
-      <div className="absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
-      <div className="absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
-      <motion.div
-        className="flex gap-3 whitespace-nowrap"
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-      >
-        {doubled.map((item, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center rounded-md border border-border/50 bg-card/60 px-3 py-1.5 font-mono text-xs text-muted-foreground/70 backdrop-blur-sm"
-          >
-            {item}
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+    </svg>
+  );
+}
+
+/* ───────────────────────── The exhibit ───────────────────────── */
+function ClipmerWindow() {
+  const [hidden, setHidden] = useState<boolean[]>(() => ROWS.map((r) => r.hidden));
+  const maskedCount = hidden.filter(Boolean).length;
+
+  const toggle = (i: number) =>
+    setHidden((prev) => prev.map((v, j) => (j === i ? !v : v)));
+
+  return (
+    <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+      {/* Static bloom. Rasterized once; nothing animates it. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-8 rounded-[2rem] bg-[radial-gradient(closest-side,rgba(233,84,32,0.12),rgba(233,84,32,0))] blur-2xl"
+      />
+
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card shadow-[0_28px_70px_-24px_rgba(0,0,0,0.9)]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(233,84,32,0.5),transparent)]"
+        />
+
+        {/* Title bar — GNOME, not macOS. No traffic lights on a Linux product. */}
+        <div className="flex items-center gap-2 border-b border-border bg-surface/30 px-3 py-2">
+          <span className="grid size-4 shrink-0 place-items-center rounded-[4px] bg-orange text-[8px] font-bold text-white">
+            C
           </span>
-        ))}
-      </motion.div>
+          <span className="text-xs font-medium">Clipmer</span>
+          <span className="font-mono text-[10px] text-muted-foreground">
+            {ROWS.length} items
+          </span>
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md border border-orange/25 bg-orange/[0.08] px-1.5 py-0.5 text-[10px] font-medium text-orange tabular-nums">
+            <EyeOff aria-hidden className="size-2.5" />
+            {maskedCount} masked
+          </span>
+          <kbd className="ml-1 hidden shrink-0 rounded border border-border bg-surface/60 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground sm:block">
+            Ctrl+Shift+D
+          </kbd>
+        </div>
+
+        {/* Search bar — mirrors renderer/index.html #search-bar */}
+        <div className="flex items-center gap-2 px-2.5 pt-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border/70 bg-surface/40 px-2.5 py-1.5">
+            <Search aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="truncate text-xs text-muted-foreground">Search...</span>
+            <span className="ml-auto hidden shrink-0 items-center gap-1 rounded border border-border bg-surface/70 px-1.5 py-px font-mono text-[9px] text-muted-foreground sm:inline-flex">
+              content <kbd className="rounded bg-background/60 px-1">tab</kbd>
+            </span>
+          </div>
+          <span
+            aria-hidden
+            className="grid size-7 shrink-0 place-items-center rounded-lg border border-border/70 bg-surface/40 text-muted-foreground"
+          >
+            <ListFilter className="size-3.5" />
+          </span>
+        </div>
+
+        {/* History list */}
+        <div className="space-y-0.5 p-1.5 sm:p-2">
+          {ROWS.map((row, i) => {
+            const isHidden = hidden[i];
+            const shown = isHidden ? MASK : row.plain;
+            return (
+              <div
+                key={row.plain}
+                data-masked={isHidden}
+                className="group/row flex items-start gap-2.5 rounded-lg border border-transparent px-2 py-2 transition-colors duration-200 hover:bg-surface/30 data-[masked=true]:border-orange/20 data-[masked=true]:bg-orange/[0.05]"
+              >
+                <span
+                  aria-hidden
+                  className="mt-px grid size-5 shrink-0 place-items-center rounded-[5px] border border-border bg-surface/50 font-mono text-[10px] leading-none text-muted-foreground"
+                >
+                  T
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  {/* Row height is one line of mono at fixed leading in a flex-1
+                      box, so swapping the string can shift nothing. */}
+                  <span className="sr-only">
+                    {isHidden ? "Entry hidden" : row.plain}
+                  </span>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "block truncate font-mono text-[12px] leading-5 select-none sm:text-[13px]",
+                      isHidden ? "text-muted-foreground" : "text-foreground"
+                    )}
+                  >
+                    {shown}
+                  </span>
+
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {row.time}
+                    </span>
+                    {row.folder ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-orange/20 bg-orange/[0.08] px-1.5 py-px text-[9px] font-medium text-orange sm:text-[10px]">
+                        <Folder aria-hidden className="size-2.5" strokeWidth={2.5} />
+                        {row.folder}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Real control on every row: masking is a per-entry choice. */}
+                <button
+                  type="button"
+                  onClick={() => toggle(i)}
+                  aria-pressed={isHidden}
+                  aria-label={`Hide entry copied ${row.time}`}
+                  className={cn(
+                    "mt-px grid size-6 shrink-0 place-items-center rounded-md transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-orange/60 focus-visible:outline-none",
+                    isHidden
+                      ? "bg-orange/10 text-orange hover:bg-orange/20"
+                      : "text-muted-foreground/50 hover:bg-surface/70 hover:text-foreground group-hover/row:text-muted-foreground"
+                  )}
+                >
+                  {isHidden ? (
+                    <EyeOff className="size-3.5" />
+                  ) : (
+                    <Eye className="size-3.5" />
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-1.5 border-t border-border bg-surface/20 px-3 py-1.5">
+          <Lock aria-hidden className="size-2.5 shrink-0 text-muted-foreground" />
+          <span className="truncate font-mono text-[9px] text-muted-foreground sm:text-[10px]">
+            ~/.config/clipmer &middot; never leaves this machine
+          </span>
+        </div>
+      </div>
+
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        Masked rows still copy the real value. Hiding is free, forever.
+      </p>
     </div>
   );
 }
 
-/* ---- Floating orbs ---- */
-function FloatingOrbs() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* Large warm orb top-right */}
-      <motion.div
-        className="absolute -top-32 -right-32 size-96 rounded-full bg-orange/[0.07] blur-[100px]"
-        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      {/* Small orb left */}
-      <motion.div
-        className="absolute top-1/3 -left-16 size-64 rounded-full bg-orange/[0.04] blur-[80px]"
-        animate={{ y: [0, 40, 0], opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
-      {/* Center accent */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[500px] rounded-full bg-orange/[0.03] blur-[120px]"
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </div>
-  );
-}
-
-/* ---- Orbiting ring around the mockup ---- */
-function OrbitRing() {
-  return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <motion.div
-        className="absolute size-[110%] rounded-full border border-orange/10"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      >
-        {/* Orbiting dot */}
-        <div className="absolute -top-1 left-1/2 -translate-x-1/2 size-2 rounded-full bg-orange shadow-[0_0_10px_rgba(233,84,32,0.6)]" />
-      </motion.div>
-      <motion.div
-        className="absolute size-[125%] rounded-full border border-orange/5"
-        animate={{ rotate: -360 }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-      >
-        <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 size-1.5 rounded-full bg-orange/60 shadow-[0_0_8px_rgba(233,84,32,0.4)]" />
-      </motion.div>
-    </div>
-  );
-}
-
-/* ---- Hero ---- */
+/* ───────────────────────────── Hero ───────────────────────────── */
 export function Hero() {
   return (
-    <section className="relative flex min-h-[calc(100svh-2rem)] items-center overflow-hidden py-20 sm:py-24 lg:min-h-screen lg:py-32">
-      <AnimatedGrid />
-      <FloatingOrbs />
+    <MotionConfig reducedMotion="user">
+      <section className="relative flex items-center overflow-hidden py-20 sm:py-24 lg:min-h-[calc(100svh-2rem)] lg:py-24">
+        {/* Static substrate — replaces the rAF canvas and three animated orbs. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(233,84,32,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(233,84,32,0.05)_1px,transparent_1px)] [background-size:50px_50px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,#000,transparent)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_58%_45%_at_50%_-5%,rgba(233,84,32,0.12),transparent_70%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background"
+        />
 
-      {/* Bottom fade */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 sm:px-6">
-        <div className="flex flex-col gap-10 lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
-          {/* ---- Copy ---- */}
-          <div className="flex flex-col gap-5 sm:gap-6 text-center lg:text-left">
-            <FadeUp>
-              <motion.div
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="flex justify-center lg:justify-start"
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-col gap-12 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10 xl:gap-14">
+            {/* ── Copy: four clusters on one descending ramp ── */}
+            <FadeUp className="mx-auto max-w-xl text-center lg:mx-0 lg:max-w-none lg:text-left">
+              <Badge
+                variant="outline"
+                className="h-auto w-fit gap-1.5 border-orange/25 bg-orange/[0.08] px-3 py-1 text-xs font-normal text-orange"
               >
-                <Badge
-                  variant="outline"
-                  className="w-fit border-orange/30 bg-orange/10 text-orange px-3 py-1 text-xs sm:text-sm backdrop-blur-sm"
-                >
-                  <motion.span
-                    className="mr-1.5 inline-block size-1.5 rounded-full bg-orange"
-                    animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
-                  100% offline &middot; No telemetry
-                </Badge>
-              </motion.div>
-            </FadeUp>
+                <span aria-hidden className="size-1.5 rounded-full bg-orange" />
+                100% offline &middot; No telemetry
+              </Badge>
 
-            <FadeUp delay={0.1}>
-              <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Never lose a{" "}
-                <span className="inline-block bg-gradient-to-r from-orange via-[#ff7b45] to-orange bg-[length:200%_auto] bg-clip-text text-transparent animate-[gradient-shift_3s_ease_infinite]">
-                  copied item again.
+              {/* Three authored lines. The blocks decide the breaks; nbsp,
+                  nowrap and text-balance are only fallbacks. */}
+              <h1 className="mt-4 text-balance font-bold text-[clamp(1.625rem,calc(3.2vw_+_0.6rem),3.375rem)] leading-[1.06] tracking-[-0.03em] sm:mt-5">
+                <span className="block">Your clipboard is full of</span>
+                <span className="block w-fit mx-auto lg:mx-0 box-decoration-clone bg-[linear-gradient(100deg,#E95420_0%,#ff8a52_55%,#E95420_100%)] bg-clip-text text-transparent">
+                  production&nbsp;secrets.
                 </span>
+                <span className="block whitespace-nowrap">Treat it like it.</span>
               </h1>
-            </FadeUp>
 
-            <FadeUp delay={0.2}>
-              <p className="mx-auto max-w-lg text-base text-muted-foreground leading-relaxed sm:text-lg lg:mx-0">
-                A fast clipboard history manager for Linux. Your copies stay on
-                your machine — no cloud, no telemetry, no account.
+              <p className="mt-4 mx-auto max-w-[56ch] text-pretty text-base leading-relaxed text-muted-foreground sm:mt-5 sm:text-lg lg:mx-0">
+                Never lose a copied item again &mdash; and never flash a credential
+                on a screen share. Masked entries stay copyable, but unreadable.
               </p>
-            </FadeUp>
 
-            <FadeUp delay={0.3}>
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground lg:justify-start">
+                {CAPABILITIES.map(({ icon: Icon, label, tier }) => (
+                  <li key={label} className="inline-flex items-center gap-1.5">
+                    <Icon aria-hidden className="size-3.5 text-orange/80" />
+                    {label}
+                    <span
+                      className={cn(
+                        "rounded px-1 py-px text-[9px] font-semibold tracking-wide uppercase",
+                        tier === "Free"
+                          ? "bg-orange/15 text-orange"
+                          : "bg-surface text-muted-foreground"
+                      )}
+                    >
+                      {tier}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Widest gap in the column sits directly above Download. */}
+              <div className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
                 <a
                   href="#download"
                   className={cn(
                     buttonVariants({ size: "lg" }),
-                    "group/btn relative h-11 sm:flex-1 gap-2 overflow-hidden px-5 text-sm sm:h-12 sm:px-6 sm:text-base bg-orange text-white hover:bg-orange-hover"
+                    "group/btn relative h-12 w-full gap-2 overflow-hidden rounded-lg px-7 text-base font-semibold sm:w-auto",
+                    "bg-orange text-white shadow-lg shadow-orange/25 transition-shadow hover:bg-orange-hover hover:shadow-orange/40"
                   )}
                 >
-                  {/* Shimmer */}
-                  <span className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_ease_infinite] bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-                  <Download className="relative size-4 sm:size-5" />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out group-hover/btn:translate-x-full motion-reduce:transition-none"
+                  />
+                  <Download className="relative size-5" />
                   <span className="relative">Download for Linux</span>
                 </a>
                 <a
@@ -164,128 +318,56 @@ export function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
-                    buttonVariants({ variant: "outline", size: "lg" }),
-                    "h-11 sm:flex-1 gap-2 px-5 text-sm sm:h-12 sm:px-6 sm:text-base border-border hover:bg-surface backdrop-blur-sm"
+                    buttonVariants({ variant: "ghost", size: "lg" }),
+                    "h-12 w-full gap-2 rounded-lg px-4 text-sm text-muted-foreground sm:w-auto",
+                    "hover:bg-surface/60 hover:text-foreground dark:hover:bg-surface/60"
                   )}
                 >
-                  <svg className="size-4 sm:size-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                  <GithubMark className="size-4" />
                   View on GitHub
+                </a>
+              </div>
+
+              {/* Fine print: reassurance first, upsell second. */}
+              <div className="mt-4 flex flex-col items-center gap-1.5 text-xs leading-relaxed text-muted-foreground lg:items-start">
+                <p className="max-w-[58ch]">
+                  Source-available, not open source &mdash; read and audit every
+                  line under the{" "}
+                  <a
+                    href="https://github.com/0x99M/clipmer/blob/master/LICENSE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline decoration-border underline-offset-2 transition-colors hover:text-foreground"
+                  >
+                    PolyForm Strict 1.0.0
+                  </a>{" "}
+                  license.
+                </p>
+                <a
+                  href="/pro"
+                  className="group/pro inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+                >
+                  <span className="rounded bg-orange/15 px-1.5 py-px font-semibold text-orange">
+                    $9
+                  </span>
+                  <span>Get Clipmer Pro &mdash; one payment, forever</span>
+                  <span
+                    aria-hidden
+                    className="text-orange transition-transform group-hover/pro:translate-x-0.5 motion-reduce:transition-none"
+                  >
+                    &rarr;
+                  </span>
                 </a>
               </div>
             </FadeUp>
 
-            <FadeUp delay={0.35}>
-              <a
-                href="/pro"
-                className="group flex w-full items-center gap-2 rounded-lg border border-orange/30 bg-orange/[0.08] hover:bg-orange/15 pl-1.5 pr-4 py-2 text-sm sm:text-base backdrop-blur-sm transition-colors"
-              >
-                <span className="inline-flex items-center gap-1 rounded-md bg-orange text-white px-2.5 py-1 text-xs font-semibold uppercase tracking-wider shrink-0">
-                  <Sparkles className="size-3.5" />
-                  $9
-                </span>
-                <span className="text-orange">Get Clipmer Pro — one payment, forever</span>
-                <span className="ml-auto text-orange/60 transition-transform group-hover:translate-x-0.5">&rarr;</span>
-              </a>
+            {/* ── The exhibit ── */}
+            <FadeUp delay={0.12}>
+              <ClipmerWindow />
             </FadeUp>
           </div>
-
-          {/* ---- Mockup with orbit ---- */}
-          <FadeUp delay={0.4} className="relative">
-            <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-none">
-              <OrbitRing />
-
-              {/* Pulsing glow */}
-              <motion.div
-                className="absolute -inset-6 rounded-2xl bg-orange/8 blur-3xl"
-                animate={{ opacity: [0.4, 0.7, 0.4], scale: [0.95, 1.02, 0.95] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              />
-
-              <div className="relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-2xl shadow-orange/[0.05] backdrop-blur-sm">
-                {/* Animated border glow */}
-                <div className="absolute inset-0 rounded-xl opacity-50">
-                  <motion.div
-                    className="absolute inset-[-1px] rounded-xl"
-                    style={{
-                      background: "conic-gradient(from 0deg, transparent 60%, rgba(233,84,32,0.3) 80%, transparent 100%)",
-                    }}
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                  />
-                </div>
-
-                <div className="relative rounded-xl bg-card">
-                  <div className="flex items-center gap-1.5 border-b border-border px-3 py-2 sm:gap-2 sm:px-4 sm:py-3">
-                    <div className="size-2.5 rounded-full bg-[#ff5f57] sm:size-3" />
-                    <div className="size-2.5 rounded-full bg-[#febc2e] sm:size-3" />
-                    <div className="size-2.5 rounded-full bg-[#28c840] sm:size-3" />
-                    <span className="ml-1.5 text-[10px] text-muted-foreground font-mono sm:ml-2 sm:text-xs">
-                      Clipmer v3.0.5
-                    </span>
-                    <motion.div
-                      className="ml-auto size-1.5 rounded-full bg-green-500"
-                      animate={{ opacity: [1, 0.3, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                  </div>
-                  <div className="p-3 space-y-1.5 sm:p-4 sm:space-y-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-surface/50 px-2.5 py-1.5 border border-border/50 sm:px-3 sm:py-2">
-                      <svg
-                        className="size-3.5 text-muted-foreground sm:size-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <span className="text-xs text-muted-foreground sm:text-sm">
-                        Search clipboard...
-                      </span>
-                    </div>
-                    {[
-                      { text: "npm install clipmer", time: "Just now", folder: "Work" },
-                      { text: "https://github.com/0x99M/clipmer", time: "2m ago", folder: null },
-                      { text: "export default function App() {", time: "5m ago", folder: null },
-                      { text: "E95420", time: "12m ago", folder: null },
-                      { text: "ssh user@192.168.1.100", time: "1h ago", folder: "Servers" },
-                    ].map((item, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.5 + i * 0.1 }}
-                        className="flex items-center justify-between rounded-lg px-2.5 py-2 hover:bg-surface/30 transition-colors sm:px-3 sm:py-2.5"
-                      >
-                        <div className="flex items-center gap-2 min-w-0 sm:gap-3">
-                          <span className="text-xs truncate font-mono sm:text-sm">{item.text}</span>
-                          {item.folder && (
-                            <span className="inline-flex items-center gap-1 rounded-md border border-orange/20 bg-orange/[0.08] px-1.5 py-0.5 text-[9px] sm:text-[10px] text-orange shrink-0">
-                              <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-                              </svg>
-                              {item.folder}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground ml-2 whitespace-nowrap sm:text-xs sm:ml-3">{item.time}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </FadeUp>
         </div>
-
-        {/* ---- Infinite clipboard ticker ---- */}
-        <FadeUp delay={0.6}>
-          <div className="mt-16 lg:mt-24">
-            <ClipboardTicker />
-          </div>
-        </FadeUp>
-      </div>
-    </section>
+      </section>
+    </MotionConfig>
   );
 }
