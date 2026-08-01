@@ -585,9 +585,14 @@ function HiddenEntryMockup() {
 
 const features = [
   {
-    title: "Every copy, saved",
-    description: "Ctrl+C is now a permanent record. Text, code, links, snippets — up to 200 entries, deduplicated, still here after reboot.",
-    mockup: ClipboardHistoryMockup,
+    title: "Hide what shouldn't be on screen",
+    description: "Marking an entry as hidden masks it as ••••••••• in the list — safe to leave open during a screen-share or pair session. Click-to-copy still pastes the real content; search skips hidden entries so they can't be surfaced by accident.",
+    mockup: HiddenEntryMockup,
+  },
+  {
+    title: "Add context with notes",
+    description: "Attach a note to any entry — label that token as \"staging API key\" so future-you knows what it's for. Notes are fully searchable.",
+    mockup: NotesMockup,
   },
   {
     title: "Group with folders",
@@ -600,14 +605,9 @@ const features = [
     mockup: SmartSearchMockup,
   },
   {
-    title: "Add context with notes",
-    description: "Attach a note to any entry — label that token as \"staging API key\" so future-you knows what it's for. Notes are fully searchable.",
-    mockup: NotesMockup,
-  },
-  {
-    title: "Hide what shouldn't be on screen",
-    description: "Marking an entry as hidden masks it as ••••••••• in the list — safe to leave open during a screen-share or pair session. Click-to-copy still pastes the real content; search skips hidden entries so they can't be surfaced by accident.",
-    mockup: HiddenEntryMockup,
+    title: "Every copy, saved",
+    description: "Ctrl+C is now a permanent record. Text, code, links, snippets — up to 200 entries, deduplicated, still here after reboot.",
+    mockup: ClipboardHistoryMockup,
   },
   {
     title: "Paste without switching windows",
@@ -621,7 +621,7 @@ const features = [
   },
   {
     title: "Match your desktop",
-    description: "Light or dark. Any accent color. Clipmer should look like it belongs on your machine — not like a web app in an Electron wrapper.",
+    description: "Light or dark. Any accent color. Clipmer should look like it belongs on your machine.",
     mockup: ThemeMockup,
   },
   {
