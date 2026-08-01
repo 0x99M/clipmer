@@ -20,15 +20,16 @@ const PADDLE_ENV = (process.env.NEXT_PUBLIC_PADDLE_ENV || "sandbox") as
 const BUY_PRO_ENABLED = process.env.NEXT_PUBLIC_BUY_PRO_ENABLED === "true";
 
 const features = [
-  { name: "Clipboard history", free: "25 entries", pro: "200 entries" },
+  { name: "Clipboard history", free: "100 entries", pro: "200 entries" },
   { name: "Folders", free: false, pro: true },
   { name: "Inline notes", free: false, pro: true },
   { name: "Smart search", free: "Content only", pro: "Content + notes" },
   { name: "Auto-paste (Wayland)", free: true, pro: true },
-  { name: "Dark & light themes", free: "Dark only", pro: "Both + accent color" },
+  { name: "Dark & light themes", free: true, pro: true },
+  { name: "Accent color", free: true, pro: true },
   { name: "Adjustable font size", free: true, pro: true },
   { name: "Minimal view", free: false, pro: true },
-  { name: "Custom shortcut", free: "Default only", pro: "Configurable" },
+  { name: "Custom shortcut", free: true, pro: true },
   { name: "Keyboard navigation", free: true, pro: true },
   { name: "Start on login", free: true, pro: true },
   { name: "Hide entries (screen-share safe)", free: true, pro: true },
@@ -308,7 +309,7 @@ export default function ProPage() {
               {[
                 {
                   q: "Why is the source on GitHub then?",
-                  a: "Because your clipboard handles passwords, tokens, and private snippets — you should be able to verify there's no telemetry or hidden network call. The source is published for transparency and security audit. It's source-available, not open source: redistribution, derivative works, and commercial forks aren't permitted. Your $9 pays for the pre-built binary, the Pro feature unlocks, and ongoing development.",
+                  a: "Because your clipboard handles passwords, tokens, and private snippets — you should be able to verify there's no telemetry or hidden network call. The source is published for transparency and security audit under the PolyForm Strict License 1.0.0. It's source-available, not open source: redistribution and derivative works aren't permitted. Your $9 pays for the pre-built binary, the Pro feature unlocks, and ongoing development.",
                 },
                 {
                   q: "Is this a subscription?",

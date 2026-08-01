@@ -59,7 +59,7 @@ let lastClipboardText = '';
 let pollingInterval = null;
 
 const MAX_HISTORY = 200;
-const FREE_HISTORY_LIMIT = 25;
+const FREE_HISTORY_LIMIT = 100;
 const POLL_MS = 500;
 const PID_FILE = path.join(app.getPath('userData'), 'clipmer.pid');
 
@@ -452,21 +452,18 @@ ipcMain.handle('get-stats', () => {
 ipcMain.handle('get-theme', () => store.get('theme') || 'dark');
 
 ipcMain.handle('set-theme', (_event, theme) => {
-  if (!license.isPro()) return;
   store.set('theme', theme);
 });
 
 ipcMain.handle('get-accent', () => store.get('accentColor') || '#E95420');
 
 ipcMain.handle('set-accent', (_event, color) => {
-  if (!license.isPro()) return;
   store.set('accentColor', color);
 });
 
 ipcMain.handle('get-shortcut', () => store.get('shortcut') || 'Ctrl+Shift+D');
 
 ipcMain.handle('set-shortcut', (_event, shortcut) => {
-  if (!license.isPro()) return;
   globalShortcut.unregisterAll();
   store.set('shortcut', shortcut);
   registerGlobalShortcut();

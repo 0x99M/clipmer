@@ -453,19 +453,21 @@ async function initLicense() {
 }
 
 function applyProGating() {
-  const proRows = [
-    'minimal-view-toggle',
-    'accent-picker',
-    'shortcut-recorder',
-  ];
+  // Free: themes, accent color, custom shortcut, font size, hidden entries.
+  // Pro: folders, notes + note search, minimal view, 200-entry history.
+  const proRows = ['minimal-view-toggle'];
+  const freeRows = ['accent-picker', 'shortcut-recorder'];
 
-  // Theme buttons
+  // Themes are free — clear any lock left over from an earlier build.
   document.querySelectorAll('.theme-btn').forEach((btn) => {
-    if (!proActive && btn.dataset.theme === 'light') {
-      btn.classList.add('pro-locked');
-    } else {
-      btn.classList.remove('pro-locked');
-    }
+    btn.classList.remove('pro-locked');
+  });
+
+  freeRows.forEach((id) => {
+    const row = document.getElementById(id)?.closest('.settings-row');
+    if (!row) return;
+    row.classList.remove('pro-locked');
+    row.querySelector('.pro-badge')?.remove();
   });
 
   proRows.forEach((id) => {
