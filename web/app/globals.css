@@ -131,7 +131,13 @@
   }
 
   [data-parallax] {
+    /* When the tiles land, relative to first paint. Inherited by the contents
+       below so every feature delay shifts with it — retime the constellation
+       from this one value. */
+    --tile-at: 0.42s;
     animation: tile-in 0.7s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+    /* The shorthand above resets animation-delay, so this has to follow it. */
+    animation-delay: var(--tile-at, 0s);
     /* Smooths the parallax follow and the return to rest in one line, so the
        pointer handler can write raw values every frame without lerping. */
     transition: transform 220ms cubic-bezier(0.22, 0.75, 0.3, 1);
@@ -139,7 +145,7 @@
 
   /* Each feature fires just after its own tile has landed. */
   [data-tile] {
-    animation-delay: calc(var(--t0, 0s) + 0.72s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s) + 0.72s);
     animation-fill-mode: both;
     animation-iteration-count: 1;
   }
@@ -175,13 +181,13 @@
     animation-name: tile-plain;
     animation-duration: 2.4s;
     animation-timing-function: ease-in-out;
-    animation-delay: var(--t0, 0s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s));
   }
   [data-tile="masked"] {
     animation-name: tile-masked;
     animation-duration: 2.4s;
     animation-timing-function: ease-in-out;
-    animation-delay: var(--t0, 0s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s));
   }
 
   /* ── stack: a new entry drops in ─────────────────────────────────── */
@@ -227,13 +233,13 @@
   }
   /* Innermost first, so the pulse travels outward. */
   [data-tile="arc-2"] {
-    animation-delay: calc(var(--t0, 0s) + 0.72s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s) + 0.72s);
   }
   [data-tile="arc-1"] {
-    animation-delay: calc(var(--t0, 0s) + 0.84s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s) + 0.84s);
   }
   [data-tile="arc-0"] {
-    animation-delay: calc(var(--t0, 0s) + 0.96s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s) + 0.96s);
   }
   [data-tile="slash"] {
     /* Path is 17,17 on the diagonal — length ≈ 24.04. */
@@ -241,7 +247,7 @@
     animation-name: tile-slash;
     animation-duration: 0.45s;
     animation-timing-function: cubic-bezier(0.6, 0, 0.35, 1);
-    animation-delay: calc(var(--t0, 0s) + 1.16s);
+    animation-delay: calc(var(--tile-at, 0s) + var(--t0, 0s) + 1.16s);
   }
 
   /* ── folders: the front tab shuffles forward ─────────────────────── */
@@ -317,6 +323,70 @@
        and still. A caret that blinks forever would be the one thing on the
        page that never settles. */
     animation-iteration-count: 4;
+  }
+}
+
+/* ───────────────────────── Hero entrance cascade ─────────────────────────
+   The hero is above the fold, so it cannot use <FadeUp>: that component waits
+   on an intersection observer, and an observer cannot fire until React has
+   hydrated. The tiles are CSS and start at first paint, so the two systems ran
+   unsynchronized — on a throttled load the headline was simply present at
+   opacity 1 while the copy below arrived roughly 600ms after the tiles had
+   already finished.
+
+   Everything here is CSS for that reason: one timeline, started at first
+   paint, no dependency on JS. --hero-at is each element's beat; --tile-at
+   above places the constellation inside the same sequence.
+
+   Reduced motion is handled by omission — none of this applies, and every
+   element's authored state is already its settled state. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      translate: 0 var(--hero-lift, 14px);
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  [data-hero] {
+    animation: hero-rise var(--hero-dur, 0.62s) cubic-bezier(0.22, 0.75, 0.3, 1)
+      both;
+    animation-delay: var(--hero-at, 0s);
+  }
+
+  /* Reads top-to-bottom as one move down the page. The three headline lines
+     carry a longer lift than the small copy so the type leads the eye; the
+     tiles land at 0.42s, between the last line and the sub-copy. */
+  [data-hero="badge"] {
+    --hero-at: 0.05s;
+  }
+  [data-hero="line-1"] {
+    --hero-at: 0.13s;
+    --hero-lift: 22px;
+  }
+  [data-hero="line-2"] {
+    --hero-at: 0.21s;
+    --hero-lift: 22px;
+  }
+  [data-hero="line-3"] {
+    --hero-at: 0.29s;
+    --hero-lift: 22px;
+  }
+  [data-hero="copy"] {
+    --hero-at: 0.52s;
+  }
+  [data-hero="caps"] {
+    --hero-at: 0.6s;
+  }
+  [data-hero="cta"] {
+    --hero-at: 0.68s;
+  }
+  [data-hero="fine"] {
+    --hero-at: 0.78s;
   }
 }
 

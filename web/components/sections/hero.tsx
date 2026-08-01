@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { MotionConfig } from "framer-motion";
 import { Download, EyeOff, Folder, StickyNote } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { FadeUp } from "@/components/fade-up";
 import {
   FeatureTile,
   type TileDepth,
@@ -328,8 +326,14 @@ export function Hero() {
     };
   }, []);
 
+  /* The hero is above the fold, so its entrance is pure CSS and runs from the
+     first paint. The rest of the page uses <FadeUp>, which is correct there —
+     it waits for an intersection observer, and an observer cannot fire until
+     React has hydrated. Using it here meant the copy arrived ~600ms after the
+     tiles had already finished, with the headline never animating at all.
+     Sequencing lives in globals.css under [data-hero]. */
   return (
-    <MotionConfig reducedMotion="user">
+    <>
       {/* -mt-16 pulls the section up behind the 4rem (h-16) sticky nav so the
           radial glow below renders continuously to the top of the viewport —
           otherwise the nav leaves a flat band and a hard seam where the
@@ -354,7 +358,7 @@ export function Hero() {
         />
 
         <div className="relative z-10 mx-auto w-full max-w-7xl px-4 text-center sm:px-6">
-          <FadeUp className="flex justify-center">
+          <div data-hero="badge" className="flex justify-center">
             <Badge
               variant="outline"
               className="h-auto w-fit gap-1.5 border-orange/25 bg-orange/[0.08] px-3 py-1 text-xs font-normal text-orange"
@@ -362,7 +366,7 @@ export function Hero() {
               <span aria-hidden className="size-1.5 rounded-full bg-orange" />
               100% offline &middot; No telemetry
             </Badge>
-          </FadeUp>
+          </div>
 
           {/* The headline block is the tiles' coordinate space, so above 900px
               it shrink-wraps the type rather than the container: a tile at
@@ -373,9 +377,15 @@ export function Hero() {
             className="relative isolate mx-auto mt-6 w-full min-[900px]:mt-8 min-[900px]:w-fit"
           >
             <h1 className="relative z-[1] font-bold text-[clamp(3rem,8vw,7rem)] leading-[0.92] tracking-[-0.035em]">
-              <span className="block">Your clipboard</span>
-              <span className="block">is full of secrets.</span>
-              <span className="block text-orange">Treat it like it.</span>
+              <span data-hero="line-1" className="block">
+                Your clipboard
+              </span>
+              <span data-hero="line-2" className="block">
+                is full of secrets.
+              </span>
+              <span data-hero="line-3" className="block text-orange">
+                Treat it like it.
+              </span>
             </h1>
 
             {TILES.map((tile, i) => (
@@ -395,13 +405,19 @@ export function Hero() {
             ))}
           </div>
 
-          <FadeUp delay={0.08}>
-            <p className="mx-auto mt-7 max-w-[56ch] text-pretty text-base leading-relaxed text-muted-foreground sm:mt-8 sm:text-lg">
+          <>
+            <p
+              data-hero="copy"
+              className="mx-auto mt-7 max-w-[56ch] text-pretty text-base leading-relaxed text-muted-foreground sm:mt-8 sm:text-lg"
+            >
               Never lose a copied item again &mdash; and never flash a credential
               on a screen share. Masked entries stay copyable, but unreadable.
             </p>
 
-            <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+            <ul
+              data-hero="caps"
+              className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground"
+            >
               {CAPABILITIES.map(({ icon: Icon, label, tier }) => (
                 <li key={label} className="inline-flex items-center gap-1.5">
                   <Icon aria-hidden className="size-3.5 text-orange/80" />
@@ -421,7 +437,10 @@ export function Hero() {
             </ul>
 
             {/* Widest gap in the column sits directly above Download. */}
-            <div className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center">
+            <div
+              data-hero="cta"
+              className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center"
+            >
               <a
                 href="#download"
                 className={cn(
@@ -453,7 +472,10 @@ export function Hero() {
             </div>
 
             {/* Fine print: reassurance first, upsell second. */}
-            <div className="mt-4 flex flex-col items-center gap-1.5 text-xs leading-relaxed text-muted-foreground">
+            <div
+              data-hero="fine"
+              className="mt-4 flex flex-col items-center gap-1.5 text-xs leading-relaxed text-muted-foreground"
+            >
               <p className="max-w-[58ch]">
                 Source-available, not open source &mdash; read and audit every
                 line under the{" "}
@@ -483,9 +505,9 @@ export function Hero() {
                 </span>
               </a>
             </div>
-          </FadeUp>
+          </>
         </div>
       </section>
-    </MotionConfig>
+    </>
   );
 }
