@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-GITHUB_REPO="0x99M/project-y"
+GITHUB_REPO="0x99M/clipmer"
 
 # ── Read version from linux/package.json ──────────────────────────────
 VERSION=$(node -p "require('$REPO_ROOT/linux/package.json').version")

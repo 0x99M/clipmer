@@ -21,8 +21,8 @@ A tray-based clipboard history manager for Linux. Monitors your clipboard, store
 
 Download the latest release for Linux:
 
-- [.deb package](https://github.com/0x99M/project-y/releases/latest) — Ubuntu/Debian
-- [AppImage](https://github.com/0x99M/project-y/releases/latest) — any distro
+- [.deb package](https://github.com/0x99M/clipmer/releases/latest) — Ubuntu/Debian
+- [AppImage](https://github.com/0x99M/clipmer/releases/latest) — any distro
 
 See [clipmer.app](https://clipmer.app) for more.
 

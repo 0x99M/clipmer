@@ -41,7 +41,7 @@ export function DownloadSection() {
         <FadeUp delay={0.3}>
           <div className="mt-8 flex flex-col flex-wrap gap-4 sm:flex-row sm:justify-center">
             <a
-              href="https://github.com/0x99M/project-y/releases/download/v3.0.5/clipmer_3.0.5_amd64.deb"
+              href="https://github.com/0x99M/clipmer/releases/download/v3.0.5/clipmer_3.0.5_amd64.deb"
               className={cn(
                 buttonVariants({ size: "lg" }),
                 "h-14 gap-2 px-8 text-base bg-orange text-white hover:bg-orange-hover"
@@ -51,7 +51,7 @@ export function DownloadSection() {
               Download .deb Package
             </a>
             <a
-              href="https://github.com/0x99M/project-y/releases/download/v3.0.5/clipmer-3.0.5.x86_64.rpm"
+              href="https://github.com/0x99M/clipmer/releases/download/v3.0.5/clipmer-3.0.5.x86_64.rpm"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "h-14 gap-2 px-8 text-base border-border hover:bg-surface"
@@ -61,7 +61,7 @@ export function DownloadSection() {
               Download .rpm Package
             </a>
             <a
-              href="https://github.com/0x99M/project-y/releases/download/v3.0.5/Clipmer-3.0.5.AppImage"
+              href="https://github.com/0x99M/clipmer/releases/download/v3.0.5/Clipmer-3.0.5.AppImage"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "h-14 gap-2 px-8 text-base border-border hover:bg-surface"

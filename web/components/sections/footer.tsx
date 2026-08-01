@@ -12,7 +12,7 @@ export function Footer() {
               <span className="text-sm text-muted-foreground">v3.0.5</span>
             </div>
             <a
-              href="https://github.com/0x99M/project-y"
+              href="https://github.com/0x99M/clipmer"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -21,7 +21,7 @@ export function Footer() {
               GitHub
             </a>
             <a
-              href="https://github.com/0x99M/project-y/issues"
+              href="https://github.com/0x99M/clipmer/issues"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"

@@ -33,7 +33,7 @@ export default function ContactPage() {
       <p>
         Found a bug? Open an issue on{" "}
         <a
-          href="https://github.com/0x99M/project-y/issues"
+          href="https://github.com/0x99M/clipmer/issues"
           target="_blank"
           rel="noopener noreferrer"
         >

@@ -74,7 +74,7 @@ export default function RootLayout({
               operatingSystem: "Linux",
               url: "https://clipmer.app",
               downloadUrl:
-                "https://github.com/0x99M/project-y/releases/latest",
+                "https://github.com/0x99M/clipmer/releases/latest",
               offers: {
                 "@type": "Offer",
                 price: "0",

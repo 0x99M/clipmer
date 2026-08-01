@@ -160,7 +160,7 @@ export function Hero() {
                   <span className="relative">Download for Linux</span>
                 </a>
                 <a
-                  href="https://github.com/0x99M/project-y"
+                  href="https://github.com/0x99M/clipmer"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
@@ -245,7 +245,7 @@ export function Hero() {
                     </div>
                     {[
                       { text: "npm install clipmer", time: "Just now", folder: "Work" },
-                      { text: "https://github.com/0x99M/project-y", time: "2m ago", folder: null },
+                      { text: "https://github.com/0x99M/clipmer", time: "2m ago", folder: null },
                       { text: "export default function App() {", time: "5m ago", folder: null },
                       { text: "E95420", time: "12m ago", folder: null },
                       { text: "ssh user@192.168.1.100", time: "1h ago", folder: "Servers" },

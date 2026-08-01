@@ -54,7 +54,7 @@ export default function TermsPage() {
         source code is published on GitHub for transparency and security audit
         and is governed by the{" "}
         <a
-          href="https://github.com/0x99M/project-y/blob/master/LICENSE"
+          href="https://github.com/0x99M/clipmer/blob/master/LICENSE"
           target="_blank"
           rel="noopener noreferrer"
         >

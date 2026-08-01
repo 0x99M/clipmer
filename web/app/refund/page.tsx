@@ -52,7 +52,7 @@ export default function RefundPage() {
         so you can avoid the refund process entirely. The free version is
         available at{" "}
         <a
-          href="https://github.com/0x99M/project-y/releases/latest"
+          href="https://github.com/0x99M/clipmer/releases/latest"
           target="_blank"
           rel="noopener noreferrer"
         >

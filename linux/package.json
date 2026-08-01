@@ -6,7 +6,7 @@
     "name": "Mustafa",
     "email": "mustafa@clipmer.local"
   },
-  "homepage": "https://github.com/mustafa/clipmer",
+  "homepage": "https://github.com/0x99M/clipmer",
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
