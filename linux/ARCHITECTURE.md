@@ -3,7 +3,7 @@
 ## Project Structure
 
 ```
-project-y/
+linux/
 ├── main.js              # Electron main process (all backend logic)
 ├── preload.js           # contextBridge IPC bridge
 ├── package.json         # CJS, electron-store@8.2.0

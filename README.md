@@ -1,11 +1,16 @@
 # Clipmer
 
-A tray-based clipboard history manager for Linux. Monitors your clipboard, stores text entries, and provides a fast popup UI with search, pinned items, notes, and auto-paste.
+A secrets-aware clipboard manager for Linux. Your clipboard fills up with SSH
+commands, API keys, and connection strings — Clipmer lets you mask them before a
+screen share, annotate them with notes, and file them into folders, all from a
+tray-based popup that never leaves your machine.
 
 **Ubuntu · GNOME · Wayland**
 
 ## Features
 
+- Masked entries — stay copyable, but unreadable on screen
+- Folders for grouping SSH commands, credentials, and snippets
 - Clipboard history up to 200 entries, deduplicated
 - Pinned items that survive restarts
 - Instant search across content and notes
@@ -29,7 +34,7 @@ See [clipmer.app](https://clipmer.app) for more.
 ## Repo Structure
 
 ```
-project-y/
+clipmer/
 ├── linux/      Electron desktop app
 ├── web/        Next.js landing page (clipmer.app)
 └── scripts/    Release tooling
