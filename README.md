@@ -62,7 +62,11 @@ This uploads the binaries to GitHub Releases and updates all version references 
 
 ## License
 
-Source-available. The code in this repository is provided for transparency
-and personal use; redistribution, derivative works, and commercial forks are
-not permitted. See [LICENSE](LICENSE) for the full terms. This is not an
-OSI-approved open source license.
+Source-available, not open source. The code in this repository is licensed
+under the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0)
+— you may read, audit, and run it for noncommercial and personal purposes, but
+redistribution and derivative works are not permitted. See [LICENSE](LICENSE)
+for the full terms, including how pre-built binaries are licensed separately.
+
+This is not an OSI-approved open source license. For commercial use or
+redistribution rights, contact support@clipmer.app.

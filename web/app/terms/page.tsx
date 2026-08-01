@@ -58,11 +58,13 @@ export default function TermsPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Clipmer Source-Available License
+          PolyForm Strict License 1.0.0
         </a>
-        . You may read and audit the source, and you may build it from source
-        for your own personal use. Redistribution, derivative works, hosted
-        services, and commercial forks require prior written permission.
+        . You may read and audit the source, and you may build and run it from
+        source for noncommercial and personal purposes. Redistribution,
+        derivative works, hosted services, and commercial use require prior
+        written permission. This license governs the source code only —
+        pre-built binaries are governed by these Terms.
       </p>
       <p>
         A Clipmer Pro license key grants <strong>one individual</strong> access
