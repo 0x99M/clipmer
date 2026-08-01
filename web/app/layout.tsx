@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Clipmer" }],
   alternates: {
     canonical: "https://clipmer.app",
+    types: {
+      "application/rss+xml": "https://clipmer.app/blog/rss.xml",
+    },
   },
   openGraph: {
     type: "website",

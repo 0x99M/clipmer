@@ -1,0 +1,156 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+
+Ubuntu still ships no clipboard history. Copy something, copy something else, and the
+first thing is gone — there is no built-in way to get it back, and there has never been
+one in any Ubuntu release.
+
+This guide covers the five options that actually work, with every command run against a
+real Ubuntu 24.04.4 LTS install rather than copied from older guides.
+
+## First, check which session you are in
+
+This determines which tools can work at all, so do it before installing anything:
+
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+<Callout type="note" title="24.04 versus 26.04">
+  On Ubuntu 24.04 you can be in either `x11` or `wayland`, and you can switch at the
+  login screen with the gear icon. Ubuntu 26.04 LTS removed the X11 *session* entirely —
+  the GNOME session is Wayland-only. XWayland still exists, so X11 applications continue
+  to run, but "just log into Xorg instead" stopped being an available workaround.
+</Callout>
+
+## Option 1: Clipboard History extension
+
+The simplest thing that works on GNOME, and the one to try first. It is a GNOME Shell
+extension, so it runs inside the compositor and works on Wayland without any protocol
+support.
+
+Install [Clipboard History](https://extensions.gnome.org/extension/4839/clipboard-history/)
+from the GNOME Extensions site, or use the Extension Manager app:
+
+```bash
+sudo apt install gnome-shell-extension-manager
+```
+
+Open Extension Manager, search "Clipboard History", install. Press **Super + Shift + V**
+to open the panel. Searchable, keyboard-driven, no daemon to configure.
+
+## Option 2: GPaste
+
+The most established option, and the one with a real daemon behind it rather than only a
+shell extension. Install both parts — the daemon and the GNOME integration:
+
+```bash
+sudo apt install gpaste-2 gnome-shell-extension-gpaste
+```
+
+Then log out and back in. Open **GPaste Preferences** from the applications menu, scroll
+to the GNOME Shell section, and enable both toggles — the extension does not always
+enable itself on install, which is the single most common reason people conclude GPaste
+"doesn't work."
+
+GPaste also gives you a CLI, which is genuinely useful in scripts:
+
+```bash
+gpaste-client history
+gpaste-client get 3
+```
+
+## Option 3: Pano
+
+Prettier than the alternatives, with typed previews for links, colors, and code. It needs
+two libraries plus their introspection data, none of which are installed by default:
+
+```bash
+sudo apt install libgda-5.0-4t64 gir1.2-gda-5.0 libgsound0t64 gir1.2-gsound-1.0
+```
+
+<Callout type="note" title="Why the t64 suffix">
+  Ubuntu 24.04's 64-bit `time_t` transition renamed these libraries from `libgda-5.0-4`
+  and `libgsound0` to `libgda-5.0-4t64` and `libgsound0t64`. The old names still work —
+  the renamed packages declare `Provides:` for them, so `apt install libgda-5.0-4`
+  resolves to the t64 package. The `gir1.2-*` introspection packages were unaffected. The
+  names above are the real ones, which is what you want if you are reading the output of
+  `apt policy` and wondering why the old name shows no candidate version.
+</Callout>
+
+Then install [Pano](https://extensions.gnome.org/extension/5278/pano/) from the GNOME
+Extensions site and restart the shell by logging out and back in.
+
+## Option 4: CopyQ
+
+The power-user option, and the only one here that is genuinely cross-platform. Tabs,
+scripting, an editor for stored items, and filters:
+
+```bash
+sudo apt install copyq
+```
+
+CopyQ is an X11-first application. Under a Wayland session it runs through XWayland and
+its Wayland support has known rough edges, particularly around global shortcuts. If you
+are on Wayland and want CopyQ specifically, expect to spend time on configuration.
+
+## Option 5: Clipmer
+
+Ours, so treat this section with the appropriate suspicion. Clipmer is built for people
+whose clipboard is full of things they would rather not display: it can mask individual
+entries so they render as dots during a screen share, attach notes to entries, and file
+them into folders.
+
+```bash
+wget https://github.com/0x99M/clipmer/releases/latest/download/clipmer_3.1.0_amd64.deb
+sudo apt install ./clipmer_3.1.0_amd64.deb
+```
+
+Press **Ctrl + Shift + D** to open it. The free version keeps 100 entries.
+
+The honest trade-off: Clipmer is source-available under PolyForm Strict, **not** open
+source, and the folders, notes, and minimal view are paid. Everything above is free
+software and most of it is GPL. If licensing matters to you — and on Linux it reasonably
+might — GPaste is the better choice and we would rather you were happy than converted.
+
+## Which one should you actually install
+
+<SupportTable
+  headers={["If you want…", "Install", "Why"]}
+  rows={[
+    { name: "Something that just works", cells: ["Clipboard History", "One extension, no daemon, works on Wayland"] },
+    { name: "The most mature option", cells: ["GPaste", "Real daemon, CLI, longest track record"] },
+    { name: "The best-looking option", cells: ["Pano", "Typed previews, but two extra dependencies"] },
+    { name: "Scripting and power features", cells: ["CopyQ", "Tabs and scripting; X11-first"] },
+    { name: "To not leak secrets on a call", cells: ["Clipmer", "Per-entry masking, notes, folders"], highlight: true },
+  ]}
+/>
+
+## Setting a keyboard shortcut
+
+GNOME reserves **Super + V** for notifications, so most tools default to something else.
+To bind your own, open **Settings → Keyboard → View and Customize Shortcuts → Custom
+Shortcuts**, then add a command:
+
+```bash
+# GPaste
+gpaste-client ui
+
+# CopyQ
+copyq toggle
+```
+
+Extensions like Clipboard History and Pano set their own shortcut in the extension's
+preferences instead, since they run inside the shell.
+
+## One thing worth knowing before you install any of these
+
+Whichever you choose, you are about to create a plaintext file on disk that accumulates
+everything you copy. That will include passwords pasted from a password manager, API
+keys, database URLs, and session tokens — and it will keep them long after you have
+forgotten they were there.
+
+That is not an argument against clipboard managers; the productivity gain is real and
+worth it. It is an argument for knowing where the file lives and what is in it. Clipmer
+stores its history at `~/.config/clipmer/`, GPaste under `~/.local/share/gpaste/`. Have a
+look at yours sometime — it is usually more revealing than people expect.

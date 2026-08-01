@@ -1,0 +1,234 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+
+You copy a database URL out of a terminal, close the terminal, press paste — and get
+nothing. Or you install a clipboard manager that worked fine for years, log into a
+Wayland session, and it records nothing at all.
+
+Both are the same bug report, and neither is a bug. They fall out of a deliberate
+decision in the Wayland protocol, and understanding that decision tells you exactly
+which clipboard managers can work on your system and which ones cannot.
+
+## The clipboard is not a buffer
+
+The first thing to unlearn: there is no clipboard. Nothing on your system holds "the
+copied text" the way a variable holds a string.
+
+What actually happens when you press Ctrl+C is that the application **announces that it
+owns the current selection**, and advertises a list of MIME types it could produce —
+`text/plain;charset=utf-8`, maybe `text/html`, maybe `image/png`. No data moves. The
+application just raises its hand.
+
+The data only moves when something asks for it. The receiving application says "give me
+`text/plain`", the two clients open a pipe, and the owner writes the bytes on demand.
+
+This has a consequence people hit constantly without knowing why:
+
+<Callout type="note" title="Why closing the app empties your clipboard">
+  If the owning application exits, there is nobody left to answer the request. The
+  selection dies with the process. This is true on X11 too — it is not a Wayland
+  regression. It is the single biggest reason clipboard managers exist at all: a manager
+  keeps its own copy so the data survives the app that produced it.
+</Callout>
+
+## What Wayland actually changed
+
+On X11, any client connected to the X server can ask who owns the selection and request
+its contents, at any time, without being focused. That is why writing an X11 clipboard
+manager was almost trivial — you watch for ownership changes and read the data.
+
+It is also why the X11 security model is a running joke. A client that can silently read
+your clipboard can also read every keystroke you type into any window, and screenshot
+your screen, because X11 has no isolation between clients. Your password manager pastes
+into your browser through a channel that any process on your session can watch.
+
+Wayland closed that hole. In the core protocol, clipboard access is dispensed through
+`wl_data_device`, which is bound to a `wl_seat` — and a client only receives selection
+offers **while it has keyboard focus**. No focus, no clipboard.
+
+Read that again with a clipboard manager in mind. A clipboard manager is a program whose
+entire purpose is to read the clipboard while it is not focused. The core Wayland
+protocol forbids precisely and only the thing a clipboard manager needs to do.
+
+This is not an oversight. It is the feature.
+
+## The escape hatches
+
+Wayland's answer to "some programs legitimately need this" is a privileged protocol
+extension that the compositor may choose to implement. There are two that matter, and
+they are the same idea a few years apart.
+
+### wlr-data-control-unstable-v1
+
+The [wlr-data-control](https://wayland.app/protocols/wlr-data-control-unstable-v1)
+protocol came out of wlroots, the library behind Sway, river, and Wayfire. It lets a
+client read and write the selection without ever holding focus or even having a visible
+window — exactly the clipboard-manager use case.
+
+For most of Wayland's practical history this was *the* answer, which is why so much
+existing documentation still treats "does it support wlr-data-control?" as the deciding
+question. That is now only half the question.
+
+### ext-data-control-v1
+
+Because `wlr-data-control` was a wlroots extension, adopting it meant every other
+compositor implementing someone else's vendor protocol. So it was standardized:
+[ext-data-control-v1](https://wayland.app/protocols/ext-data-control-v1) is the
+successor, shipped in wayland-protocols 1.39, functionally the same design without the
+vendor prefix.
+
+The two protocols have **different** support sets, and that catches people out:
+
+<Callout type="warn" title="Supporting one does not imply supporting the other">
+  KWin implements `ext-data-control-v1` but **not** `wlr-data-control` — KDE skipped the
+  wlroots protocol and went straight to the standardized one. Wayfire, river, and phoc
+  are the mirror image: they implement `wlr-data-control` only. So a clipboard tool
+  written strictly against `wlr-data-control` will work on Sway and fail on KDE, and a
+  tool written strictly against `ext-data-control-v1` will work on KDE and fail on
+  Wayfire. Robust tools bind whichever is available — which is what `wl-clipboard` does.
+</Callout>
+
+And GNOME implements neither. Mutter appears in the registry's compositor list, as every
+tracked compositor does, but its row is empty for both protocols, and there is no
+data-control implementation in Mutter's source tree. If you are on GNOME, no amount of
+`wl-clipboard` will give you clipboard history — which is why every GNOME clipboard
+manager is a shell extension instead.
+
+### GNOME Shell extensions
+
+There is a second route on GNOME that sidesteps the protocol question entirely: run
+*inside* the compositor. A GNOME Shell extension is JavaScript executing in the same
+process as Mutter, so it can reach Mutter's internal selection API and observe ownership
+changes directly. No protocol negotiation, because there are no two parties.
+
+This is how GPaste's shell integration, Pano, and Clipboard History work. It also
+explains their most common failure mode: a GNOME version bump can break every extension
+at once, because they are coupled to compositor internals rather than to a stable
+protocol.
+
+### XWayland
+
+X11 applications still run under Wayland through XWayland, and the compositor bridges
+selections between the X11 and Wayland worlds. An X11 clipboard manager running under
+XWayland therefore still sees a great deal — including copies made in Wayland-native
+applications, because the compositor forwards them.
+
+This path is unglamorous and widely dismissed, but it is load-bearing: a large share of
+the desktop Linux applications people actually use — anything Electron-based, by default
+— are XWayland clients today.
+
+### Portals are not the answer (yet)
+
+You will occasionally see portals suggested as the sanctioned route. Be careful here.
+There *is* an
+[org.freedesktop.portal.Clipboard](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Clipboard.html)
+interface, but it does not provide standalone clipboard access. It exists to let an
+*already established* session — in practice a RemoteDesktop session — opt into clipboard
+integration. There is no general-purpose clipboard portal a background manager can call.
+It was discussed during review and deliberately scoped to sessions.
+
+## Which compositors support what
+
+<SupportTable
+  headers={["Compositor", "ext-data-control-v1", "wlr-data-control"]}
+  rows={[
+    { name: "Mutter (GNOME)", cells: ["No", "No"] },
+    { name: "KWin (KDE)", cells: ["Yes", "No"] },
+    { name: "Sway", cells: ["Yes", "Yes"] },
+    { name: "Hyprland", cells: ["Yes", "Yes"] },
+    { name: "niri", cells: ["Yes", "Yes"] },
+    { name: "COSMIC", cells: ["Yes", "Yes"] },
+    { name: "labwc", cells: ["Yes", "Yes"] },
+    { name: "Mir", cells: ["Yes", "No"] },
+    { name: "Wayfire", cells: ["No", "Yes"] },
+    { name: "river", cells: ["No", "Yes"] },
+    { name: "phoc", cells: ["No", "Yes"] },
+    { name: "Weston", cells: ["No", "No"] },
+  ]}
+  caption="Source: the compositor support matrix in the Wayland protocol registry at wayland.app, read in August 2026. Support moves — check the registry rather than trusting this table a year from now."
+/>
+
+Two things stand out. GNOME is the only major desktop with no data-control support at
+all, and KWin and Wayfire support opposite protocols — so "does my compositor support
+clipboard managers?" has no single answer, only a per-protocol one.
+
+## How to tell what your own session supports
+
+Three commands, in increasing order of usefulness.
+
+What session type are you actually in? A surprising number of "Wayland clipboard
+problems" turn out to be an X11 session:
+
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+Which protocols does your compositor advertise? `wayland-info` ships in the
+`wayland-utils` package on most distributions:
+
+```bash
+wayland-info | grep -i data_control
+```
+
+Does a data-control client actually work? `wl-paste --watch` uses the data-control
+protocol, so if this prints on every copy, a clipboard manager can work the same way:
+
+```bash
+wl-paste --watch echo "copied at $(date +%T)"
+```
+
+If the first says `wayland`, the second prints nothing, and the third sits silent, your
+compositor has no data-control support and your only options are a shell extension or an
+XWayland-based tool.
+
+## What this means for the tools you already know
+
+<SupportTable
+  headers={["Tool", "How it reads the clipboard", "Where it works"]}
+  rows={[
+    { name: "cliphist", cells: ["wl-clipboard, via data-control", "Any compositor with data-control — so not GNOME"] },
+    { name: "GPaste", cells: ["GNOME Shell extension + daemon", "GNOME"] },
+    { name: "Pano", cells: ["GNOME Shell extension", "GNOME"] },
+    { name: "Clipboard History", cells: ["GNOME Shell extension", "GNOME"] },
+    { name: "Klipper", cells: ["Built into Plasma", "KDE"] },
+    { name: "CopyQ", cells: ["X11/XWayland, with partial Wayland support", "Broadly, with caveats on Wayland"] },
+    { name: "Clipmer", cells: ["Electron clipboard API under XWayland", "GNOME on X11 or Wayland"], highlight: true },
+  ]}
+/>
+
+Every one of these except Clipmer is free software, and most are GPL. If all you need is
+a list of the last few things you copied, install GPaste or Pano and stop reading — they
+are good, they are free, and they will serve you well.
+
+## How Clipmer does it, specifically
+
+Clipmer is an Electron application, and Electron runs as an XWayland client by default.
+It reads the clipboard through Electron's clipboard API on a 500 ms poll, and the
+compositor's XWayland bridge is what lets it see copies made in Wayland-native
+applications.
+
+That is a less elegant mechanism than speaking `ext-data-control-v1` directly, and it is
+worth being plain about the trade-off: polling costs a timer that a protocol subscription
+would not, and it inherits whatever fidelity the XWayland selection bridge provides. In
+exchange it works identically across GNOME on X11 and GNOME on Wayland without depending
+on a shell extension that a GNOME release can break.
+
+We test on Ubuntu 24.04 LTS. Ubuntu 26.04 ships a Wayland-only GNOME session — the X11
+*session* is gone, but XWayland is not, and GNOME has no plan to remove it.
+
+## The trade-off nobody advertises
+
+Here is the part worth sitting with. `ext-data-control-v1` is a protocol whose entire
+purpose is to let a background process read everything you copy without your knowledge or
+any visible window. It restores, for clients the compositor deems privileged, exactly the
+capability Wayland took away from X11 for good reasons.
+
+That is the right call — clipboard managers are genuinely useful and users want them. But
+"my clipboard is private because I'm on Wayland" was never true in the first place, and
+it is less true on a system with a clipboard manager installed, whichever one you pick.
+Your clipboard history is a plaintext file on disk containing every password, API key,
+and connection string you have copied recently.
+
+Wayland decided who is allowed to *read* your clipboard. It has nothing to say about what
+your clipboard manager does with it afterward — that part is still entirely up to the
+tool you chose, and worth choosing deliberately.
