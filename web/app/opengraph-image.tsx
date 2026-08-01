@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export const alt = "Clipmer — Offline Clipboard Manager for Linux";
+export const alt = "Clipmer — Secrets-Aware Clipboard Manager for Linux";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -41,28 +41,29 @@ export default async function Image() {
         {/* Icon */}
         <img
           src={iconBase64}
+          alt=""
           width={80}
           height={80}
           style={{ borderRadius: 16, marginBottom: 32 }}
         />
 
-        {/* Headline */}
+        {/* Headline — the hero's three lines set as two, since the card is
+            landscape where the page is portrait-ish. Same break on the orange. */}
         <div
           style={{
             display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            fontSize: 52,
+            flexDirection: "column",
+            alignItems: "center",
+            fontSize: 54,
             fontWeight: 700,
             color: "#EEEEEC",
             textAlign: "center",
-            lineHeight: 1.2,
-            maxWidth: 800,
-            gap: 12,
+            lineHeight: 1.18,
+            letterSpacing: "-0.02em",
           }}
         >
-          <span>Never lose a</span>
-          <span style={{ color: "#E95420" }}>copied item again.</span>
+          <span>Your clipboard is full of secrets.</span>
+          <span style={{ color: "#E95420" }}>Treat it like it.</span>
         </div>
 
         {/* Subline */}
@@ -70,11 +71,11 @@ export default async function Image() {
           style={{
             fontSize: 24,
             color: "#888888",
-            marginTop: 20,
+            marginTop: 22,
             textAlign: "center",
           }}
         >
-          Offline clipboard manager for Linux &middot; No telemetry
+          Mask them before you present &middot; 100% offline &middot; No telemetry
         </div>
 
         {/* URL */}

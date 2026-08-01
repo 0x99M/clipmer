@@ -74,7 +74,7 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               name: "Clipmer",
               description:
-                "An offline clipboard history manager for Linux. Search every copy, organize what matters into folders, paste with one keystroke. 100% offline, no telemetry.",
+                "A secrets-aware clipboard manager for Linux. Mask entries before a screen share, annotate them with notes, and file SSH commands, API keys, and connection strings into folders. 100% offline, no telemetry.",
               applicationCategory: "UtilitiesApplication",
               operatingSystem: "Linux",
               url: "https://clipmer.app",
