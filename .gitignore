@@ -9,3 +9,6 @@ web/node_modules/
 web/.next/
 web/out/
 .next/
+
+# Playwright MCP session artifacts
+.playwright-mcp/
