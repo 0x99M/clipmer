@@ -1,7 +1,7 @@
 {
   "name": "clipmer",
   "version": "3.1.0",
-  "description": "Clipboard history manager for Linux",
+  "description": "Secrets-aware clipboard manager for Linux",
   "author": {
     "name": "Mustafa",
     "email": "mustafa@clipmer.local"

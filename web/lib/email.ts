@@ -21,7 +21,7 @@ function renderHtml(licenseKey: string): string {
       <p style="color: #333; line-height: 1.6;">Keep this email &mdash; it's your proof of purchase. If you lose this email, contact <a href="mailto:support@clipmer.app" style="color: #E95420;">support@clipmer.app</a> and we'll re-issue your key.</p>
 
       <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;" />
-      <p style="color: #999; font-size: 12px;">Clipmer &mdash; Clipboard History Manager for Linux</p>
+      <p style="color: #999; font-size: 12px;">Clipmer &mdash; Secrets-Aware Clipboard Manager for Linux</p>
     </div>
   `;
 }

@@ -612,7 +612,7 @@ function setAutostart(enabled) {
       'Name=Clipmer',
       `Exec=${launcherScript}`,
       `Icon=${path.join(__dirname, 'assets', 'icon.png')}`,
-      'Comment=Clipboard History Manager',
+      'Comment=Secrets-aware clipboard manager',
       'Categories=Utility;',
       'Terminal=false',
       'StartupNotify=false',

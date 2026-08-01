@@ -50,7 +50,7 @@ else
   gh release create "$TAG" "$DEB" "$APPIMAGE" "$RPM" \
     --repo "$GITHUB_REPO" \
     --title "Clipmer $TAG" \
-    --notes "Clipboard history manager for Linux (Ubuntu/GNOME/Wayland)" \
+    --notes "Secrets-aware clipboard manager for Linux (Ubuntu/GNOME/Wayland)" \
     --latest
 fi
 
