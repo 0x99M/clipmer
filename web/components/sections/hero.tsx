@@ -235,7 +235,12 @@ function ClipmerWindow() {
 export function Hero() {
   return (
     <MotionConfig reducedMotion="user">
-      <section className="relative flex items-center overflow-hidden py-20 sm:py-24 lg:min-h-[calc(100svh-2rem)] lg:py-24">
+      {/* -mt-16 pulls the section up behind the 4rem (h-16) sticky nav so the
+          radial glow below renders continuously to the top of the viewport —
+          otherwise the nav leaves a flat band and a hard seam where the
+          gradient is clipped at the section edge. Top padding restores the
+          original spacing (py-20/24 + 4rem), and min-h now spans the nav too. */}
+      <section className="relative -mt-16 flex items-center overflow-hidden pt-36 pb-20 sm:pt-40 sm:pb-24 lg:min-h-svh lg:pt-40 lg:pb-24">
         {/* Static substrate — replaces the rAF canvas and three animated orbs. */}
         <div
           aria-hidden

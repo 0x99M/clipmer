@@ -8,6 +8,7 @@ import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Footer } from "@/components/sections/footer";
+import { SiteNav } from "@/components/site-nav";
 
 const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
 const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID;
@@ -105,6 +106,8 @@ export default function ProPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SiteNav />
+
       {/* Ambient glow — single, slow, subtle */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <motion.div
