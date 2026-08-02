@@ -11,8 +11,13 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/blog", label: "Blog" },
   { href: "/changelog", label: "Changelog" },
-  { href: "/pro", label: "Pro" },
 ];
+
+/* Pro is rendered apart from LINKS: it is the only revenue link on the site
+   and was previously indistinguishable from the blog index. The price rides
+   along because "is this a subscription?" is a question the Pro page FAQ
+   answers — cheaper to answer it before the click than after. */
+const PRO = { href: "/pro", label: "Pro", price: "$9" };
 
 const GITHUB_URL = "https://github.com/0x99M/clipmer";
 
@@ -118,6 +123,32 @@ export function SiteNav() {
             );
           })}
 
+          {/* Tinted rather than solid: the nav already has one solid orange
+              button, and Download should keep winning that contest — it is the
+              free entry point that feeds Pro later. */}
+          <Link
+            href={PRO.href}
+            aria-current={isActive(pathname, PRO.href) ? "page" : undefined}
+            // The label and the price are adjacent inline nodes, so the
+            // computed name would otherwise run together as "Pro$9".
+            aria-label={`${PRO.label} ${PRO.price}`}
+            title="Clipmer Pro — one-time payment"
+            className={cn(
+              "ml-1 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-orange transition-colors",
+              // Three distinct rungs. The fill stops at /15 in both raised
+              // states: pushing it further lifts the backdrop under the price
+              // chip and drops that 11px text below the 4.5:1 AA floor.
+              isActive(pathname, PRO.href)
+                ? "border-orange/70 bg-orange/15"
+                : "border-orange/25 bg-orange/[0.08] hover:border-orange/45 hover:bg-orange/15"
+            )}
+          >
+            {PRO.label}
+            <span className="rounded bg-orange/20 px-1 py-px text-[11px] font-bold">
+              {PRO.price}
+            </span>
+          </Link>
+
           <span aria-hidden className="mx-2 h-5 w-px bg-border" />
 
           <a
@@ -191,6 +222,23 @@ export function SiteNav() {
                 </Link>
               );
             })}
+
+            <Link
+              href={PRO.href}
+              aria-current={isActive(pathname, PRO.href) ? "page" : undefined}
+              aria-label={`${PRO.label} ${PRO.price}`}
+              className={cn(
+                "flex items-center justify-between rounded-md border px-3 py-2.5 text-[0.9375rem] font-medium text-orange transition-colors",
+                isActive(pathname, PRO.href)
+                  ? "border-orange/70 bg-orange/15"
+                  : "border-orange/25 bg-orange/[0.08]"
+              )}
+            >
+              {PRO.label}
+              <span className="rounded bg-orange/20 px-1.5 py-px text-xs font-bold">
+                {PRO.price}
+              </span>
+            </Link>
 
             <a
               href={GITHUB_URL}
