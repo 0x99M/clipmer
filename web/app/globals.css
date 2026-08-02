@@ -390,3 +390,54 @@
   }
 }
 
+/* ───────────────────────── Nav: the Pro link ─────────────────────────
+   Text only, no container — the nav already has one solid orange button and
+   Download should keep winning it.
+
+   A highlight sweeps across the word on a loop. The cycle is mostly rest:
+   the sweep takes ~1.5s of a 5.5s cycle and the remaining ~4s holds flat
+   orange. The nav is sticky and shows on every page including long articles,
+   so a continuous shimmer would sit in peripheral vision the whole time
+   someone is reading — the gap is what keeps a loop from becoming a nag.
+   Retime both halves from --sheen-cycle and the 27% stop below.
+
+   The wrap-around is invisible: 130% and -30% both put flat accent under the
+   glyphs, so the jump back to the start has nothing to show.
+
+   @supports guards the whole thing because the sweep works by clipping a
+   moving gradient to the glyphs, which requires painting the text itself
+   transparent. Without background-clip the word would simply be invisible. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    @keyframes nav-pro-sheen {
+      0% {
+        background-position: 130% 0;
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      27%,
+      100% {
+        background-position: -30% 0;
+      }
+    }
+
+    [data-pro-sheen] {
+      --sheen-cycle: 5.5s;
+      /* Both ends of the ramp are the flat accent, so the word reads as plain
+         orange before the sweep arrives and after it has passed. */
+      background-image: linear-gradient(
+        100deg,
+        var(--color-orange) 0%,
+        var(--color-orange) 38%,
+        #ffd9c9 50%,
+        var(--color-orange) 62%,
+        var(--color-orange) 100%
+      );
+      background-size: 260% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: nav-pro-sheen var(--sheen-cycle) linear 0.5s infinite backwards;
+    }
+  }
+}
+
