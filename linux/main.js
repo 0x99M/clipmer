@@ -673,59 +673,107 @@ function toGnomeBinding(shortcut) {
     .join('');
 }
 
-// Remove legacy GNOME shortcut from before the rename
-function cleanupLegacyShortcut() {
-  const { execSync } = require('child_process');
-  try {
-    const existing = execSync(
-      'gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings',
-      { encoding: 'utf8' }
-    ).trim();
-    if (existing.includes('clipboard-manager-toggle')) {
-      const cleaned = existing.replace(/,?\s*'\/org\/gnome\/settings-daemon\/plugins\/media-keys\/custom-keybindings\/clipboard-manager-toggle\/'/, '');
-      execSync(`gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "${cleaned}"`);
-    }
-  } catch {}
+const MEDIA_KEYS_SCHEMA = 'org.gnome.settings-daemon.plugins.media-keys';
+const CUSTOM_KEYBINDING_SCHEMA = `${MEDIA_KEYS_SCHEMA}.custom-keybinding`;
+const KEYBINDING_NAME = 'clipmer-toggle';
+const KEYBINDING_PATH = `/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/${KEYBINDING_NAME}/`;
+const LEGACY_KEYBINDING_PATH =
+  '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/clipboard-manager-toggle/';
+
+// Every gsettings call goes through execFile with an argv array — no shell, so
+// nothing in a value can be interpreted as syntax. The previous code built
+// shell strings and interpolated both the user's accelerator and raw dconf
+// output into them.
+function gsettings(args) {
+  const { execFileSync } = require('child_process');
+  return execFileSync('gsettings', args, { encoding: 'utf8', timeout: 5000 }).trim();
 }
 
-// Register a GNOME custom keyboard shortcut.
-// It runs our app binary; the single-instance lock sends SIGUSR1 to toggle.
-function registerGnomeShortcut() {
-  const { execSync } = require('child_process');
-  const shortcutName = 'clipmer-toggle';
-  const shortcutPath = `/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/${shortcutName}/`;
+// GVariant 'as' is `@as []` when empty, otherwise `['a', 'b']`. Parsing it
+// properly beats regex-editing the serialized form: the old cleanup stripped a
+// *leading* comma, so removing the first of several paths produced `[, '…']`,
+// which GLib rejects — and the failure was swallowed, so the stale binding
+// survived every upgrade forever.
+function parseGVariantStringArray(raw) {
+  if (!raw || raw === '@as []' || raw === '[]') return [];
+  const out = [];
+  const re = /'((?:[^'\\]|\\.)*)'/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    out.push(m[1].replace(/\\(.)/g, '$1'));
+  }
+  return out;
+}
 
-  // Build a command that sends SIGUSR1 to the running process
-  const command = `kill -USR1 $(cat '${PID_FILE}') 2>/dev/null`;
+function serializeGVariantStringArray(values) {
+  if (values.length === 0) return '@as []';
+  const escaped = values.map((v) => `'${v.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`);
+  return `[${escaped.join(', ')}]`;
+}
+
+function readCustomKeybindingPaths() {
+  return parseGVariantStringArray(gsettings(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']));
+}
+
+function writeCustomKeybindingPaths(paths) {
+  gsettings(['set', MEDIA_KEYS_SCHEMA, 'custom-keybindings', serializeGVariantStringArray(paths)]);
+}
+
+// Remove the GNOME shortcut left behind by the pre-rename version.
+function cleanupLegacyShortcut() {
+  try {
+    const paths = readCustomKeybindingPaths();
+    if (!paths.includes(LEGACY_KEYBINDING_PATH)) return;
+    writeCustomKeybindingPaths(paths.filter((p) => p !== LEGACY_KEYBINDING_PATH));
+  } catch (err) {
+    console.log('Could not clean up legacy GNOME shortcut:', err.message);
+  }
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+// Register a GNOME custom keyboard shortcut. It signals the running instance;
+// the SIGUSR1 handler toggles the window.
+function registerGnomeShortcut() {
+  // The PID is read when the key is PRESSED, not when the binding is written.
+  // Previously `$(cat …)` sat inside a double-quoted string handed to a shell at
+  // registration time, so the running process's PID was baked into dconf — the
+  // hotkey worked until the next restart and then silently signalled a dead
+  // process. The /proc check makes a stale PID harmless rather than sending
+  // SIGUSR1 (default disposition: terminate) to whatever recycled it.
+  const script =
+    `p=$(cat ${shellQuote(PID_FILE)} 2>/dev/null); ` +
+    `[ -n "$p" ] && grep -qs clipmer /proc/$p/cmdline && kill -USR1 "$p"`;
+  const command = `bash -c ${shellQuote(script)}`;
 
   try {
-    const existing = execSync(
-      'gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings',
-      { encoding: 'utf8' }
-    ).trim();
-
-    if (!existing.includes(shortcutName)) {
-      let paths;
-      if (existing === '@as []' || existing === '[]') {
-        paths = `['${shortcutPath}']`;
-      } else {
-        paths = existing.slice(0, -1) + `, '${shortcutPath}']`;
-      }
-      execSync(
-        `gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "${paths}"`
-      );
+    const paths = readCustomKeybindingPaths();
+    if (!paths.includes(KEYBINDING_PATH)) {
+      writeCustomKeybindingPaths([...paths, KEYBINDING_PATH]);
     }
 
-    const base = `gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${shortcutPath}`;
-    execSync(`${base} name 'Clipmer Toggle'`);
-    execSync(`${base} command "bash -c \\"${command}\\""`);
-    const binding = toGnomeBinding(store.get('shortcut') || 'Ctrl+Shift+D');
-    execSync(`${base} binding '${binding}'`);
+    const target = `${CUSTOM_KEYBINDING_SCHEMA}:${KEYBINDING_PATH}`;
+    const shortcut = store.get('shortcut') || DEFAULT_SHORTCUT;
+    gsettings(['set', target, 'name', 'Clipmer Toggle']);
+    gsettings(['set', target, 'command', command]);
+    gsettings(['set', target, 'binding', toGnomeBinding(shortcut)]);
 
-    console.log(`GNOME shortcut registered: ${store.get('shortcut') || 'Ctrl+Shift+D'}`);
+    console.log(`GNOME shortcut registered: ${shortcut}`);
   } catch (err) {
     console.log('Could not register GNOME shortcut:', err.message);
   }
+}
+
+// Drop our binding so it does not squat the key combination after the app is
+// gone. Re-registered on next launch.
+function unregisterGnomeShortcut() {
+  try {
+    const paths = readCustomKeybindingPaths();
+    if (!paths.includes(KEYBINDING_PATH)) return;
+    writeCustomKeybindingPaths(paths.filter((p) => p !== KEYBINDING_PATH));
+  } catch {}
 }
 
 // ─── SIGUSR1 handler (Wayland shortcut toggle) ─────────────────────────────────
@@ -949,6 +997,9 @@ app.on('web-contents-created', (_event, contents) => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   if (pollingInterval) clearInterval(pollingInterval);
+  // Release the GNOME key combination rather than leaving a binding pointing at
+  // a process that no longer exists. Re-registered on the next launch.
+  unregisterGnomeShortcut();
   // Clean up PID file
   try { fs.unlinkSync(PID_FILE); } catch {}
 });
