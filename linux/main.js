@@ -162,9 +162,11 @@ function createWindow() {
     return { action: 'deny' };
   });
 
-  mainWindow.webContents.setPermissionRequestHandler((_wc, _permission, callback) => {
-    callback(false);
-  });
+  // Lives on the session, not on webContents. The app needs no permissions at
+  // all, so deny everything rather than relying on the default prompt.
+  mainWindow.webContents.session.setPermissionRequestHandler(
+    (_wc, _permission, callback) => callback(false)
+  );
 
   mainWindow.on('close', (e) => {
     if (!app.isQuitting) {
