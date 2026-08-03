@@ -11,6 +11,10 @@ let filteredData = [];
 // True whenever the search box has a query, including one that matches nothing.
 // currentEntries() depends on this rather than on filteredData being non-empty.
 let searchActive = false;
+// A history update that arrived while a note input had focus. Applied when that
+// input blurs, so the list never renders stale while the user is typing but is
+// never left permanently out of sync either.
+let pendingHistory = null;
 let selectedIndex = -1;
 let searchMode = 'content';
 let activeFilter = 'all';  // 'all' | group.id
@@ -101,6 +105,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyFilter();
 
   window.clipboardManager.onHistoryUpdated((history) => {
+    // Buffer rather than adopt. Assigning historyData while skipping the
+    // re-render left the DOM showing the previous ordering, and rows carry
+    // their render-time index — so every index was off by one after a new
+    // entry was unshifted, and clicking a row copied the entry rendered one
+    // row above it. update-note deliberately does not broadcast, so blurring
+    // the input never repaired it either.
+    if (document.activeElement && document.activeElement.classList.contains('note-input')) {
+      pendingHistory = history;
+      return;
+    }
+
     historyData = history;
 
     // The viewer holds its own reference to an entry. If that entry is gone —
@@ -110,9 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       closeViewer();
     }
 
-    if (document.activeElement && document.activeElement.classList.contains('note-input')) {
-      return;
-    }
     // Skip the render when nobody can see it. The visibilitychange handler
     // already calls applyFilter() when the window opens, so we catch up then.
     if (document.hidden) return;
@@ -267,6 +279,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Closing them here is what makes "hide it, then reopen" safe mid-call.
     if (viewerOpen) closeViewer();
     if (entryMenuOpen) closeEntryMenu();
+
+    // A note input focused when the window hid never fires blur, so anything
+    // buffered while it held focus is adopted here.
+    flushPendingHistory();
 
     timeReferenceNow = Date.now();
     visibleCount = PAGE_SIZE;
@@ -607,6 +623,18 @@ function applyFontSize(size) {
 // The window hides itself on blur. That is right for the entry list, but the
 // settings pane owns a native colour dialog which blurs us, and the list is
 // covered by these panes anyway, so hiding is suppressed while either is open.
+// Adopt any history update that arrived while a note input was focused.
+function flushPendingHistory() {
+  if (!pendingHistory) return;
+  historyData = pendingHistory;
+  pendingHistory = null;
+  if (viewerOpen && viewerEntry && !historyData.some((e) => e.id === viewerEntry.id)) {
+    closeViewer();
+  }
+  if (document.hidden) return;
+  applyFilter();
+}
+
 function syncBlurHideSuppression() {
   window.clipboardManager.setBlurHideSuppressed(settingsOpen || foldersViewOpen);
 }
@@ -687,6 +715,7 @@ function render(entries) {
 
     noteInput.addEventListener('blur', () => {
       window.clipboardManager.updateNote({ id: entry.id, note: noteInput.value });
+      flushPendingHistory();
     });
 
     body.appendChild(noteInput);
@@ -739,7 +768,9 @@ function render(entries) {
       if (e.target.classList.contains('note-input')) return;
       if (e.target.closest('.entry-actions-btn')) return;
       if (e.target.closest('.entry-chip')) return;
-      selectEntry(i);
+      // By id, not by the render-time index — a row must always copy the entry
+      // it is displaying, even if the list has shifted underneath it.
+      selectEntryById(entry.id);
     });
 
     listEl.appendChild(row);
@@ -773,7 +804,12 @@ function expandVisible(entries) {
 async function selectEntry(index) {
   const entries = currentEntries();
   if (index < 0 || index >= entries.length) return;
-  await window.clipboardManager.copyToClipboard(entries[index].id);
+  await selectEntryById(entries[index].id);
+}
+
+async function selectEntryById(entryId) {
+  if (!entryId) return;
+  await window.clipboardManager.copyToClipboard(entryId);
   await window.clipboardManager.simulatePaste();
 }
 
