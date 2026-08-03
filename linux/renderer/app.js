@@ -587,6 +587,13 @@ function applyFontSize(size) {
 
 // ─── Rendering ──────────────────────────────────────────────────────────────────
 
+// The window hides itself on blur. That is right for the entry list, but the
+// settings pane owns a native colour dialog which blurs us, and the list is
+// covered by these panes anyway, so hiding is suppressed while either is open.
+function syncBlurHideSuppression() {
+  window.clipboardManager.setBlurHideSuppressed(settingsOpen || foldersViewOpen);
+}
+
 function getSourceData() {
   if (activeFilter === 'all') return historyData;
   const group = groupsData.find((g) => g.id === activeFilter);
@@ -760,6 +767,7 @@ async function toggleSettings() {
   if (foldersViewOpen) toggleFoldersView();
 
   settingsOpen = !settingsOpen;
+  syncBlurHideSuppression();
   document.body.classList.toggle('settings-open', settingsOpen);
   const settingsView = document.getElementById('settings-view');
   const searchBar = document.getElementById('search-bar');
@@ -782,6 +790,7 @@ function toggleFoldersView() {
   if (settingsOpen) toggleSettings();
 
   foldersViewOpen = !foldersViewOpen;
+  syncBlurHideSuppression();
   document.body.classList.toggle('folders-open', foldersViewOpen);
   const view = document.getElementById('folders-view');
   const searchBar = document.getElementById('search-bar');

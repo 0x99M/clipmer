@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('clipboardManager', {
   copyToClipboard: (entryId) => ipcRenderer.invoke('copy-to-clipboard', entryId),
   clearHistory: () => ipcRenderer.invoke('clear-history'),
   hideWindow: () => ipcRenderer.invoke('hide-window'),
+  setBlurHideSuppressed: (v) => ipcRenderer.invoke('set-blur-hide-suppressed', v),
   simulatePaste: () => ipcRenderer.invoke('simulate-paste'),
   updateNote: ({ id, note }) => ipcRenderer.invoke('update-note', { id, note }),
   setEntryHidden: ({ id, hidden }) => ipcRenderer.invoke('set-entry-hidden', { id, hidden }),

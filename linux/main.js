@@ -57,6 +57,8 @@ let clipboardHistory = [];
 let groups = [];
 let lastClipboardText = '';
 let pollingInterval = null;
+// Set by the renderer while a pane that owns focus-stealing UI is open.
+let blurHideSuppressed = false;
 
 const MAX_HISTORY = 200;
 const FREE_HISTORY_LIMIT = 100;
@@ -114,8 +116,21 @@ function createWindow() {
   mainWindow.on('close', (e) => {
     if (!app.isQuitting) {
       e.preventDefault();
-      mainWindow.hide();
+      hideWindow();
     }
+  });
+
+  // Required by the project rules and never implemented. Without it an
+  // alwaysOnTop list of SSH commands and connection strings stays pinned over
+  // whatever the user switches to — including a screen share.
+  //
+  // Suppressed while a settings or folders pane is open: the accent picker is a
+  // native OS colour dialog that blurs us, and the list is covered anyway, so
+  // the privacy reason for hiding does not apply there.
+  mainWindow.on('blur', () => {
+    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return;
+    if (blurHideSuppressed) return;
+    hideWindow();
   });
 }
 
@@ -149,13 +164,25 @@ function showWindow() {
   mainWindow.focus();
 }
 
+function persistPosition() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (store.get('rememberPosition') === false) return;
+  const bounds = mainWindow.getBounds();
+  store.set('lastWindowPosition', { x: bounds.x, y: bounds.y });
+}
+
+// The single place the window is hidden, so position is saved on every route
+// out — blur, Escape, auto-paste and the tray — not just the one that used to
+// remember it.
+function hideWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  persistPosition();
+  mainWindow.hide();
+}
+
 function toggleWindow() {
   if (mainWindow.isVisible()) {
-    if (store.get('rememberPosition') !== false) {
-      const bounds = mainWindow.getBounds();
-      store.set('lastWindowPosition', { x: bounds.x, y: bounds.y });
-    }
-    mainWindow.hide();
+    hideWindow();
   } else {
     showWindow();
   }
@@ -291,11 +318,15 @@ ipcMain.handle('clear-history', () => {
 });
 
 ipcMain.handle('hide-window', () => {
-  if (mainWindow) mainWindow.hide();
+  hideWindow();
+});
+
+ipcMain.handle('set-blur-hide-suppressed', (_event, suppressed) => {
+  blurHideSuppressed = !!suppressed;
 });
 
 ipcMain.handle('simulate-paste', () => {
-  if (mainWindow) mainWindow.hide();
+  hideWindow();
 
   if (!store.get('autoPaste')) return;
 
