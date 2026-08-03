@@ -1,6 +1,9 @@
 let historyData = [];
 let groupsData = [];
 let filteredData = [];
+// True whenever the search box has a query, including one that matches nothing.
+// currentEntries() depends on this rather than on filteredData being non-empty.
+let searchActive = false;
 let selectedIndex = -1;
 let searchMode = 'content';
 let activeFilter = 'all';  // 'all' | group.id
@@ -1009,6 +1012,7 @@ async function renderStats() {
 function applyFilter() {
   const query = searchEl.value.toLowerCase().trim();
   selectedIndex = -1;
+  searchActive = !!query;
   updateFilterLabel();
 
   if (!query) {
@@ -1071,9 +1075,14 @@ function renderFilterEmptyState() {
   if (countEl) countEl.textContent = '';
 }
 
+// Whether a search is active is tracked explicitly rather than inferred from
+// filteredData.length. Inferring it meant a query matching nothing rendered the
+// empty state while every handler still indexed the FULL history — ArrowDown
+// then Enter put historyData[0] on the clipboard, and Shift+Enter opened it in
+// the viewer, both defeating the deliberate exclusion of hidden entries from
+// search below.
 function currentEntries() {
-  if (filteredData.length > 0) return filteredData;
-  return getSourceData();
+  return searchActive ? filteredData : getSourceData();
 }
 
 function updateSearchModeIndicator() {
