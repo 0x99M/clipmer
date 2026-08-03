@@ -18,10 +18,32 @@ const Store = require('electron-store');
 const license = require('./license');
 
 // AppImages mount on a nosuid filesystem, so chrome-sandbox cannot be SUID
-// root and the renderer crashes with SIGTRAP. Detect AppImage runtime via the
-// APPIMAGE env var and disable the sandbox there. .deb/.rpm installs keep the
-// proper SUID sandbox via the postinst hook.
-if (process.env.APPIMAGE) {
+// root and the renderer crashes with SIGTRAP. Disable the sandbox only there;
+// .deb/.rpm installs keep the proper SUID sandbox via the postinst hook.
+//
+// $APPIMAGE alone is not enough to decide: AppRun exports it to child
+// processes, so a .deb-installed Clipmer launched from a terminal that was
+// itself started inside an AppImage would run fully unsandboxed. Corroborate
+// with the two things that are actually true of an AppImage runtime — the
+// binary lives under the mount point, and the bundled chrome-sandbox is not
+// usable.
+function shouldDisableSandbox() {
+  if (!process.env.APPIMAGE) return false;
+  if (process.execPath.startsWith('/tmp/.mount_')) return true;
+
+  // Not running from the mount, so only disable if the helper really is
+  // unusable (missing, or not setuid-root).
+  try {
+    const sandbox = path.join(path.dirname(process.execPath), 'chrome-sandbox');
+    const st = fs.statSync(sandbox);
+    const setuidRoot = st.uid === 0 && (st.mode & 0o4000) !== 0;
+    return !setuidRoot;
+  } catch {
+    return true;
+  }
+}
+
+if (shouldDisableSandbox()) {
   app.commandLine.appendSwitch('no-sandbox');
 }
 
@@ -903,9 +925,15 @@ function setAutostart(enabled) {
       fs.mkdirSync(autostartDir, { recursive: true });
     }
 
+    // Under an AppImage, process.execPath points inside /tmp/.mount_XXXX, which
+    // is unmounted on exit and renamed on every run — so autostart pointed at a
+    // path that no longer existed while isAutostartEnabled() still reported
+    // true, because it only checks that the .desktop file exists. $APPIMAGE is
+    // the stable path to the image itself.
+    const target = process.env.APPIMAGE || process.execPath;
     const execTarget = app.isPackaged
-      ? `"${process.execPath}"`
-      : `"${process.execPath}" "${app.getAppPath()}"`;
+      ? shellQuote(target)
+      : `${shellQuote(target)} ${shellQuote(app.getAppPath())}`;
 
     const launcherContent = [
       '#!/bin/bash',
@@ -921,8 +949,14 @@ function setAutostart(enabled) {
       '[Desktop Entry]',
       'Type=Application',
       'Name=Clipmer',
-      `Exec=${launcherScript}`,
-      `Icon=${path.join(__dirname, 'assets', 'icon.png')}`,
+      // Quoted because the Desktop Entry spec word-splits Exec, so a home
+      // directory containing a space broke login startup entirely.
+      `Exec="${launcherScript}"`,
+      // A theme name, not a path into app.asar. Electron's patched fs reads
+      // through the archive — which is why the tray icon works — but
+      // gnome-session does not, so stat() returned ENOTDIR and the entry fell
+      // back to a generic icon. electron-builder installs hicolor icons for us.
+      'Icon=clipmer',
       'Comment=Secrets-aware clipboard manager',
       'Categories=Utility;',
       'Terminal=false',
