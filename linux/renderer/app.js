@@ -161,7 +161,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   clearBtn.addEventListener('click', async () => {
-    const ok = confirm('Clear all clipboard history? This can\'t be undone.');
+    // Names what actually happens: clearHistory() deliberately keeps entries
+    // referenced by a folder. Promising to remove everything and then leaving
+    // secrets in the list is exactly the wrong surprise before a screen share.
+    const ok = confirm(
+      'Clear clipboard history?\n\nEntries saved in folders are kept. This can\'t be undone.'
+    );
     if (!ok) return;
     await window.clipboardManager.clearHistory();
   });

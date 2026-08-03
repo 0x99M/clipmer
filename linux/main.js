@@ -232,7 +232,9 @@ function createTray() {
 
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Show/Hide', click: () => toggleWindow() },
-    { label: 'Clear History', click: () => clearHistory() },
+    // Says "unsaved" because clearHistory() keeps folder members. Wiping from
+    // the tray has no confirmation step, so the label has to carry the caveat.
+    { label: 'Clear Unsaved History', click: () => clearHistory() },
     { type: 'separator' },
     {
       label: 'Quit',
