@@ -271,10 +271,19 @@ ipcMain.handle('get-app-version', () => app.getVersion());
 
 ipcMain.handle('get-history', () => getVisibleHistory());
 
-ipcMain.handle('copy-to-clipboard', (_event, entry) => {
+// Takes an id, never a caller-supplied object. Trusting the renderer's copy of
+// the entry meant a stale one could be written back: addEntry() only reuses a
+// record on exact content match, so a resurrected entry got a fresh UUID, an
+// empty note and — critically — no `hidden` flag, silently unmasking a secret
+// the user had marked. Clearing history and then clicking Copy in a viewer left
+// open over the wiped entry did exactly that.
+ipcMain.handle('copy-to-clipboard', (_event, entryId) => {
+  const entry = clipboardHistory.find((e) => e.id === entryId);
+  if (!entry || typeof entry.content !== 'string') return { success: false };
   clipboard.writeText(entry.content);
   lastClipboardText = entry.content;
   addEntry(entry.content, entry.content.substring(0, 200));
+  return { success: true };
 });
 
 ipcMain.handle('clear-history', () => {

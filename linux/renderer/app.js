@@ -92,6 +92,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.clipboardManager.onHistoryUpdated((history) => {
     historyData = history;
+
+    // The viewer holds its own reference to an entry. If that entry is gone —
+    // deleted, cleared, or evicted by the cap — keep showing it and the Copy
+    // button writes a wiped secret straight back to disk.
+    if (viewerOpen && viewerEntry && !history.some((e) => e.id === viewerEntry.id)) {
+      closeViewer();
+    }
+
     if (document.activeElement && document.activeElement.classList.contains('note-input')) {
       return;
     }
@@ -741,7 +749,7 @@ function expandVisible(entries) {
 async function selectEntry(index) {
   const entries = currentEntries();
   if (index < 0 || index >= entries.length) return;
-  await window.clipboardManager.copyToClipboard(entries[index]);
+  await window.clipboardManager.copyToClipboard(entries[index].id);
   await window.clipboardManager.simulatePaste();
 }
 
@@ -1674,7 +1682,7 @@ document.getElementById('viewer-close').addEventListener('click', closeViewer);
 document.getElementById('viewer-backdrop').addEventListener('click', closeViewer);
 document.getElementById('viewer-copy').addEventListener('click', () => {
   if (viewerEntry) {
-    window.clipboardManager.copyToClipboard(viewerEntry);
+    window.clipboardManager.copyToClipboard(viewerEntry.id);
     closeViewer();
     window.clipboardManager.hideWindow();
   }
