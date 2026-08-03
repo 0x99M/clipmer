@@ -72,19 +72,23 @@ let effectiveShortcut = DEFAULT_SHORTCUT;
 
 // ─── Single instance lock ───────────────────────────────────────────────────────
 
+// A losing instance must touch nothing — no PID file, no tray, no store. It
+// used to fall through to app.whenReady(), whose first statement stamps this
+// process's PID over the live instance's moments before exiting. That is the
+// only writer of the file, so the primary never repaired it, and the GNOME
+// hotkey (kill -USR1 $(cat PID_FILE)) signalled a dead PID from then on.
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
-  // Send SIGUSR1 to the running instance to toggle, then quit
-  try {
-    const pid = parseInt(fs.readFileSync(PID_FILE, 'utf8').trim());
-    process.kill(pid, 'SIGUSR1');
-  } catch {}
   app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (mainWindow) toggleWindow();
-  });
+  return;
 }
+
+// Electron delivers second-instance to us; an explicit relaunch should always
+// show the window rather than toggle it, or clicking the launcher icon while
+// the window is already up reads as the app being dead.
+app.on('second-instance', () => {
+  if (mainWindow) showWindow();
+});
 
 // ─── Window ─────────────────────────────────────────────────────────────────────
 
