@@ -62,6 +62,13 @@ const MAX_HISTORY = 200;
 const FREE_HISTORY_LIMIT = 100;
 const POLL_MS = 500;
 const PID_FILE = path.join(app.getPath('userData'), 'clipmer.pid');
+const DEFAULT_SHORTCUT = 'Ctrl+Shift+D';
+const FALLBACK_SHORTCUT = 'Ctrl+Shift+B';
+
+// What actually bound, which is not always what is stored — the fallback may
+// have been used, or nothing may have bound at all on Wayland. The settings
+// pane reads this so it stops reporting a hotkey that isn't live.
+let effectiveShortcut = DEFAULT_SHORTCUT;
 
 // ─── Single instance lock ───────────────────────────────────────────────────────
 
@@ -461,13 +468,55 @@ ipcMain.handle('set-accent', (_event, color) => {
   store.set('accentColor', color);
 });
 
-ipcMain.handle('get-shortcut', () => store.get('shortcut') || 'Ctrl+Shift+D');
+ipcMain.handle('get-shortcut', () => store.get('shortcut') || DEFAULT_SHORTCUT);
 
+// Reports what is actually bound right now, so the settings pane can tell the
+// user their chosen hotkey did not take.
+ipcMain.handle('get-effective-shortcut', () => ({
+  requested: store.get('shortcut') || DEFAULT_SHORTCUT,
+  effective: effectiveShortcut,
+  bound: globalShortcut.isRegistered(effectiveShortcut),
+}));
+
+// Validate first, then try to bind, and only persist once something bound.
+// Persisting before registration is what used to brick the app: an accelerator
+// Electron cannot parse was written to disk, then threw on every subsequent
+// launch and took the rest of startup down with it.
 ipcMain.handle('set-shortcut', (_event, shortcut) => {
+  if (!isValidAccelerator(shortcut)) {
+    return { success: false, error: 'Unsupported shortcut' };
+  }
+
+  const previous = store.get('shortcut') || DEFAULT_SHORTCUT;
   globalShortcut.unregisterAll();
+
+  let bound = false;
+  try {
+    bound = globalShortcut.register(shortcut, toggleWindow);
+  } catch (err) {
+    console.log(`Rejected accelerator ${shortcut}: ${err.message}`);
+  }
+
+  if (!bound) {
+    // Nothing bound. On Wayland that is expected and the GNOME path still
+    // works, so persist the choice; on X11 it means the combination is taken,
+    // so roll back rather than leaving the user with no hotkey at all.
+    if (process.env.XDG_SESSION_TYPE === 'wayland' || process.env.WAYLAND_DISPLAY) {
+      store.set('shortcut', shortcut);
+      effectiveShortcut = shortcut;
+      registerGnomeShortcut();
+      return { success: true, bound: false };
+    }
+    store.set('shortcut', previous);
+    registerGlobalShortcut();
+    registerGnomeShortcut();
+    return { success: false, error: 'That shortcut is already in use' };
+  }
+
+  effectiveShortcut = shortcut;
   store.set('shortcut', shortcut);
-  registerGlobalShortcut();
   registerGnomeShortcut();
+  return { success: true, bound: true };
 });
 
 let isExpanded = false;
@@ -490,16 +539,57 @@ ipcMain.handle('toggle-expand', () => {
 
 // ─── Global shortcuts ───────────────────────────────────────────────────────────
 
+const ACCEL_MODIFIERS = new Set([
+  'Ctrl', 'Control', 'CmdOrCtrl', 'CommandOrControl',
+  'Alt', 'Option', 'AltGr', 'Shift', 'Super', 'Meta',
+]);
+
+// Deliberately narrower than Electron's full accelerator grammar: alphanumerics,
+// function keys, and named keys only. Punctuation is excluded because it buys
+// almost nothing as a hotkey and keeps the value trivially safe to hand to other
+// layers (gsettings, the .desktop file) without quoting games.
+const ACCEL_KEY =
+  /^(?:[A-Z0-9]|F(?:[1-9]|1[0-9]|2[0-4])|Space|Tab|Backspace|Delete|Insert|Return|Enter|Up|Down|Left|Right|Home|End|PageUp|PageDown|Escape|Esc)$/;
+
+function isValidAccelerator(value) {
+  if (typeof value !== 'string' || value.length > 40) return false;
+  const parts = value.split('+');
+  if (parts.length < 2 || parts.length > 5) return false;
+  const key = parts[parts.length - 1];
+  const modifiers = parts.slice(0, -1);
+  if (!modifiers.every((m) => ACCEL_MODIFIERS.has(m))) return false;
+  if (new Set(modifiers).size !== modifiers.length) return false;
+  return ACCEL_KEY.test(key);
+}
+
+// Returns true only if the accelerator actually bound. In Electron 35 register()
+// THROWS on a string it cannot parse rather than returning false, so the call has
+// to be guarded — an escaping throw here used to abort the rest of startup.
 function registerGlobalShortcut() {
   // Electron globalShortcut works on X11 but silently fails on Wayland.
   // On Wayland, the SIGUSR1/GNOME-shortcut approach handles it instead.
   const shortcut = store.get('shortcut') || 'Ctrl+Shift+D';
-  const registered = globalShortcut.register(shortcut, toggleWindow);
-  if (registered) {
-    console.log(`Global shortcut registered: ${shortcut}`);
-  } else {
-    console.log(`Failed to register shortcut: ${shortcut}`);
+  const candidates = shortcut === FALLBACK_SHORTCUT
+    ? [shortcut]
+    : [shortcut, FALLBACK_SHORTCUT];
+
+  for (const accelerator of candidates) {
+    if (!isValidAccelerator(accelerator)) continue;
+    try {
+      if (globalShortcut.register(accelerator, toggleWindow)) {
+        effectiveShortcut = accelerator;
+        console.log(`Global shortcut registered: ${accelerator}`);
+        return true;
+      }
+    } catch (err) {
+      console.log(`Rejected accelerator ${accelerator}: ${err.message}`);
+    }
   }
+
+  // Both failed. Expected on Wayland, where the GNOME/SIGUSR1 path takes over.
+  effectiveShortcut = shortcut;
+  console.log(`Failed to register shortcut: ${shortcut}`);
+  return false;
 }
 
 function toGnomeBinding(shortcut) {
@@ -754,11 +844,26 @@ app.whenReady().then(() => {
 
   createWindow();
   createTray();
-  cleanupLegacyShortcut();
-  registerGlobalShortcut();
-  registerGnomeShortcut();
-  if (store.get('autoPaste')) installPasteExtension();
+
+  // Clipboard capture is the whole point of the app, so it starts before any of
+  // the OS-integration work that might fail. Each of those is independently
+  // guarded: a broken shortcut, a missing gsettings, or a GNOME Shell that
+  // rejects the extension must degrade to "that feature is off", never to
+  // "the app silently stopped recording anything".
   startClipboardPolling();
+
+  for (const [label, step] of [
+    ['legacy shortcut cleanup', cleanupLegacyShortcut],
+    ['global shortcut', registerGlobalShortcut],
+    ['GNOME shortcut', registerGnomeShortcut],
+    ['paste extension', () => { if (store.get('autoPaste')) installPasteExtension(); }],
+  ]) {
+    try {
+      step();
+    } catch (err) {
+      console.error(`Startup step failed (${label}):`, err);
+    }
+  }
 });
 
 app.on('will-quit', () => {

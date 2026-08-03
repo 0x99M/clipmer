@@ -1279,6 +1279,17 @@ body.folders-open #fab {
   padding-bottom: 4px;
 }
 
+/* Only appears when a shortcut fails to bind or falls back, so it stays out of
+   the layout entirely the rest of the time. */
+#shortcut-hint {
+  display: none;
+  color: var(--accent);
+}
+
+#shortcut-hint.visible {
+  display: block;
+}
+
 /* ─── Toggle switch ─────────────────────────────────────────────────────────── */
 
 .toggle-switch {

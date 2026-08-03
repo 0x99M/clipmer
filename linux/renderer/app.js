@@ -285,6 +285,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Shortcut recorder
   const recorder = document.getElementById('shortcut-recorder');
   let recording = false;
+  let shortcutHintTimer = null;
+
+  function showShortcutHint(text) {
+    const hint = document.getElementById('shortcut-hint');
+    if (!hint) return;
+    hint.textContent = text;
+    hint.classList.add('visible');
+    clearTimeout(shortcutHintTimer);
+    shortcutHintTimer = setTimeout(() => hint.classList.remove('visible'), 4000);
+  }
+
+  // Surface a hotkey that never bound — otherwise the pane keeps displaying an
+  // accelerator that does nothing.
+  window.clipboardManager.getEffectiveShortcut().then((s) => {
+    if (!s) return;
+    recorder.textContent = s.requested;
+    if (!s.bound && s.effective !== s.requested) {
+      showShortcutHint(`Using ${s.effective} — ${s.requested} was unavailable.`);
+    }
+  });
 
   recorder.addEventListener('click', () => {
     recording = !recording;
@@ -320,20 +340,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.shiftKey) parts.push('Shift');
     if (e.altKey) parts.push('Alt');
 
-    // Map key to Electron accelerator name
+    // Map the DOM key name to Electron's accelerator name. These differ — the
+    // arrows are 'ArrowUp' in the DOM but 'Up' to Electron, and passing the DOM
+    // spelling through made globalShortcut.register() throw.
+    const KEY_ALIASES = {
+      ArrowUp: 'Up',
+      ArrowDown: 'Down',
+      ArrowLeft: 'Left',
+      ArrowRight: 'Right',
+      ' ': 'Space',
+      Spacebar: 'Space',
+      Esc: 'Escape',
+      Del: 'Delete',
+    };
+
     let key = e.key;
-    if (key.length === 1) {
-      key = key.toUpperCase();
-    } else if (key === ' ') {
-      key = 'Space';
-    }
+    if (key.length === 1) key = key.toUpperCase();
+    else if (KEY_ALIASES[key]) key = KEY_ALIASES[key];
     parts.push(key);
 
     const accelerator = parts.join('+');
-    recorder.textContent = accelerator;
     recorder.classList.remove('recording');
     recording = false;
-    window.clipboardManager.setShortcut(accelerator);
+
+    // Only paint the new value once the main process confirms it took. It
+    // rejects anything it cannot bind, and silently showing a shortcut that
+    // never registered is how a dead hotkey goes unnoticed.
+    const previous = recorder.textContent;
+    recorder.textContent = accelerator;
+    window.clipboardManager
+      .setShortcut(accelerator)
+      .then((result) => {
+        if (result && result.success) {
+          if (result.bound === false) showShortcutHint('Saved. Uses the GNOME shortcut on Wayland.');
+          return;
+        }
+        recorder.textContent = previous;
+        showShortcutHint((result && result.error) || 'Could not set that shortcut');
+      })
+      .catch(() => {
+        recorder.textContent = previous;
+        showShortcutHint('Could not set that shortcut');
+      });
   }, true);
 
   // Theme toggle

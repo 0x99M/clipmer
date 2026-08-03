@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('clipboardManager', {
   getAccent: () => ipcRenderer.invoke('get-accent'),
   setAccent: (color) => ipcRenderer.invoke('set-accent', color),
   getShortcut: () => ipcRenderer.invoke('get-shortcut'),
+  getEffectiveShortcut: () => ipcRenderer.invoke('get-effective-shortcut'),
   setShortcut: (shortcut) => ipcRenderer.invoke('set-shortcut', shortcut),
   getAutoPaste: () => ipcRenderer.invoke('get-auto-paste'),
   setAutoPaste: (enabled) => ipcRenderer.invoke('set-auto-paste', enabled),
