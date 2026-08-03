@@ -24,6 +24,9 @@ let autoFocusFirst = false;
 let proActive = false;
 let viewerOpen = false;
 let viewerEntry = null;
+// Reset every time the viewer closes, so revealing a masked entry never
+// persists into the next time it is opened.
+let viewerRevealed = false;
 let entryMenuOpen = false;
 let entryMenuTarget = null;
 let entryMenuView = 'main'; // 'main' | 'folders'
@@ -257,6 +260,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Apply settings when window becomes visible
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
+
+    // Main only ever hides the window; the renderer is never reloaded. So an
+    // open viewer or entry menu was still on screen the instant the window came
+    // back — a masked entry's plaintext was visible before any keystroke.
+    // Closing them here is what makes "hide it, then reopen" safe mid-call.
+    if (viewerOpen) closeViewer();
+    if (entryMenuOpen) closeEntryMenu();
 
     timeReferenceNow = Date.now();
     visibleCount = PAGE_SIZE;
@@ -1669,33 +1679,63 @@ function closeEntryMenu() {
 
 // ─── Full-content viewer ────────────────────────────────────────────────────────
 
+// A masked entry opens masked. Marking something hidden is a statement that it
+// must not appear on screen, and this viewer used to print entry.content with no
+// check at all — so the one feature the product is sold on was defeated by the
+// menu item sitting directly above the Hide button.
 function openViewer(entry) {
   viewerEntry = entry;
   viewerOpen = true;
+  viewerRevealed = false;
+  renderViewer();
+  document.getElementById('viewer-overlay').style.display = 'flex';
+}
 
-  const overlay = document.getElementById('viewer-overlay');
+function renderViewer() {
+  const entry = viewerEntry;
+  if (!entry) return;
+
   const body = document.getElementById('viewer-body');
   const title = document.getElementById('viewer-title');
   const meta = document.getElementById('viewer-meta');
+  const reveal = document.getElementById('viewer-reveal');
 
-  title.textContent = 'Full content';
-  body.textContent = entry.content;
-  const chars = entry.content.length;
-  const lines = entry.content.split('\n').length;
-  meta.textContent = `${chars.toLocaleString()} chars · ${lines} line${lines === 1 ? '' : 's'}`;
+  const masked = entry.hidden && !viewerRevealed;
 
-  overlay.style.display = 'flex';
+  title.textContent = masked ? 'Hidden entry' : 'Full content';
+  body.textContent = masked ? '••••••••••' : entry.content;
+  body.classList.toggle('viewer-masked', masked);
+
+  // Length and line count are withheld while masked — they leak the shape of
+  // the secret, which is often enough to identify it.
+  if (masked) {
+    meta.textContent = 'Masked';
+  } else {
+    const chars = entry.content.length;
+    const lines = entry.content.split('\n').length;
+    meta.textContent = `${chars.toLocaleString()} chars · ${lines} line${lines === 1 ? '' : 's'}`;
+  }
+
+  reveal.style.display = entry.hidden ? '' : 'none';
+  reveal.textContent = viewerRevealed ? 'Hide' : 'Reveal';
 }
 
 function closeViewer() {
   viewerOpen = false;
   viewerEntry = null;
+  // Re-masks for next time — a revealed secret must never still be revealed
+  // when the viewer is next opened.
+  viewerRevealed = false;
   document.getElementById('viewer-overlay').style.display = 'none';
 }
 
 // Wire up viewer controls (elements exist since script is at end of body)
 document.getElementById('viewer-close').addEventListener('click', closeViewer);
 document.getElementById('viewer-backdrop').addEventListener('click', closeViewer);
+document.getElementById('viewer-reveal').addEventListener('click', () => {
+  viewerRevealed = !viewerRevealed;
+  renderViewer();
+});
 document.getElementById('viewer-copy').addEventListener('click', () => {
   if (viewerEntry) {
     window.clipboardManager.copyToClipboard(viewerEntry.id);

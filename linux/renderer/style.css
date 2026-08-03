@@ -1279,6 +1279,14 @@ body.folders-open #fab {
   padding-bottom: 4px;
 }
 
+/* Masked content in the full-content viewer. Letter-spaced so the dots read as
+   a deliberate mask rather than truncated text. */
+.viewer-body.viewer-masked {
+  letter-spacing: 0.28em;
+  color: var(--text-muted);
+  user-select: none;
+}
+
 /* Only appears when a shortcut fails to bind or falls back, so it stays out of
    the layout entirely the rest of the time. */
 #shortcut-hint {
