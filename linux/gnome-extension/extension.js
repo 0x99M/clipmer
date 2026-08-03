@@ -25,7 +25,20 @@ class PasteService {
     );
   }
 
-  Paste() {
+  // Async form so GJS hands us the invocation, which is the only way to learn
+  // who called. Without this any peer on the session bus could synthesize
+  // Ctrl+V into whatever window currently has focus — on Wayland that is a
+  // capability the caller would not otherwise have.
+  PasteAsync(_params, invocation) {
+    if (!this._callerIsClipmer(invocation)) {
+      invocation.return_error_literal(
+        Gio.DBusError,
+        Gio.DBusError.ACCESS_DENIED,
+        'Only Clipmer may call Paste'
+      );
+      return;
+    }
+
     GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
       this._notify(Clutter.KEY_Control_L, Clutter.KeyState.PRESSED);
       this._notify(Clutter.KEY_v, Clutter.KeyState.PRESSED);
@@ -33,6 +46,34 @@ class PasteService {
       this._notify(Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
       return GLib.SOURCE_REMOVE;
     });
+
+    invocation.return_value(null);
+  }
+
+  _callerIsClipmer(invocation) {
+    try {
+      const sender = invocation.get_sender();
+      if (!sender) return false;
+      const reply = Gio.DBus.session.call_sync(
+        'org.freedesktop.DBus',
+        '/org/freedesktop/DBus',
+        'org.freedesktop.DBus',
+        'GetConnectionUnixProcessID',
+        new GLib.Variant('(s)', [sender]),
+        new GLib.VariantType('(u)'),
+        Gio.DBusCallFlags.NONE,
+        500,
+        null
+      );
+      const [pid] = reply.deepUnpack();
+      const [ok, contents] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
+      if (!ok) return false;
+      return new TextDecoder().decode(contents).replace(/\0/g, ' ').includes('clipmer');
+    } catch {
+      // Could not establish the caller, so refuse. The cost is a failed paste;
+      // the alternative is honouring a request from an unknown peer.
+      return false;
+    }
   }
 
   destroy() {

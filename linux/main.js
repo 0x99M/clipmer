@@ -866,14 +866,37 @@ function installPasteExtension() {
     fs.copyFileSync(path.join(srcDir, file), path.join(extDir, file));
   }
 
-  const { execSync } = require('child_process');
   try {
-    execSync(`gnome-extensions enable ${extId}`);
+    const { execFileSync } = require('child_process');
+    execFileSync('gnome-extensions', ['enable', extId], { timeout: 5000, stdio: 'ignore' });
   } catch {
     // Extension not yet known to GNOME Shell — needs logout/login
   }
 
   return isNew;
+}
+
+// Disable and delete the paste helper. The extension exports a keystroke
+// injection service on the session bus, so opting out has to actually remove it
+// rather than just flip a flag in our own store.
+function removePasteExtension() {
+  const os = require('os');
+  const extId = 'clipmer-paste@clipmer.local';
+  const extDir = path.join(os.homedir(), '.local/share/gnome-shell/extensions', extId);
+
+  try {
+    const { execFileSync } = require('child_process');
+    execFileSync('gnome-extensions', ['disable', extId], { timeout: 5000, stdio: 'ignore' });
+  } catch {
+    // Not installed, or GNOME Shell not running — removing the directory below
+    // is what actually matters.
+  }
+
+  try {
+    fs.rmSync(extDir, { recursive: true, force: true });
+  } catch (err) {
+    console.log('Could not remove paste extension:', err.message);
+  }
 }
 
 ipcMain.handle('get-auto-paste', () => store.get('autoPaste') || false);
@@ -899,15 +922,19 @@ ipcMain.handle('get-remember-position', () => store.get('rememberPosition') !== 
 ipcMain.handle('set-remember-position', (_event, v) => store.set('rememberPosition', v));
 
 ipcMain.handle('set-auto-paste', (_event, enabled) => {
-  store.set('autoPaste', enabled);
+  store.set('autoPaste', !!enabled);
 
   if (enabled) {
     const isNew = installPasteExtension();
     if (isNew) {
       return 'needs-restart';
     }
+    return 'ok';
   }
 
+  // Turning it off used to write the flag and nothing else, so the keystroke
+  // injection service stayed enabled on the session bus indefinitely.
+  removePasteExtension();
   return 'ok';
 });
 

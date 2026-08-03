@@ -29,11 +29,13 @@
     },
     "deb": {
       "depends": ["at-spi2-core"],
-      "afterInstall": "build/postinst.sh"
+      "afterInstall": "build/postinst.sh",
+      "afterRemove": "build/afterRemove.sh"
     },
     "rpm": {
       "depends": ["at-spi2-core"],
-      "afterInstall": "build/postinst.sh"
+      "afterInstall": "build/postinst.sh",
+      "afterRemove": "build/afterRemove.sh"
     }
   }
 }
