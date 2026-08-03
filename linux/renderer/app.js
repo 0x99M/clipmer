@@ -547,6 +547,14 @@ async function initLicense() {
 function applyProGating() {
   // Free: themes, accent color, custom shortcut, font size, hidden entries.
   // Pro: folders, notes + note search, minimal view, 200-entry history.
+
+  // A licence that lapses while notes-search is active would otherwise leave
+  // the user in a Pro mode they can no longer toggle out of.
+  if (!proActive && searchMode === 'notes') {
+    searchMode = 'content';
+    updateSearchModeIndicator();
+  }
+
   const proRows = ['minimal-view-toggle'];
   const freeRows = ['accent-picker', 'shortcut-recorder'];
 
@@ -1098,11 +1106,12 @@ function applyFilter() {
     // Search across all of history (groups reference history entries).
     // Hidden entries are deliberately excluded so a search like "pass"
     // can't surface a masked password as a result.
+    const notesMode = searchMode === 'notes' && proActive;
     filteredData = historyData.filter((e) => {
       if (e.hidden) return false;
       const matchContent = e.content.toLowerCase().includes(query);
       const matchNote = (e.note || '').toLowerCase().includes(query);
-      return searchMode === 'notes' ? matchNote : matchContent;
+      return notesMode ? matchNote : matchContent;
     });
     render(filteredData);
   }
@@ -1319,7 +1328,11 @@ function handleKeyDown(e) {
         visibleCount = PAGE_SIZE;
         applyFilter();
       } else {
-        // Tab: toggle search mode
+        // Tab: toggle search mode. Notes are a Pro feature, and searching them
+        // was gated nowhere — not here and not in main — while writing them is
+        // refused in main. A lapsed customer could still search notes they had
+        // authored.
+        if (!proActive && searchMode === 'content') break;
         searchMode = searchMode === 'content' ? 'notes' : 'content';
         updateSearchModeIndicator();
         applyFilter();

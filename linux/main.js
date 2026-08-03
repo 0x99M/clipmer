@@ -438,8 +438,12 @@ ipcMain.handle('rename-group', (_event, { id, name }) => {
   return { success: true };
 });
 
+// Ungated on purpose. Creating folders is the Pro feature; being able to clean
+// up folders you already made is not. Gating deletion meant a lapsed customer
+// could not remove a folder, and because grouped entries are exempt from both
+// Clear History and the history cap, those folders became an unremovable anchor
+// keeping old entries alive forever.
 ipcMain.handle('delete-group', (_event, id) => {
-  if (!license.isPro()) return { success: false };
   const idx = groups.findIndex((g) => g.id === id);
   if (idx === -1) return { success: false };
   groups.splice(idx, 1);
@@ -469,8 +473,9 @@ ipcMain.handle('add-to-group', (_event, { groupId, entryId }) => {
   return { success: true };
 });
 
+// Ungated for the same reason as delete-group — removing an entry you filed
+// earlier must not require an active licence.
 ipcMain.handle('remove-from-group', (_event, { groupId, entryId }) => {
-  if (!license.isPro()) return { success: false };
   const group = groups.find((g) => g.id === groupId);
   if (!group) return { success: false };
   const i = group.memberIds.indexOf(entryId);
@@ -883,7 +888,11 @@ ipcMain.handle('set-active-filter', (_event, v) => store.set('activeFilter', v |
 ipcMain.handle('get-font-size', () => store.get('fontSize') || 13);
 ipcMain.handle('set-font-size', (_event, size) => store.set('fontSize', size));
 ipcMain.handle('get-minimal-view', () => store.get('minimalView') || false);
-ipcMain.handle('set-minimal-view', (_event, v) => { if (license.isPro()) store.set('minimalView', v); });
+// Turning it ON is Pro; turning it OFF must always work, or a lapsed customer
+// is stuck in a view they cannot leave.
+ipcMain.handle('set-minimal-view', (_event, v) => {
+  if (license.isPro() || !v) store.set('minimalView', !!v);
+});
 ipcMain.handle('get-remember-position', () => store.get('rememberPosition') !== false);
 ipcMain.handle('set-remember-position', (_event, v) => store.set('rememberPosition', v));
 
