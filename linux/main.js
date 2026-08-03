@@ -9,6 +9,7 @@ const {
   ipcMain,
   dialog,
   screen,
+  shell,
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -112,6 +113,32 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  // A preload script is a property of the webContents, not of the document, so
+  // it is re-injected across navigations. Nothing in the app navigates, but
+  // Chromium's default drop behaviour does: dropping a URL or an .html file on
+  // the window loads it, and the resulting page inherits the full
+  // clipboardManager bridge — get-history returns every entry's plaintext,
+  // including hidden ones. loadFile is also only ever called once, so any
+  // navigation permanently breaks the UI with no way back.
+  const blockNavigation = (e) => e.preventDefault();
+  mainWindow.webContents.on('will-navigate', blockNavigation);
+  mainWindow.webContents.on('will-frame-navigate', blockNavigation);
+  mainWindow.webContents.on('will-redirect', blockNavigation);
+
+  // window.open() defaults to allow, which rendered the checkout page in a
+  // chromeless Electron window — no address bar, so no way for the user to
+  // confirm the origin before typing card details. Send it to the real browser.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://clipmer.app/')) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
+  mainWindow.webContents.setPermissionRequestHandler((_wc, _permission, callback) => {
+    callback(false);
+  });
 
   mainWindow.on('close', (e) => {
     if (!app.isQuitting) {
@@ -908,6 +935,15 @@ app.whenReady().then(() => {
       console.error(`Startup step failed (${label}):`, err);
     }
   }
+});
+
+// Belt and braces for any webContents the app grows later — the guards in
+// createWindow only cover the one window that exists today. This fires
+// synchronously from `new BrowserWindow`, so createWindow's own
+// setWindowOpenHandler runs afterwards and takes precedence for the main window.
+app.on('web-contents-created', (_event, contents) => {
+  contents.on('will-navigate', (e) => e.preventDefault());
+  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
 });
 
 app.on('will-quit', () => {

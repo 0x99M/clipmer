@@ -1,3 +1,10 @@
+// Chromium's default drop behaviour navigates the frame to a dropped URL or
+// .html file. The preload bridge survives navigation, so that page would inherit
+// full access to the clipboard store. Main blocks the navigation too; this stops
+// the drag being interpreted at all.
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
+
 let historyData = [];
 let groupsData = [];
 let filteredData = [];
