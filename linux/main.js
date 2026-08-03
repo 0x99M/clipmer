@@ -163,6 +163,39 @@ function createWindow() {
 
 // ─── Window positioning ─────────────────────────────────────────────────────────
 
+// The work area of whichever display the pointer is on, which is where the user
+// is looking. getPrimaryDisplay().workAreaSize was wrong twice over: it ignores
+// the display's origin, and setPosition takes global coordinates — so with a
+// second monitor to the left the window opened on the wrong screen.
+function activeWorkArea() {
+  try {
+    return screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+  } catch {
+    return screen.getPrimaryDisplay().workArea;
+  }
+}
+
+// Keep the window fully inside the work area it is being placed on.
+function clampToWorkArea(x, y, width, height, area) {
+  const maxX = area.x + Math.max(0, area.width - width);
+  const maxY = area.y + Math.max(0, area.height - height);
+  return {
+    x: Math.round(Math.min(Math.max(x, area.x), maxX)),
+    y: Math.round(Math.min(Math.max(y, area.y), maxY)),
+  };
+}
+
+function centerOnActiveDisplay() {
+  const area = activeWorkArea();
+  const { width, height } = mainWindow.getBounds();
+  const { x, y } = clampToWorkArea(
+    area.x + (area.width - width) / 2,
+    area.y + (area.height - height) / 2,
+    width, height, area
+  );
+  mainWindow.setPosition(x, y);
+}
+
 function showWindow() {
   if (store.get('rememberPosition') !== false) {
     const saved = store.get('lastWindowPosition');
@@ -182,11 +215,7 @@ function showWindow() {
     }
   }
 
-  const { workAreaSize } = screen.getPrimaryDisplay();
-  const { width, height } = mainWindow.getBounds();
-  const x = Math.round((workAreaSize.width - width) / 2);
-  const y = Math.round((workAreaSize.height - height) / 2);
-  mainWindow.setPosition(x, y);
+  centerOnActiveDisplay();
   mainWindow.show();
   mainWindow.focus();
 }
@@ -597,21 +626,34 @@ ipcMain.handle('set-shortcut', (_event, shortcut) => {
   return { success: true, bound: true };
 });
 
+const COLLAPSED_SIZE = { width: 380, height: 500 };
+const EXPANDED_SIZE = { width: 800, height: 900 };
+
 let isExpanded = false;
 ipcMain.handle('toggle-expand', () => {
   if (!mainWindow) return isExpanded;
-  const { workAreaSize } = screen.getPrimaryDisplay();
-  if (isExpanded) {
-    mainWindow.setSize(380, 500);
-  } else {
-    mainWindow.setSize(800, 900);
-  }
-  // Re-center after resize
-  const { width, height } = mainWindow.getBounds();
-  const x = Math.round((workAreaSize.width - width) / 2);
-  const y = Math.round((workAreaSize.height - height) / 2);
+
+  const area = activeWorkArea();
+  const target = isExpanded ? COLLAPSED_SIZE : EXPANDED_SIZE;
+
+  // 800x900 was applied unconditionally. On a 1366x768 laptop that put y at
+  // -79, pushing the drag strip — the only draggable surface outside minimal
+  // mode — above the top of the screen, leaving the window unmovable.
+  const width = Math.min(target.width, area.width);
+  const height = Math.min(target.height, area.height);
+  mainWindow.setSize(width, height);
+
+  const { x, y } = clampToWorkArea(
+    area.x + (area.width - width) / 2,
+    area.y + (area.height - height) / 2,
+    width, height, area
+  );
   mainWindow.setPosition(x, y);
+
   isExpanded = !isExpanded;
+  // Re-centring discards a deliberate placement, so record the new one rather
+  // than leaving a stale position to be restored later.
+  persistPosition();
   return isExpanded;
 });
 
