@@ -1767,7 +1767,11 @@ function renderViewer() {
   } else {
     const chars = entry.content.length;
     const lines = entry.content.split('\n').length;
-    meta.textContent = `${chars.toLocaleString()} chars · ${lines} line${lines === 1 ? '' : 's'}`;
+    // Say so when the stored copy was capped, rather than presenting a partial
+    // secret as if it were the whole thing.
+    const suffix = entry.truncated ? ' · truncated' : '';
+    meta.textContent =
+      `${chars.toLocaleString()} chars · ${lines} line${lines === 1 ? '' : 's'}${suffix}`;
   }
 
   reveal.style.display = entry.hidden ? '' : 'none';

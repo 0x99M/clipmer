@@ -65,6 +65,10 @@ const MAX_HISTORY = 200;
 const FREE_HISTORY_LIMIT = 100;
 const POLL_MS = 500;
 const PID_FILE = path.join(app.getPath('userData'), 'clipmer.pid');
+// Roughly 256 KB of text. Well past any real snippet, and small enough that a
+// full history stays cheap to serialize.
+const MAX_ENTRY_CHARS = 262144;
+const MAX_PREVIEW_CHARS = 200;
 const DEFAULT_SHORTCUT = 'Ctrl+Shift+D';
 const FALLBACK_SHORTCUT = 'Ctrl+Shift+B';
 
@@ -283,23 +287,63 @@ function startClipboardPolling() {
   pollingInterval = setInterval(checkClipboard, POLL_MS);
 }
 
+// electron-store 8 re-reads, re-parses and rewrites the entire file on every
+// set(). With 200 entries of unbounded content that is a synchronous stall on
+// the main process for every single copy, which also freezes the tray and the
+// hotkey. Coalesce the writes; state in memory is always current, and a flush
+// on quit means at most one poll interval can be lost to a hard kill.
+let historyWriteTimer = null;
+const HISTORY_WRITE_DEBOUNCE_MS = 400;
+
+function persistHistory({ immediate = false } = {}) {
+  if (historyWriteTimer) {
+    clearTimeout(historyWriteTimer);
+    historyWriteTimer = null;
+  }
+  if (immediate) {
+    store.set('history', clipboardHistory);
+    return;
+  }
+  historyWriteTimer = setTimeout(() => {
+    historyWriteTimer = null;
+    store.set('history', clipboardHistory);
+  }, HISTORY_WRITE_DEBOUNCE_MS);
+}
+
+function flushHistory() {
+  if (!historyWriteTimer) return;
+  clearTimeout(historyWriteTimer);
+  historyWriteTimer = null;
+  store.set('history', clipboardHistory);
+}
+
 function checkClipboard() {
   const currentText = clipboard.readText();
   if (currentText && currentText !== lastClipboardText) {
     lastClipboardText = currentText;
-    addEntry(currentText, currentText.substring(0, 200));
+    addEntry(currentText, currentText.substring(0, MAX_PREVIEW_CHARS));
   }
 }
 
 function addEntry(content, preview) {
+  // A stray multi-megabyte copy would otherwise be stored whole and, if filed
+  // into a folder, be exempt from eviction — making every subsequent copy pay
+  // to re-serialize it forever.
+  let stored = content;
+  let truncated = false;
+  if (stored.length > MAX_ENTRY_CHARS) {
+    stored = stored.slice(0, MAX_ENTRY_CHARS);
+    truncated = true;
+  }
+
   // If the exact content already exists in history, bubble it to the top and
   // refresh its timestamp. Reuse the same id so any group memberships stay valid.
-  const existingIdx = clipboardHistory.findIndex((e) => e.content === content);
+  const existingIdx = clipboardHistory.findIndex((e) => e.content === stored);
   if (existingIdx !== -1) {
     const [existing] = clipboardHistory.splice(existingIdx, 1);
     existing.timestamp = Date.now();
     clipboardHistory.unshift(existing);
-    store.set('history', clipboardHistory);
+    persistHistory();
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('history-updated', getVisibleHistory());
     }
@@ -309,8 +353,9 @@ function addEntry(content, preview) {
   const entry = {
     id: crypto.randomUUID(),
     type: 'text',
-    content,
-    preview,
+    content: stored,
+    preview: preview.slice(0, MAX_PREVIEW_CHARS),
+    truncated,
     timestamp: Date.now(),
     note: '',
   };
@@ -327,7 +372,7 @@ function addEntry(content, preview) {
     clipboardHistory = kept;
   }
 
-  store.set('history', clipboardHistory);
+  persistHistory();
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('history-updated', getVisibleHistory());
@@ -339,7 +384,11 @@ function clearHistory() {
   // saved). Everything else is wiped.
   const memberIds = new Set(groups.flatMap((g) => g.memberIds));
   clipboardHistory = clipboardHistory.filter((e) => memberIds.has(e.id));
-  store.set('history', clipboardHistory);
+  // Forget what was last seen, or re-copying the text that was just wiped is a
+  // no-op — the poller's currentText !== lastClipboardText guard rejects it,
+  // and re-copying is the natural way to recover from clearing by mistake.
+  lastClipboardText = '';
+  persistHistory();
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('history-updated', getVisibleHistory());
   }
@@ -406,7 +455,7 @@ ipcMain.handle('update-note', (_event, { id, note }) => {
   const entry = clipboardHistory.find((e) => e.id === id);
   if (entry) {
     entry.note = note;
-    store.set('history', clipboardHistory);
+    persistHistory();
   }
 });
 
@@ -418,7 +467,9 @@ ipcMain.handle('set-entry-hidden', (_event, { id, hidden }) => {
   const entry = clipboardHistory.find((e) => e.id === id);
   if (!entry) return { success: false };
   entry.hidden = !!hidden;
-  store.set('history', clipboardHistory);
+  // Written straight through rather than debounced: if the app dies in the next
+  // 400ms an entry the user just masked must not come back unmasked.
+  persistHistory({ immediate: true });
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('history-updated', getVisibleHistory());
   }
@@ -523,8 +574,10 @@ ipcMain.handle('remove-from-group', (_event, { groupId, entryId }) => {
 ipcMain.handle('delete-entry', (_event, entryId) => {
   const idx = clipboardHistory.findIndex((e) => e.id === entryId);
   if (idx === -1) return { success: false };
-  clipboardHistory.splice(idx, 1);
-  store.set('history', clipboardHistory);
+  const [removed] = clipboardHistory.splice(idx, 1);
+  // Same reason as clearHistory: re-copying deleted text must re-add it.
+  if (removed && removed.content === lastClipboardText) lastClipboardText = '';
+  persistHistory();
 
   let groupsChanged = false;
   groups.forEach((g) => {
@@ -1077,6 +1130,8 @@ app.on('web-contents-created', (_event, contents) => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   if (pollingInterval) clearInterval(pollingInterval);
+  // Commit anything the debounce is still holding.
+  flushHistory();
   // Release the GNOME key combination rather than leaving a binding pointing at
   // a process that no longer exists. Re-registered on the next launch.
   unregisterGnomeShortcut();
