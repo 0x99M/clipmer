@@ -61,9 +61,14 @@ case "$CURRENT" in
       "[]"|"[ ]"|"") CLEANED="@as []" ;;
     esac
     as_user gsettings set "$SCHEMA" custom-keybindings "$CLEANED" >/dev/null
-    as_user dconf reset -f "$KEY_PATH" >/dev/null
     ;;
 esac
+
+# Outside the case: the app removes its own path from the list on a clean quit,
+# so the branch above usually does not run — but the keybinding's own settings
+# live under KEY_PATH and would be left behind. A reset is a no-op when the
+# subtree is already gone.
+as_user dconf reset -f "$KEY_PATH" >/dev/null
 
 # ── Autostart entry, which also lives outside the package ─────────────────────
 rm -f "${USER_HOME}/.config/autostart/clipmer.desktop"

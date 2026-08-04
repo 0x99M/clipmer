@@ -164,8 +164,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Names what actually happens: clearHistory() deliberately keeps entries
     // referenced by a folder. Promising to remove everything and then leaving
     // secrets in the list is exactly the wrong surprise before a screen share.
-    const ok = confirm(
-      'Clear clipboard history?\n\nEntries saved in folders are kept. This can\'t be undone.'
+    const ok = await withModal(() =>
+      confirm('Clear clipboard history?\n\nEntries saved in folders are kept. This can\'t be undone.')
     );
     if (!ok) return;
     await window.clipboardManager.clearHistory();
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   autoPasteToggle.addEventListener('change', async () => {
     const result = await window.clipboardManager.setAutoPaste(autoPasteToggle.checked);
     if (result === 'needs-restart') {
-      alert('Almost there! Log out and log back in to activate auto-paste.');
+      await withModal(() => alert('Almost there! Log out and log back in to activate auto-paste.'));
     }
   });
 
@@ -462,6 +462,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     applyTheme('dark');
     applyAccent('#E95420');
     accentPicker.value = '#E95420';
+    // Painted optimistically below and corrected if main refuses, the same way
+    // the recorder itself behaves — otherwise Reset can display a shortcut that
+    // never bound.
     recorder.textContent = 'Ctrl+Shift+D';
     autostartToggle.checked = false;
     window.clipboardManager.setAutostart(false);
@@ -477,7 +480,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.clipboardManager.setTheme('dark');
     window.clipboardManager.setMinimalView(false);
     window.clipboardManager.setAccent('#E95420');
-    window.clipboardManager.setShortcut('Ctrl+Shift+D');
+    window.clipboardManager.setShortcut('Ctrl+Shift+D').then((r) => {
+      if (r && r.success) return;
+      window.clipboardManager.getShortcut().then((s) => { recorder.textContent = s; });
+      showShortcutHint('Could not reset the shortcut');
+    });
     window.clipboardManager.setAutoPaste(false);
     fontSlider.value = 13;
     applyFontSize(13);
@@ -666,6 +673,19 @@ function flushPendingHistory() {
   applyFilter();
 }
 
+// alert() and confirm() open a native dialog that takes focus, which the new
+// blur handler reads as "the user left" — so the window hid itself behind its
+// own dialog. Bracket every modal with suppression; the sync call restores
+// whatever the current pane state warrants.
+async function withModal(fn) {
+  await window.clipboardManager.setBlurHideSuppressed(true);
+  try {
+    return fn();
+  } finally {
+    syncBlurHideSuppression();
+  }
+}
+
 function syncBlurHideSuppression() {
   window.clipboardManager.setBlurHideSuppressed(settingsOpen || foldersViewOpen);
 }
@@ -779,20 +799,19 @@ function render(entries) {
       memberGroups.forEach((group) => {
         const chip = document.createElement('button');
         chip.className = 'entry-chip';
-        chip.title = proActive ? `Remove from "${group.name}"` : group.name;
+        chip.title = `Remove from "${group.name}"`;
         chip.innerHTML =
           '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
           '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>' +
           '</svg><span class="entry-chip-name"></span>';
         chip.querySelector('.entry-chip-name').textContent = group.name;
-        if (proActive) {
-          chip.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await window.clipboardManager.removeFromGroup({ groupId: group.id, entryId: entry.id });
-          });
-        } else {
-          chip.addEventListener('click', (e) => e.stopPropagation());
-        }
+        // Removal is ungated in main, so let a lapsed customer actually reach
+        // it. Folder members are exempt from Clear History and from the entry
+        // cap, so without this their old entries are unremovable.
+        chip.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await window.clipboardManager.removeFromGroup({ groupId: group.id, entryId: entry.id });
+        });
         chips.appendChild(chip);
       });
       row.appendChild(chips);
@@ -1023,7 +1042,7 @@ function startCreateFolderInline(anchorBtn, container) {
     const result = await window.clipboardManager.createGroup(value);
     if (!result || !result.success) {
       input.remove();
-      if (result && result.error) alert(result.error);
+      if (result && result.error) await withModal(() => alert(result.error));
     }
   };
   const cancel = () => {
@@ -1056,7 +1075,7 @@ function startRenameFolderInline(row, group) {
     if (value && value !== group.name) {
       const result = await window.clipboardManager.renameGroup({ id: group.id, name: value });
       if (!result || !result.success) {
-        if (result && result.error) alert(result.error);
+        if (result && result.error) await withModal(() => alert(result.error));
         renderFolders();
       }
     } else {
@@ -1076,7 +1095,7 @@ function startRenameFolderInline(row, group) {
 
 async function handleDeleteFolder(group) {
   if (!proActive) return;
-  const ok = confirm(`Delete folder "${group.name}"?`);
+  const ok = await withModal(() => confirm(`Delete folder "${group.name}"?`));
   if (!ok) return;
   await window.clipboardManager.deleteGroup(group.id);
 }
@@ -1727,7 +1746,7 @@ function promptNewFolderInMenu(menu, entry, anchorRow) {
     if (result && result.success && result.id) {
       await window.clipboardManager.addToGroup({ groupId: result.id, entryId: entry.id });
     } else if (result && result.error) {
-      alert(result.error);
+      await withModal(() => alert(result.error));
     }
     if (entryMenuOpen && entryMenuView === 'folders') {
       renderFolderPickerMenu(menu, entry);
