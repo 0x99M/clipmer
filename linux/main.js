@@ -441,11 +441,25 @@ ipcMain.handle('get-history', () => getVisibleHistory());
 // the user had marked. Clearing history and then clicking Copy in a viewer left
 // open over the wiped entry did exactly that.
 ipcMain.handle('copy-to-clipboard', (_event, entryId) => {
-  const entry = clipboardHistory.find((e) => e.id === entryId);
-  if (!entry || typeof entry.content !== 'string') return { success: false };
+  const idx = clipboardHistory.findIndex((e) => e.id === entryId);
+  if (idx === -1) return { success: false };
+  const entry = clipboardHistory[idx];
+  if (typeof entry.content !== 'string') return { success: false };
+
   clipboard.writeText(entry.content);
   lastClipboardText = entry.content;
-  addEntry(entry.content, entry.content.substring(0, 200));
+
+  // Bubble the existing record rather than routing back through addEntry().
+  // addEntry matches on content AFTER truncating it, so an entry written by an
+  // older build at more than MAX_ENTRY_CHARS would fail to match itself and fork
+  // into a duplicate — new id, no note, and no `hidden` flag.
+  clipboardHistory.splice(idx, 1);
+  entry.timestamp = Date.now();
+  clipboardHistory.unshift(entry);
+  persistHistory();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('history-updated', getVisibleHistory());
+  }
   return { success: true };
 });
 
@@ -661,11 +675,23 @@ ipcMain.handle('get-shortcut', () => store.get('shortcut') || DEFAULT_SHORTCUT);
 
 // Reports what is actually bound right now, so the settings pane can tell the
 // user their chosen hotkey did not take.
-ipcMain.handle('get-effective-shortcut', () => ({
-  requested: store.get('shortcut') || DEFAULT_SHORTCUT,
-  effective: effectiveShortcut,
-  bound: globalShortcut.isRegistered(effectiveShortcut),
-}));
+ipcMain.handle('get-effective-shortcut', () => {
+  // isRegistered() throws on an accelerator it cannot parse, and a store written
+  // by an older build can still hold one — the very case this whole area exists
+  // to survive. A throw here rejects the IPC and the settings pane silently
+  // never updates.
+  let bound = false;
+  try {
+    bound = globalShortcut.isRegistered(effectiveShortcut);
+  } catch {
+    bound = false;
+  }
+  return {
+    requested: store.get('shortcut') || DEFAULT_SHORTCUT,
+    effective: effectiveShortcut,
+    bound,
+  };
+});
 
 // Validate first, then try to bind, and only persist once something bound.
 // Persisting before registration is what used to brick the app: an accelerator
@@ -842,8 +868,16 @@ function serializeGVariantStringArray(values) {
   return `[${escaped.join(', ')}]`;
 }
 
+// GVariant switches to double quotes for any string containing an apostrophe.
+// The parser only understands the single-quoted form, so rewriting a list that
+// contains one would silently drop another application's keybinding. Refuse to
+// touch the list in that case rather than destroying someone else's shortcuts.
 function readCustomKeybindingPaths() {
-  return parseGVariantStringArray(gsettings(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']));
+  const raw = gsettings(['get', MEDIA_KEYS_SCHEMA, 'custom-keybindings']);
+  if (raw.includes('"')) {
+    throw new Error('custom-keybindings contains a double-quoted entry; leaving it alone');
+  }
+  return parseGVariantStringArray(raw);
 }
 
 function writeCustomKeybindingPaths(paths) {

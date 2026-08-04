@@ -220,8 +220,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Minimal view toggle
   minimalToggle.addEventListener('change', () => {
+    // Main refuses to enable it without a licence, so don't let the UI drift
+    // out of sync by pretending it worked.
+    if (!proActive && minimalToggle.checked) {
+      minimalToggle.checked = false;
+      return;
+    }
     document.body.classList.toggle('minimal', minimalToggle.checked);
     window.clipboardManager.setMinimalView(minimalToggle.checked);
+    // Re-lock the row once a lapsed user has switched it off.
+    applyProGating();
   });
 
   // Font size slider
@@ -350,8 +358,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.clipboardManager.getEffectiveShortcut().then((s) => {
     if (!s) return;
     recorder.textContent = s.requested;
-    if (!s.bound && s.effective !== s.requested) {
+    // Two distinct cases, and the old single condition could match neither:
+    // when the fallback binds, bound is true; when nothing binds, effective
+    // equals requested. So `!bound && effective !== requested` was unreachable.
+    if (s.effective !== s.requested) {
       showShortcutHint(`Using ${s.effective} — ${s.requested} was unavailable.`);
+    } else if (!s.bound) {
+      showShortcutHint(`${s.requested} could not be registered. The GNOME shortcut still works.`);
     }
   });
 
@@ -581,7 +594,12 @@ function applyProGating() {
     const row = el.closest('.settings-row');
     if (!row) return;
     if (!proActive) {
-      row.classList.add('pro-locked');
+      // Minimal view is the one Pro row a lapsed customer must still be able to
+      // operate — to turn it OFF. .pro-locked sets pointer-events:none, which
+      // would have made the main-process ungate unreachable, leaving them stuck
+      // in a view with no visible header.
+      const stuckOn = id === 'minimal-view-toggle' && el.checked;
+      row.classList.toggle('pro-locked', !stuckOn);
       if (!row.querySelector('.pro-badge')) {
         const badge = document.createElement('span');
         badge.className = 'pro-badge';
@@ -728,7 +746,10 @@ function render(entries) {
 
     noteInput.addEventListener('blur', () => {
       window.clipboardManager.updateNote({ id: entry.id, note: noteInput.value });
-      flushPendingHistory();
+      // Deferred, because blur fires BEFORE the click that caused it. Re-rendering
+      // here destroys the row under the pointer and the click never lands, so
+      // clicking straight from a note field onto another entry did nothing.
+      setTimeout(flushPendingHistory, 0);
     });
 
     body.appendChild(noteInput);
