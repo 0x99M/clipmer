@@ -408,10 +408,15 @@ function clearHistory() {
   // saved). Everything else is wiped.
   const memberIds = new Set(groups.flatMap((g) => g.memberIds));
   clipboardHistory = clipboardHistory.filter((e) => memberIds.has(e.id));
-  // Forget what was last seen, or re-copying the text that was just wiped is a
-  // no-op — the poller's currentText !== lastClipboardText guard rejects it,
-  // and re-copying is the natural way to recover from clearing by mistake.
-  lastClipboardText = '';
+  // lastClipboardText is deliberately NOT reset here. Clearing history does not
+  // clear the system clipboard, so blanking it makes the very next poll tick
+  // re-add whatever is still on the clipboard — as a brand new record with no
+  // `hidden` flag. Wiping a masked secret before a screen share would put it
+  // back on screen in plaintext within 500ms.
+  //
+  // The cost is that re-copying the identical text does not re-add it until one
+  // other copy has intervened. Polling cannot distinguish a deliberate re-copy
+  // from text merely still resident on the clipboard, so that is accepted.
   persistHistory();
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('history-updated', getVisibleHistory());
@@ -598,9 +603,9 @@ ipcMain.handle('remove-from-group', (_event, { groupId, entryId }) => {
 ipcMain.handle('delete-entry', (_event, entryId) => {
   const idx = clipboardHistory.findIndex((e) => e.id === entryId);
   if (idx === -1) return { success: false };
-  const [removed] = clipboardHistory.splice(idx, 1);
-  // Same reason as clearHistory: re-copying deleted text must re-add it.
-  if (removed && removed.content === lastClipboardText) lastClipboardText = '';
+  clipboardHistory.splice(idx, 1);
+  // See clearHistory: resetting lastClipboardText here would let the poller
+  // resurrect a just-deleted entry — unmasked — on the next tick.
   persistHistory();
 
   let groupsChanged = false;
