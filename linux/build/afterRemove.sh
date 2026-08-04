@@ -10,6 +10,19 @@
 
 set +e
 
+# fpm installs this as the deb postrm and the rpm %postun, and BOTH are invoked
+# on upgrade as well as on removal — dpkg calls the old postrm with
+# "upgrade <new-version>", rpm runs %postun with $1=1. Without this guard every
+# `apt upgrade` would delete the user's autostart entry, the paste extension and
+# the GNOME keybinding, with nothing to restore them: postinst only fixes the
+# sandbox binary, and on rpm the old %postun runs after the new %post anyway.
+#
+# Proceed only on a genuine removal: dpkg sends remove/purge, rpm sends 0.
+case "${1:-}" in
+  remove|purge|0) ;;
+  *) exit 0 ;;
+esac
+
 REAL_USER="${SUDO_USER:-$USER}"
 [ -z "$REAL_USER" ] && exit 0
 [ "$REAL_USER" = "root" ] && exit 0
