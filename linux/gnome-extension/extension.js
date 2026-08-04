@@ -66,9 +66,13 @@ class PasteService {
         null
       );
       const [pid] = reply.deepUnpack();
-      const [ok, contents] = GLib.file_get_contents(`/proc/${pid}/cmdline`);
-      if (!ok) return false;
-      return new TextDecoder().decode(contents).replace(/\0/g, ' ').includes('clipmer');
+      // Resolve the actual executable rather than reading the command line.
+      // argv is attacker-controlled: `gdbus call --dest com.clipmer.PasteHelper`
+      // contains "clipmer", so a cmdline substring test authenticated exactly
+      // the caller it was meant to reject. /proc/<pid>/exe cannot be spoofed by
+      // the caller's own arguments.
+      const exe = GLib.file_read_link(`/proc/${pid}/exe`);
+      return GLib.path_get_basename(exe) === 'clipmer';
     } catch {
       // Could not establish the caller, so refuse. The cost is a failed paste;
       // the alternative is honouring a request from an unknown peer.
