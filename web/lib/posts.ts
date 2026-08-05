@@ -23,6 +23,31 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "auditing-our-own-clipboard-manager",
+    title: "We audited our own clipboard manager",
+    seoTitle: "Auditing an Electron Clipboard Manager: What We Found",
+    description:
+      "Clipmer's headline feature is masking secrets before a screen share. An audit found the fastest way past it was the menu item directly above the button that turns it on — plus a GNOME hotkey signed to a dead PID, a D-Bus check that authenticated nothing, and a three-line fix that was worse than the bug it closed.",
+    date: "2026-08-05",
+    tags: ["Security", "Electron", "Linux"],
+    readingMinutes: 7,
+    toc: [
+      { id: "a-feature-that-defeated-a-feature", title: "A feature that defeated a feature" },
+      { id: "the-one-that-needed-no-user-action", title: "The one that needed no user action" },
+      {
+        id: "the-hotkey-that-was-signed-to-a-dead-process",
+        title: "The hotkey that was signed to a dead process",
+      },
+      { id: "the-check-that-authenticated-nothing", title: "The check that authenticated nothing" },
+      { id: "the-fix-that-was-worse-than-the-bug", title: "The fix that was worse than the bug" },
+      {
+        id: "what-actually-changed-about-how-we-work",
+        title: "What actually changed about how we work",
+      },
+      { id: "the-part-that-does-not-get-fixed", title: "The part that does not get fixed" },
+    ],
+  },
+  {
     slug: "clipboard-managers-on-wayland",
     title: "Clipboard managers on Wayland: why it's hard and what actually works",
     seoTitle: "Clipboard Managers on Wayland: Why It's Hard and What Works",
@@ -86,6 +111,8 @@ export const POST_CONTENT: Record<
   string,
   () => Promise<{ default: ComponentType }>
 > = {
+  "auditing-our-own-clipboard-manager": () =>
+    import("@/content/blog/auditing-our-own-clipboard-manager.mdx"),
   "clipboard-managers-on-wayland": () =>
     import("@/content/blog/clipboard-managers-on-wayland.mdx"),
   "clipboard-history-ubuntu": () =>

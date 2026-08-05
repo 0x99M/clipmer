@@ -1,0 +1,196 @@
+import { Callout } from "@/components/blog/callout";
+
+Clipmer's headline feature is masking: mark an entry hidden and it renders as dots, so
+your production database URL is not sitting in plain view when you share your screen.
+It is the thing the landing page is built around.
+
+We audited it. The masking feature had a hole, and the fastest way to fall through it was
+to click the menu item directly above the button that turns masking on.
+
+This is what the audit found, including the part where we fixed a bug and shipped
+something worse.
+
+<Callout type="warn" title="Update to 3.2.0">
+  Everything below is fixed in 3.2.0. If you are running 3.1.0 or earlier, the masking
+  bypass is real and the auto-paste helper accepts requests from any application on your
+  session bus. The [changelog](/changelog) has the full list.
+</Callout>
+
+## A feature that defeated a feature
+
+The entry menu offers **View full content** on every entry. The viewer that opens did
+this:
+
+```js
+function openViewer(entry) {
+  body.textContent = entry.content;
+}
+```
+
+No check for whether the entry was masked. So during a screen share — the exact scenario
+the feature exists for — opening the menu on a masked entry and clicking View printed the
+secret in a full-size modal.
+
+The comment on the *next button down* in the same function reads:
+
+```js
+// Hide / Unhide — masks the entry in the list so it's safe during screen-share.
+```
+
+Both were written by the same person in the same sitting. The intent was stated correctly
+one line away from the code that violated it, which is roughly how all of these go: not
+ignorance, just two features that were never considered together.
+
+## The one that needed no user action
+
+The worse variant took longer to see.
+
+Clipmer never closes its window; it hides it. The renderer is never reloaded, so
+everything on screen is still there when the window comes back. There is a
+`visibilitychange` handler that resets search, selection, scroll position and the settings
+pane on every reopen — and it did not touch the viewer.
+
+So the sequence was: open a masked entry, press your shortcut to hide the window, then
+reopen it mid-call. The plaintext was already on screen before you touched anything.
+
+The first bug needed a deliberate click. This one just needed you to have looked at a
+secret at some point earlier, then reopen your clipboard manager.
+
+## The hotkey that was signed to a dead process
+
+Not a masking bug, but the most interesting thing we found.
+
+On Wayland, `globalShortcut.register()` does not work — the compositor owns the
+keyboard. The workaround is to register a GNOME custom keybinding that signals the running
+process. That was built like this:
+
+```js
+const command = `kill -USR1 $(cat '${PID_FILE}') 2>/dev/null`;
+execSync(`${base} command "bash -c \\"${command}\\""`);
+```
+
+Read the quoting carefully. The `$(cat …)` sits inside a double-quoted string that is
+handed to a shell **at registration time**. So the shell expanded it immediately, and what
+actually landed in dconf was:
+
+```
+bash -c "kill -USR1 189572 2>/dev/null"
+```
+
+A hardcoded PID. The shortcut worked perfectly — until you restarted Clipmer, at which
+point it silently signalled a process that no longer existed. And if that PID were ever
+recycled, it sent `SIGUSR1` — default disposition: terminate — to whatever inherited it.
+
+We only caught it by reading the live value out of dconf rather than reasoning about what
+the code was supposed to produce:
+
+```bash
+gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:\
+/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/clipmer-toggle/ command
+```
+
+The fix stores the command literally so the PID resolves when the key is pressed, and
+checks `/proc/<pid>/cmdline` first so a stale file is inert rather than dangerous. Every
+`gsettings` call now goes through `execFile` with an argument array, so no shell parses
+any value at all.
+
+## The check that authenticated nothing
+
+Auto-paste works through a small GNOME Shell extension that exports a `Paste()` method on
+the session bus. It had no caller check whatsoever: any process on your session could
+force a Ctrl+V into whatever window had focus.
+
+So we added one. It resolved the caller's PID over D-Bus and then did this:
+
+```js
+return cmdline.includes('clipmer');
+```
+
+Which admits this:
+
+```bash
+gdbus call --session --dest com.clipmer.PasteHelper \
+  --object-path /com/clipmer/PasteHelper \
+  --method com.clipmer.PasteHelper.Paste
+```
+
+The attacker's command line contains the string `clipmer`, because the bus name does. The
+check passed exactly the caller it existed to reject. Worse, the test written alongside it
+used that same `gdbus` invocation — so the test would have gone green while proving
+nothing.
+
+`argv` belongs to the caller. The fix reads `/proc/<pid>/exe`, which does not:
+
+```js
+const exe = GLib.file_read_link(`/proc/${pid}/exe`);
+return GLib.path_get_basename(exe) === 'clipmer';
+```
+
+## The fix that was worse than the bug
+
+This is the one worth writing down.
+
+A minor annoyance: delete an entry, then copy the same text again, and nothing happens.
+The clipboard poller skips text matching what it last saw, so re-copying is invisible to
+it. Low severity, obvious cause. The obvious fix:
+
+```js
+function clearHistory() {
+  clipboardHistory = clipboardHistory.filter(/* keep folder members */);
+  lastClipboardText = '';   // so a re-copy registers
+}
+```
+
+Clearing your history does not clear your system clipboard. Five hundred milliseconds
+later the poller wakes up, sees the secret still sitting there, finds no matching record —
+because it was just deleted — and creates a **new** entry. New id, no note, and no
+`hidden` flag.
+
+So: mask a password, hit Clear History before a screen share, and half a second later it
+is back in the list in plaintext. We had just spent a commit fixing that exact resurrection
+path somewhere else, and reintroduced it through a different door while fixing something
+unrelated and minor.
+
+It was caught by having the changes reviewed against the original findings, and reproduced
+before being reverted. The annoyance is back and documented, because polling genuinely
+cannot distinguish "the user deliberately copied this again" from "this text is still on
+the clipboard". Between a small annoyance and unmasking a secret, the annoyance wins.
+
+<Callout type="note" title="The general shape">
+  A low-severity bug tempted a fix in a security-relevant code path. The fix was three
+  lines and looked obviously correct. It was, in isolation — the poller and the clear path
+  are just far enough apart that nothing connected them.
+</Callout>
+
+## What actually changed about how we work
+
+Two things, both cheap.
+
+**Run it, don't just read it.** One of the hardening changes added a permission handler
+on the wrong object — `setPermissionRequestHandler` lives on `session`, not on
+`webContents`. It threw inside `app.whenReady()`, which skipped the rest of startup
+including the clipboard poller. The app came up with a window and a tray and captured
+nothing.
+
+That is the same failure mode as the bug that change was shipped alongside, and every
+syntax check passed. It was caught by launching the app for fifteen seconds and reading
+stderr — which had not been part of the routine before, and is now.
+
+**Check the live state, not the source.** The frozen PID, the extension code GNOME Shell
+still had loaded from a login 25 days earlier, the actual bytes in dconf — none of those
+were visible in the repository. Reading a system's real state finds a category of bug that
+reading its source cannot.
+
+## The part that does not get fixed
+
+Masking is a display decision, not encryption. Marking an entry hidden sets a flag; the
+plaintext is still in the store and still in the renderer's memory. That is deliberate and
+documented — click-to-copy has to return the real content, or the feature is useless.
+
+What 3.2.0 changes is that the display now honours the flag everywhere: in the list, in the
+viewer, across hide and reopen, and when an entry is copied back after being cleared. What
+it does not do is protect a masked entry from someone with access to your user account and
+a text editor. If you want that, you want a password manager, and Clipmer is not one.
+
+Being clear about which of those two things you are buying seems more useful than a
+security page that implies the stronger one.
