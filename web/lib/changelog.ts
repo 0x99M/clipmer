@@ -25,6 +25,81 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.2.0",
+    date: "2026-08-05",
+    highlight: "Masking now holds everywhere",
+    changes: [
+      {
+        type: "security",
+        text: "A masked entry stayed masked in the full-content viewer. Opening one through the ⋯ menu, or with Shift+Enter, previously showed its plaintext. It now opens masked behind an explicit Reveal, and the character count is withheld while masked.",
+      },
+      {
+        type: "security",
+        text: "The viewer and the entry menu close when the window hides. An open viewer used to still be on screen the moment the window was reopened.",
+      },
+      {
+        type: "security",
+        text: "The window now hides when it loses focus, so the entry list no longer stays pinned over whatever you switch to.",
+      },
+      {
+        type: "security",
+        text: "The auto-paste helper only accepts paste requests from Clipmer. Any application on your session bus could previously trigger a paste into your focused window. Takes effect after your next login.",
+      },
+      {
+        type: "security",
+        text: "Turning auto-paste off now removes the GNOME helper instead of leaving it running, and uninstalling Clipmer removes it too.",
+      },
+      {
+        type: "security",
+        text: "The window refuses to navigate, so dropping a link or a file onto it can no longer replace the interface, and a content security policy is now enforced.",
+      },
+      {
+        type: "fixed",
+        text: "Recording a shortcut that used an arrow key could stop clipboard capture permanently, with no error and no way to tell from the interface.",
+      },
+      {
+        type: "fixed",
+        text: "Starting Clipmer a second time silently broke the keyboard shortcut on Wayland until the next restart.",
+      },
+      {
+        type: "fixed",
+        text: "The GNOME shortcut stopped working after restarting Clipmer, because it had been recorded against the previous process.",
+      },
+      {
+        type: "fixed",
+        text: "Searching for something with no matches, then pressing Down and Enter, copied an unrelated entry instead of doing nothing.",
+      },
+      {
+        type: "fixed",
+        text: "Clicking an entry while a note was being edited could copy the entry above it.",
+      },
+      {
+        type: "fixed",
+        text: "The window opened on the wrong monitor in some multi-display layouts, and expanding it on a short screen could push it off the top with no way to drag it back.",
+      },
+      {
+        type: "fixed",
+        text: "Start on login did nothing for AppImage users, while still showing as enabled.",
+      },
+      {
+        type: "fixed",
+        text: "Minimal view could not be switched off, and folders could not be deleted, once a Pro licence lapsed.",
+      },
+      {
+        type: "changed",
+        text: "Clear history now says that entries saved in folders are kept, which is what it has always done.",
+      },
+      {
+        type: "changed",
+        text: "Ctrl+Shift+B is registered as a fallback when your chosen shortcut cannot be bound, and the settings pane says which one is actually active.",
+      },
+      {
+        type: "changed",
+        text: "Very large copies are capped at 256 KB so a stray copy cannot slow the app down permanently. Capped entries are labelled.",
+      },
+    ],
+  },
+  {
     version: "3.1.0",
     date: "2026-08-01",
     highlight: "A much bigger free tier",
