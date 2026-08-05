@@ -50,6 +50,20 @@ class PasteService {
     invocation.return_value(null);
   }
 
+  // Field 4 of /proc/<pid>/stat. Parsed from the last ')' because field 2 is
+  // the executable name and may itself contain spaces and parentheses.
+  _parentPid(pid) {
+    try {
+      const [ok, contents] = GLib.file_get_contents(`/proc/${pid}/stat`);
+      if (!ok) return 0;
+      const text = new TextDecoder().decode(contents);
+      const fields = text.slice(text.lastIndexOf(')') + 2).split(' ');
+      return parseInt(fields[1], 10) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
   _callerIsClipmer(invocation) {
     try {
       const sender = invocation.get_sender();
@@ -65,14 +79,28 @@ class PasteService {
         500,
         null
       );
-      const [pid] = reply.deepUnpack();
-      // Resolve the actual executable rather than reading the command line.
-      // argv is attacker-controlled: `gdbus call --dest com.clipmer.PasteHelper`
-      // contains "clipmer", so a cmdline substring test authenticated exactly
-      // the caller it was meant to reject. /proc/<pid>/exe cannot be spoofed by
-      // the caller's own arguments.
-      const exe = GLib.file_read_link(`/proc/${pid}/exe`);
-      return GLib.path_get_basename(exe) === 'clipmer';
+      let [pid] = reply.deepUnpack();
+
+      // Clipmer has no D-Bus binding of its own, so it shells out to `gdbus`
+      // to make this call. The bus therefore attributes the request to that
+      // helper — /usr/bin/gdbus — and never to Clipmer itself. Checking only
+      // the immediate caller rejected every legitimate paste.
+      //
+      // Walk up instead, and accept if Clipmer is an ancestor. The executable
+      // is read from /proc/<pid>/exe rather than the command line, because argv
+      // belongs to the caller: `gdbus --dest com.clipmer.PasteHelper` contains
+      // the string "clipmer" and would pass a naive substring test.
+      for (let depth = 0; depth < 4 && pid > 1; depth++) {
+        try {
+          const exe = GLib.file_read_link(`/proc/${pid}/exe`);
+          if (GLib.path_get_basename(exe) === 'clipmer') return true;
+        } catch {
+          // Unreadable link, e.g. an already-reaped intermediate. Keep walking.
+        }
+        pid = this._parentPid(pid);
+        if (!pid) return false;
+      }
+      return false;
     } catch {
       // Could not establish the caller, so refuse. The cost is a failed paste;
       // the alternative is honouring a request from an unknown peer.
