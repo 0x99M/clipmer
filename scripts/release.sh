@@ -84,6 +84,17 @@ sed -i \
   "s|>v[0-9.]\+<|>v${VERSION}<|g" \
   "$WEB/components/sections/footer.tsx"
 
+# Blog posts quote versioned asset filenames in install commands. GitHub's
+# /releases/latest/download/ still needs the exact asset name, so these cannot be
+# made version-agnostic and have to be rewritten on every release.
+if compgen -G "$WEB/content/blog/*.mdx" >/dev/null; then
+  sed -i \
+    -e "s|clipmer_[0-9.]\+_amd64\.deb|clipmer_${VERSION}_amd64.deb|g" \
+    -e "s|clipmer-[0-9.]\+\.x86_64\.rpm|clipmer-${VERSION}.x86_64.rpm|g" \
+    -e "s|Clipmer-[0-9.]\+\.AppImage|Clipmer-${VERSION}.AppImage|g" \
+    "$WEB"/content/blog/*.mdx
+fi
+
 # NOTE: hero.tsx no longer carries a version string. Its mockup title bar shows
 # the live "N masked" pill instead, so there is nothing here to rewrite.
 
