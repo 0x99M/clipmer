@@ -481,13 +481,35 @@ ipcMain.handle('simulate-paste', () => {
   if (!store.get('autoPaste')) return;
 
   setTimeout(() => {
-    const { exec } = require('child_process');
-    exec(
-      'gdbus call --session --dest com.clipmer.PasteHelper ' +
-      '--object-path /com/clipmer/PasteHelper ' +
-      '--method com.clipmer.PasteHelper.Paste',
-      (err) => {
-        if (err) console.log('Auto-paste unavailable. Enable the Clipmer Paste Helper extension.');
+    const { execFile } = require('child_process');
+    execFile(
+      'gdbus',
+      [
+        'call', '--session',
+        '--dest', 'com.clipmer.PasteHelper',
+        '--object-path', '/com/clipmer/PasteHelper',
+        '--method', 'com.clipmer.PasteHelper.Paste',
+      ],
+      (err, _stdout, stderr) => {
+        if (!err) return;
+        // Distinguish the two failures. They need completely different actions,
+        // and telling someone to enable an extension that is already enabled and
+        // working sends them in the wrong direction entirely.
+        const message = `${stderr || ''}${err.message || ''}`;
+        if (message.includes('AccessDenied')) {
+          console.log(
+            'Auto-paste refused: the paste helper only accepts requests from the ' +
+            'installed Clipmer binary. Running from source (npm start) is rejected ' +
+            'by design — test auto-paste with the packaged build.'
+          );
+        } else if (message.includes('ServiceUnknown') || message.includes('was not provided')) {
+          console.log(
+            'Auto-paste unavailable: the Clipmer Paste Helper extension is not ' +
+            'running. Enable it, then log out and back in.'
+          );
+        } else {
+          console.log('Auto-paste failed:', message.trim());
+        }
       }
     );
   }, 150);
