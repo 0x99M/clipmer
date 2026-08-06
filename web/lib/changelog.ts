@@ -43,7 +43,7 @@ export const CHANGELOG: Release[] = [
       },
       {
         type: "security",
-        text: "The auto-paste helper only accepts paste requests from Clipmer. Any application on your session bus could previously trigger a paste into your focused window. Takes effect after your next login.",
+        text: "The auto-paste helper now rejects paste requests that did not come from Clipmer. Any application on your session bus could previously trigger a paste into your focused window. Takes effect after your next login.",
       },
       {
         type: "security",
