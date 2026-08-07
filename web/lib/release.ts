@@ -24,6 +24,9 @@ export const ASSETS = {
 
 export const RELEASE_PAGE = `https://github.com/0x99M/clipmer/releases/tag/${TAG}`;
 
+/** Published alongside the binaries by scripts/release.sh. */
+export const CHECKSUMS_URL = `${BASE}/SHA256SUMS`;
+
 /**
  * Only x86_64 is built — linux.target in linux/package.json specifies no arch,
  * so electron-builder produces x64 alone. The install guide checks for this

@@ -5,7 +5,7 @@ import { Footer } from "@/components/sections/footer";
 import { InstallGuide } from "@/components/install/install-guide";
 import { CommandBlock } from "@/components/copy-button";
 import { TESTED_ON } from "@/lib/tested-on";
-import { VERSION } from "@/lib/release";
+import { CHECKSUMS_URL, VERSION } from "@/lib/release";
 
 export const metadata: Metadata = {
   title: "Install Clipmer on Linux — Ubuntu, Fedora, AppImage",
@@ -102,6 +102,34 @@ export default function InstallPage() {
               </div>
             </li>
           </ol>
+        </Section>
+
+        <Section title="Verify what you downloaded">
+          <p className="leading-relaxed text-muted-foreground">
+            Every release publishes a{" "}
+            <a
+              href={CHECKSUMS_URL}
+              className="text-orange hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              SHA256SUMS
+            </a>{" "}
+            file. Run this in the directory you downloaded to, before installing:
+          </p>
+          <div className="mt-4">
+            <CommandBlock
+              command={`curl -fsSL ${CHECKSUMS_URL} -o SHA256SUMS && sha256sum -c --ignore-missing SHA256SUMS`}
+            />
+          </div>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            You should see <code className="font-mono text-foreground">OK</code> next to each
+            file you have.{" "}
+            <code className="font-mono text-foreground">--ignore-missing</code> means it only
+            checks the ones you actually downloaded. If a line says{" "}
+            <code className="font-mono text-foreground">FAILED</code>, do not install it —
+            tell us instead.
+          </p>
         </Section>
 
         <Section title="Requirements">

@@ -39,15 +39,30 @@ echo "  .deb      $(du -h "$DEB" | cut -f1)  $DEB"
 echo "  AppImage  $(du -h "$APPIMAGE" | cut -f1)  $APPIMAGE"
 echo "  .rpm      $(du -h "$RPM" | cut -f1)  $RPM"
 
+# ── Checksums ─────────────────────────────────────────────────────────
+# Published as a fourth asset so anyone can verify what they downloaded before
+# running it with sudo. Generated from the same files that are uploaded below,
+# in the dist directory, so the names in the file are bare and `sha256sum -c`
+# works from wherever the user saved them.
+echo ""
+echo "Generating SHA256SUMS ..."
+SUMS="$REPO_ROOT/linux/dist/SHA256SUMS"
+(
+  cd "$REPO_ROOT/linux/dist"
+  sha256sum "$(basename "$DEB")" "$(basename "$APPIMAGE")" "$(basename "$RPM")" > SHA256SUMS
+  sha256sum -c SHA256SUMS >/dev/null
+)
+cat "$SUMS" | sed 's/^/  /'
+
 # ── Create or update GitHub release ───────────────────────────────────
 echo ""
 echo "Creating GitHub release $TAG ..."
 
 if gh release view "$TAG" --repo "$GITHUB_REPO" &>/dev/null; then
   echo "Release $TAG already exists — uploading assets (overwrite)..."
-  gh release upload "$TAG" "$DEB" "$APPIMAGE" "$RPM" --repo "$GITHUB_REPO" --clobber
+  gh release upload "$TAG" "$DEB" "$APPIMAGE" "$RPM" "$SUMS" --repo "$GITHUB_REPO" --clobber
 else
-  gh release create "$TAG" "$DEB" "$APPIMAGE" "$RPM" \
+  gh release create "$TAG" "$DEB" "$APPIMAGE" "$RPM" "$SUMS" \
     --repo "$GITHUB_REPO" \
     --title "Clipmer $TAG" \
     --notes "Secrets-aware clipboard manager for Linux (Ubuntu/GNOME/Wayland)" \
