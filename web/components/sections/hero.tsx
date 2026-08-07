@@ -407,17 +407,9 @@ export function Hero() {
           </div>
 
           <>
-            <p
-              data-hero="copy"
-              className="mx-auto mt-7 max-w-[56ch] text-pretty text-base leading-relaxed text-muted-foreground sm:mt-8 sm:text-lg"
-            >
-              Never lose a copied item again &mdash; and never flash a credential
-              on a screen share. Masked entries stay copyable, but unreadable.
-            </p>
-
             <ul
               data-hero="caps"
-              className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground"
+              className="mt-7 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground sm:mt-8"
             >
               {CAPABILITIES.map(({ icon: Icon, label, tier }) => (
                 <li key={label} className="inline-flex items-center gap-1.5">

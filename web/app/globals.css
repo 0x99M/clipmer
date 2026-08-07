@@ -376,20 +376,17 @@
     --hero-at: 0.29s;
     --hero-lift: 22px;
   }
-  [data-hero="copy"] {
+  [data-hero="caps"] {
     --hero-at: 0.52s;
   }
-  [data-hero="caps"] {
+  [data-hero="cta"] {
     --hero-at: 0.6s;
   }
-  [data-hero="cta"] {
+  [data-hero="install"] {
     --hero-at: 0.68s;
   }
-  [data-hero="install"] {
-    --hero-at: 0.76s;
-  }
   [data-hero="fine"] {
-    --hero-at: 0.86s;
+    --hero-at: 0.78s;
   }
 }
 
