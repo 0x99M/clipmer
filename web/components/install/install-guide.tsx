@@ -22,10 +22,10 @@ const METHODS: {
     steps: [
       {
         label: "Download and install",
-        command: `wget -q ${ASSETS.deb.url} && sudo apt install ./${ASSETS.deb.file}`,
+        command: `curl -LO ${ASSETS.deb.url} && sudo apt install ./${ASSETS.deb.file}`,
       },
     ],
-    note: "apt pulls in at-spi2-core, which Clipmer needs, and sets up the Chromium sandbox helper.",
+    note: "apt pulls in at-spi2-core, which Clipmer needs, and sets up the Chromium sandbox helper. The download is around 85 MB, so curl shows a progress meter while it runs.",
   },
   {
     id: "rpm",
@@ -34,7 +34,7 @@ const METHODS: {
     steps: [
       {
         label: "Download and install",
-        command: `wget -q ${ASSETS.rpm.url} && sudo dnf install ./${ASSETS.rpm.file}`,
+        command: `curl -LO ${ASSETS.rpm.url} && sudo dnf install ./${ASSETS.rpm.file}`,
       },
     ],
     note: "On openSUSE substitute zypper install for dnf install.",
@@ -46,7 +46,7 @@ const METHODS: {
     steps: [
       {
         label: "Download and make it executable",
-        command: `mkdir -p ~/Applications && wget -qO ~/Applications/Clipmer.AppImage ${ASSETS.appImage.url} && chmod +x ~/Applications/Clipmer.AppImage`,
+        command: `mkdir -p ~/Applications && curl -L -o ~/Applications/Clipmer.AppImage ${ASSETS.appImage.url} && chmod +x ~/Applications/Clipmer.AppImage`,
       },
       { label: "Run it", command: "~/Applications/Clipmer.AppImage" },
     ],
