@@ -35,7 +35,14 @@ const OPTIONS = [
   },
 ] as const;
 
-export function CopyInstallGroup({ className }: { className?: string }) {
+export function CopyInstallGroup({
+  className,
+  /** "inline" sits beside a button in a CTA row; "stacked" puts the label above. */
+  layout = "stacked",
+}: {
+  className?: string;
+  layout?: "inline" | "stacked";
+}) {
   const [copied, setCopied] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -54,16 +61,37 @@ export function CopyInstallGroup({ className }: { className?: string }) {
     timer.current = setTimeout(() => setCopied(null), 2000);
   }
 
+  const inline = layout === "inline";
+
   return (
-    <div className={cn("flex flex-col items-center gap-2", className)}>
-      <span className="text-xs text-muted-foreground">
-        Or copy the install command
-      </span>
+    <div
+      className={cn(
+        inline ? "flex justify-center" : "flex flex-col items-center gap-2",
+        className
+      )}
+    >
+      {inline ? null : (
+        <span className="text-xs text-muted-foreground">
+          Or copy the install command
+        </span>
+      )}
       <div
         role="group"
         aria-label="Copy install command"
-        className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface/40 p-1"
+        className={cn(
+          "inline-flex items-center gap-1 rounded-lg border border-border bg-surface/40 p-1",
+          inline && "h-12 px-2"
+        )}
       >
+        {/* Without a button beside them, three format names could read as a
+            download picker. Inline, the label says what the click actually
+            does. Hidden on small screens, where the row stacks and space is
+            tight — the copy icons and the accessible names still carry it. */}
+        {inline ? (
+          <span className="hidden pr-1 pl-1 text-xs whitespace-nowrap text-muted-foreground sm:inline">
+            Copy install
+          </span>
+        ) : null}
         {OPTIONS.map((o) => {
           const isCopied = copied === o.id;
           return (
