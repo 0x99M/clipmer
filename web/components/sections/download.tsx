@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { FadeUp } from "@/components/fade-up";
 import { cn } from "@/lib/utils";
 import { TESTED_ON } from "@/lib/tested-on";
+import { ASSETS, VERSION } from "@/lib/release";
 
 export function DownloadSection() {
   return (
@@ -33,7 +34,7 @@ export function DownloadSection() {
               variant="outline"
               className="border-orange/30 bg-orange/10 text-orange font-mono"
             >
-              v3.2.0
+              v{VERSION}
             </Badge>
           </div>
         </FadeUp>
@@ -41,7 +42,7 @@ export function DownloadSection() {
         <FadeUp delay={0.3}>
           <div className="mt-8 flex flex-col flex-wrap gap-4 sm:flex-row sm:justify-center">
             <a
-              href="https://github.com/0x99M/clipmer/releases/download/v3.2.0/clipmer_3.2.0_amd64.deb"
+              href={ASSETS.deb.url}
               className={cn(
                 buttonVariants({ size: "lg" }),
                 "h-14 gap-2 px-8 text-base bg-orange text-white hover:bg-orange-hover"
@@ -51,7 +52,7 @@ export function DownloadSection() {
               Download .deb Package
             </a>
             <a
-              href="https://github.com/0x99M/clipmer/releases/download/v3.2.0/clipmer-3.2.0.x86_64.rpm"
+              href={ASSETS.rpm.url}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "h-14 gap-2 px-8 text-base border-border hover:bg-surface"
@@ -61,7 +62,7 @@ export function DownloadSection() {
               Download .rpm Package
             </a>
             <a
-              href="https://github.com/0x99M/clipmer/releases/download/v3.2.0/Clipmer-3.2.0.AppImage"
+              href={ASSETS.appImage.url}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "h-14 gap-2 px-8 text-base border-border hover:bg-surface"
@@ -71,6 +72,16 @@ export function DownloadSection() {
               Download AppImage
             </a>
           </div>
+        </FadeUp>
+
+        <FadeUp delay={0.35}>
+          <p className="mt-5 text-sm text-muted-foreground">
+            Not sure which one?{" "}
+            <a href="/install" className="text-orange hover:underline">
+              Follow the install guide &rarr;
+            </a>{" "}
+            &mdash; one command per distribution.
+          </p>
         </FadeUp>
 
         <FadeUp delay={0.4}>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { VERSION } from "@/lib/release";
 import { Bug } from "lucide-react";
 import { GitHubIcon } from "@/components/icons";
 
@@ -10,7 +11,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-6">
             <div className="flex items-center gap-2">
               <span className="font-semibold">Clipmer</span>
-              <span className="text-sm text-muted-foreground">v3.2.0</span>
+              <span className="text-sm text-muted-foreground">v{VERSION}</span>
             </div>
             <a
               href="https://github.com/0x99M/clipmer"

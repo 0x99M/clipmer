@@ -9,6 +9,7 @@ import { GitHubIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
+  { href: "/install", label: "Install" },
   { href: "/blog", label: "Blog" },
   { href: "/changelog", label: "Changelog" },
 ];
@@ -154,9 +155,9 @@ export function SiteNav() {
           </a>
 
           <Link
-            href="/#download"
-            aria-label="Download Clipmer for Linux"
-            title="Download for Linux"
+            href="/install"
+            aria-label="Install Clipmer for Linux"
+            title="Install for Linux"
             className={cn(
               buttonVariants({ size: "icon" }),
               "ml-1 bg-orange text-white hover:bg-orange-hover"
@@ -234,14 +235,14 @@ export function SiteNav() {
             </a>
 
             <Link
-              href="/#download"
+              href="/install"
               className={cn(
                 buttonVariants({ size: "lg" }),
                 "mt-3 w-full gap-2 bg-orange text-white hover:bg-orange-hover"
               )}
             >
               <Download className="size-4" />
-              Download for Linux
+              Install for Linux
             </Link>
           </div>
         </div>

@@ -9,6 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [
     { url: SITE, lastModified: now, changeFrequency: "monthly", priority: 1 },
     {
+      url: `${SITE}/install`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${SITE}/pro`,
       lastModified: now,
       changeFrequency: "monthly",

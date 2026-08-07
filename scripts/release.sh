@@ -67,22 +67,12 @@ APPIMAGE_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/Clipmer-${V
 # web/package.json — sync version
 npm --prefix "$WEB" version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null
 
-# download.tsx — all three release asset URLs plus the version badge.
-# The badge renders its text on its own JSX line, so it is matched as a
-# whitespace-only line rather than with the >v…< form used in footer.tsx.
-sed -i \
-  -e "s|releases/download/v[0-9.]\+/clipmer_[0-9.]\+_amd64\.deb|releases/download/$TAG/clipmer_${VERSION}_amd64.deb|g" \
-  -e "s|releases/download/v[0-9.]\+/clipmer-[0-9.]\+\.x86_64\.rpm|releases/download/$TAG/clipmer-${VERSION}.x86_64.rpm|g" \
-  -e "s|releases/download/v[0-9.]\+/Clipmer-[0-9.]\+\.AppImage|releases/download/$TAG/Clipmer-${VERSION}.AppImage|g" \
-  "$WEB/components/sections/download.tsx"
+# lib/release.ts — the single source for the version and every asset URL.
+# download.tsx, footer.tsx and the install guide all import from it, so this one
+# substitution covers all of them.
 sed -i -E \
-  "s|^([[:space:]]*)v[0-9]+\.[0-9]+\.[0-9]+[[:space:]]*$|\1v${VERSION}|" \
-  "$WEB/components/sections/download.tsx"
-
-# footer.tsx — inline version display
-sed -i \
-  "s|>v[0-9.]\+<|>v${VERSION}<|g" \
-  "$WEB/components/sections/footer.tsx"
+  "s|^export const VERSION = \"[0-9.]+\";|export const VERSION = \"${VERSION}\";|" \
+  "$WEB/lib/release.ts"
 
 # Blog posts quote versioned asset filenames in install commands. GitHub's
 # /releases/latest/download/ still needs the exact asset name, so these cannot be
@@ -100,14 +90,14 @@ fi
 
 echo "Updated:"
 echo "  web/package.json"
-echo "  web/components/sections/download.tsx"
-echo "  web/components/sections/footer.tsx"
+echo "  web/lib/release.ts"
 
 # ── Verify ────────────────────────────────────────────────────────────
 echo ""
 echo "Verifying ..."
-FOUND=$(grep -r "v$VERSION" "$WEB/components/sections/" | wc -l)
-echo "Found $FOUND version references in web/components/sections/"
+grep -q "export const VERSION = \"$VERSION\";" "$WEB/lib/release.ts" \
+  && echo "lib/release.ts pinned to $VERSION" \
+  || echo "WARNING: lib/release.ts was not updated"
 
 echo ""
 echo "Done. Run 'cd web && npm run build' to rebuild the site."
