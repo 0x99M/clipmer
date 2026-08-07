@@ -9,6 +9,7 @@ import {
   type TileLayer,
 } from "@/components/feature-tile";
 import { buttonVariants } from "@/components/ui/button";
+import { CopyInstallGroup } from "@/components/install/copy-install-group";
 import { cn } from "@/lib/utils";
 
 const CAPABILITIES = [
@@ -469,6 +470,15 @@ export function Hero() {
                 <GithubMark className="size-4" />
                 View on GitHub
               </a>
+            </div>
+
+            {/* Its own row rather than a third item in the CTA line: three
+                segments beside two buttons pushes the row past the headline's
+                width and wraps awkwardly between about 900 and 1100px.
+                Wrapped so it picks up a beat in the entrance cascade — the
+                component itself only takes className. */}
+            <div data-hero="install" className="mt-5">
+              <CopyInstallGroup />
             </div>
 
             {/* Fine print: reassurance first, upsell second. */}

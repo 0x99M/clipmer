@@ -385,8 +385,11 @@
   [data-hero="cta"] {
     --hero-at: 0.68s;
   }
+  [data-hero="install"] {
+    --hero-at: 0.76s;
+  }
   [data-hero="fine"] {
-    --hero-at: 0.78s;
+    --hero-at: 0.86s;
   }
 }
 
