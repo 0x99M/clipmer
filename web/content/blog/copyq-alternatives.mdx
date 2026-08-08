@@ -1,0 +1,367 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+
+CopyQ is not a bad clipboard manager. It is probably the most capable one on Linux, the
+repository dates to October 2009, and 16.0.0 shipped on 30 May 2026 with commits landing
+since. If you are looking for an alternative, it is almost certainly not because CopyQ is
+broken.
+
+It is usually one of three things: the interface looks like a Qt list widget from 2011,
+the scripting engine is more machinery than you wanted, or you moved to a Wayland session
+and something quietly stopped working. Only one of those is a real technical limit, and
+even that one is often a packaging problem rather than a CopyQ problem.
+
+This page covers what each alternative actually is, how it reads your clipboard, what it
+is licensed under, and who it suits. Clipmer is ours, and its section says so.
+
+## Why people actually leave CopyQ
+
+**The interface.** CopyQ is a Qt6 application — `CMakeLists.txt` calls
+`find_package(Qt6Widgets 6.2.0 REQUIRED)`, and 15.0.0 dropped the Qt 5 build entirely —
+and it looks like one. That is not a flaw so much as a decision: it is the same window on
+Linux, Windows and macOS, so it matches none of them. If you are on GNOME and everything
+else on your screen is libadwaita, CopyQ will always look imported.
+
+**The scripting.** CopyQ's headline feature is a "JavaScript-similar scripting language"
+in which, as the documentation puts it, "all command line options are also available for
+scripting". It is a genuine differentiator and nothing else in this article comes close.
+It is also a scripting engine, a tab system, item filters, an internal editor and a
+command palette that you are carrying around in order to get back the last twenty things
+you copied.
+
+**Auto-paste on Wayland.** CopyQ's FAQ is blunt about this: "Pasting from CopyQ works only
+on Windows, macOS and X11 on Linux." On a Wayland session, selecting an item puts it on
+the clipboard and you press Ctrl+V yourself. Global shortcuts are a separate story —
+CopyQ registers those through the XDG desktop portal on Wayland, which has worked since
+12.0.0.
+
+**And a fourth reason, which is not CopyQ's fault at all.**
+
+## The version your distro ships is probably the problem
+
+Check what you are actually running before you conclude anything:
+
+```bash
+apt policy copyq
+```
+
+On Ubuntu 24.04 LTS the candidate is `7.1.0-1build2`. Upstream is on 16.0.0. Nearly all of
+CopyQ's Wayland work landed after 7.1.0:
+
+- **10.0.0** — on a GNOME Wayland session, CopyQ's clipboard monitor and provider
+  processes now run in XWayland mode automatically, the changelog explains, "because GNOME
+  does not support Wayland data control protocol."
+- **12.0.0** — "Wayland: Global shortcuts are now registered using Portal if available."
+- **13.0.0** — "Fixes clipboard access in KDE Plasma 6.5. This requires KGuiAddons library
+  installed on the system."
+
+Ubuntu 25.10 shipped 10.0.0 and Ubuntu 26.04 LTS ships 13.0.0. So on 24.04 you are running
+CopyQ as it existed before any of those three, and a large share of "CopyQ does not work on
+Wayland" reports are really "the CopyQ in my LTS predates the fix."
+
+So before replacing CopyQ, run the current one. Flathub carries the upstream release,
+16.0.0 at the time of writing:
+
+```bash
+flatpak install flathub com.github.hluk.copyq
+```
+
+<Callout type="note" title="Or an AppImage">
+  16.0.0 added an AppImage build option (`WITH_APPIMAGE`) and the release publishes
+  `CopyQ-16.0.0-x86_64.AppImage` alongside the Windows and macOS builds, so upstream
+  binaries no longer need a Flatpak runtime. Either way, spending five minutes here is
+  cheaper than migrating your history to a new tool and finding the same limitation
+  waiting for you.
+</Callout>
+
+## How CopyQ actually reads your clipboard
+
+Worth understanding, because it decides which of the alternatives below are a genuine
+change of mechanism and which are the same mechanism in different paint.
+
+CopyQ has no Wayland platform backend. Its `src/platform` directory contains `x11`, `win`,
+`mac`, `unix` and `dummy`, and `platform.cmake` picks the X11 module whenever X11 is found
+and the target is not Apple. Wayland clipboard access is bolted on beside it: CMake looks
+for `KF6GuiAddons` and links KDE's `KSystemClipboard` when it finds it, warning otherwise
+that you should install "'kf6-kguiaddons', 'libkf6guiaddons' or similar for better Wayland
+clipboard integration."
+
+`KSystemClipboard` is the part that speaks the privileged protocols. Reading
+`ksystemclipboard.cpp`, it tries `ext_data_control_manager_v1` first, falls back to
+`wlr-data-control-unstable-v1`, and only then gives up and uses Qt's ordinary clipboard.
+CopyQ's own built-in fallback — compiled in when KGuiAddons is missing at build time —
+implements the wlroots protocol only. KWin offers `ext-data-control-v1` and not the
+wlroots one, which fits 13.0.0's note that the Plasma 6.5 fix "requires KGuiAddons library
+installed on the system."
+
+So CopyQ on Wayland is a data-control client, wherever the compositor implements
+data-control. GNOME's Mutter implements neither protocol — there are no data-control
+sources in Mutter's `src/wayland` tree — which is why CopyQ detects a GNOME Wayland
+session and deliberately drops to XWayland instead.
+[Clipboard managers on Wayland](/blog/clipboard-managers-on-wayland) covers why Mutter
+made that choice and which compositors support which protocol.
+
+The consequence for this whole page: on GNOME, every clipboard manager is either a shell
+extension or an XWayland client. There is no third option, and no alternative in the list
+below changes that.
+
+## The alternatives at a glance
+
+<SupportTable
+  headers={["Tool", "How it reads the clipboard", "Where it works", "Licence"]}
+  rows={[
+    { name: "CopyQ", cells: ["Qt on X11/XWayland; data-control via KGuiAddons", "Broadly; best on X11 and KDE", "GPL-3.0-or-later"] },
+    { name: "GPaste", cells: ["GNOME Shell extension + daemon", "GNOME", "BSD-2-Clause"] },
+    { name: "Pano", cells: ["GNOME Shell extension", "GNOME", "GPL-2.0"] },
+    { name: "Clipboard History", cells: ["GNOME Shell extension", "GNOME", "MIT"] },
+    { name: "Klipper", cells: ["KSystemClipboard, inside the Plasma shell", "KDE", "GPL-2.0-or-later"] },
+    { name: "Diodon", cells: ["GTK3 Gtk.Clipboard, links gdk-x11-3.0", "X11", "GPL-2.0-or-later"] },
+    { name: "Parcellite / ClipIt", cells: ["GTK Gtk.Clipboard on X11", "X11", "GPL-3.0"] },
+    { name: "Ringboard", cells: ["ext-data-control-v1 watcher, or X11 watcher", "Anywhere; the X11 watcher covers GNOME", "Apache-2.0"] },
+    { name: "Clipmer", cells: ["Electron clipboard API under XWayland", "GNOME on X11 or Wayland", "PolyForm Strict, source-available"], highlight: true },
+  ]}
+  caption="Licences read from each project's SPDX headers, LICENSE file or build manifest in August 2026. The first eight are free software; Clipmer is not — see its section below."
+/>
+
+## GPaste
+
+The safest recommendation on GNOME, and the one with a real daemon behind it rather than
+only shell JavaScript. Upstream is on 50.7, with commits landing the day before this was
+written, and the repository dates to January 2011.
+
+Two things about GPaste surprise people. The first is that it is **not** GPL — the
+`COPYING` file is a two-clause BSD licence, which makes it the most permissively licensed
+tool in this article by some distance. The second is that it is a GTK4 and libadwaita
+application, so on a modern GNOME desktop it is the option that looks like it belongs
+there.
+
+```bash
+sudo apt install gpaste-2 gnome-shell-extension-gpaste
+```
+
+<Callout type="note" title="apt gives you 45, not 50">
+  Ubuntu 24.04 ships GPaste `45-2ubuntu5` and Ubuntu 26.04 LTS ships `45.3-5`; 50.7 has
+  only reached the development series after 26.04. This matters less than the CopyQ
+  version gap does — GPaste 45 already depends on `libgtk-4-1` and `libadwaita-1-0`, and
+  it has the CLI — but it is not the version described in upstream's README, and the
+  release notes for 46 through 50 are not in it.
+</Callout>
+
+It also ships a CLI, which is the closest thing here to CopyQ's scripting story:
+
+```bash
+gpaste-client history
+gpaste-client get 3
+```
+
+That is not a substitute for CopyQ's scripting language — there is no equivalent of
+CopyQ's item filters or display commands — but if what you used CopyQ's scripting for was
+piping clipboard entries into shell commands, `gpaste-client` covers it.
+
+Full setup notes, including the toggle that people miss and then conclude GPaste is
+broken, are in [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu).
+
+## Pano
+
+Pano was the best-looking clipboard manager on GNOME: typed previews for links, colours
+and code, backed by a real database. We recommended it a week ago.
+
+It is no longer maintained. The README was changed on 22 January 2026 to open with: "This
+project is no longer maintained, as I have transitioned to Hyprland. Please consider using
+Copyous - Clipboard Manager instead." The last functional work was GNOME 49 support merged
+in September 2025.
+
+There is a second, more practical problem. The repository's `metadata.json` declares
+`"shell-version": ["45", "46", "47", "48", "49"]`, but the listing on extensions.gnome.org
+still tops out at version 22 for GNOME 45 — its version map covers 42 through 45 and
+nothing after. Ubuntu 24.04 ships GNOME Shell 46.0 and Ubuntu 26.04 ships 50.1, so on
+either of them the extensions site has no build to give you. You would be installing from
+the repository, where the newest tagged release is `v23-alpha5` from March 2025.
+
+<Callout type="warn" title="If you already run Pano">
+  Nothing has broken and you do not need to do anything today. But it is not a tool we
+  would point someone new at, and an unmaintained shell extension is exactly the kind of
+  thing a GNOME release breaks — extensions are coupled to compositor internals rather
+  than to a stable protocol.
+</Callout>
+
+The successor its author names, [Copyous](https://extensions.gnome.org/extension/8834/copyous/),
+is real: GPL-3.0, repository created on 10 November 2025, about 34,000 downloads. It
+supports GNOME Shell 48, 49 and 50 only, so it is an option on Ubuntu 26.04 and not on
+24.04. It is also nine months old, which is worth weighing against a clipboard manager's
+job being to still be there in a year.
+
+## Clipboard History
+
+The GNOME extension that works on the widest range of shell versions — the
+extensions.gnome.org listing covers GNOME 40 through 50, with version 48 serving 46 and
+up. MIT licensed, no daemon, no external dependencies to install first. If you want the
+smallest possible thing that gives you a searchable history on GNOME, this is it.
+
+Its README says it "is now in maintenance mode as it is being replaced by Ringboard", and
+that the author is "still accepting PRs for small improvements and bug fixes (such as
+supporting the latest Gnome version), but no new development will take place." Read that
+carefully rather than as an obituary: GNOME 50 support landed on 8 April 2026 and
+type-ahead search two weeks later. It is maintained in the sense that matters — it keeps
+up with GNOME releases.
+
+[Ringboard](https://github.com/SUPERCILEX/clipboard-history), by the same author, is a
+different animal: Apache-2.0, written in Rust, a client-server design with separate
+watcher processes and egui, ratatui and CLI front-ends. Its Wayland watcher binds
+`ext_data_control_manager_v1` directly, which is fast and desktop-agnostic — and which
+Mutter does not offer. Ringboard handles that rather than falling over: it ships a
+`wayland-interface-check` helper, and the install script probes for
+`ext_data_control_manager_v1` and switches to the X11 watcher when it is absent. On GNOME
+Wayland you therefore end up on the same XWayland path as CopyQ, not on the protocol.
+
+<Callout type="note" title="Ringboard is not packaged">
+  There is no `ringboard` package in the Ubuntu archive. Installation is `cargo install`
+  from source via the upstream script, and the repository's `rust-toolchain` pins
+  `nightly`. That is a fair amount of setup relative to `apt install copyq`, and worth
+  knowing before you start.
+</Callout>
+
+If you are leaving CopyQ because you moved to Sway, Hyprland or niri — all three implement
+both data-control protocols — Ringboard is the most interesting thing on this page.
+
+## Klipper
+
+If you are on KDE, you already have a clipboard manager and it may not have occurred to
+you that CopyQ was optional. Klipper is GPL-2.0-or-later and lives in the
+`plasma-workspace` source tree — it is not a separate application, it builds as a shared
+library plus a QML plugin that the Plasma shell loads.
+
+It is worth being precise about what that does and does not buy, because the obvious
+assumption is wrong. Klipper links `KF6::GuiAddons` and its `systemclipboard.h` includes
+`<KSystemClipboard>` — the same class CopyQ links when KGuiAddons is present. Klipper is a
+data-control client too. It is not using a privileged in-process path that CopyQ is locked
+out of; it just ships with the desktop whose compositor implements the protocol.
+
+What Klipper has instead is no tabs, no scripting language and no cross-platform story —
+and being already installed, already themed, and already bound to a shortcut. For a
+meaningful number of CopyQ users on Plasma, the honest answer is that you can uninstall
+CopyQ and use what you already have.
+
+## The GTK old guard: Diodon, Parcellite and ClipIt
+
+These three come up in every "CopyQ alternatives" list. All three are still packaged in
+Ubuntu. None of them is a good recommendation in 2026, and it is worth being specific
+about why rather than calling them dead, because none of them is.
+
+**Diodon** is the healthiest of the three. Upstream released 1.14.0 on 24 July 2026 and
+the same day added a note to the README: "This project is in low maintenance mode and only
+following issues will be addressed: packaging issues, so Diodon will remain in the Debian
+and Ubuntu repositories, Updating of translations, Addressing of security issues." That is
+an unusually clear statement and worth taking at face value — no new features, no display
+server work. Its `meson.build` hard-requires `gdk-x11-3.0`, `x11` and `xtst`, and it
+watches the GTK3 `Gtk.Clipboard` `owner_change` signal, which is the X11-era model. It
+stores history in Zeitgeist, which the README notes "persists all events in a database on
+the hard disc", so your clipboard ends up there rather than in a file of its own. Ubuntu
+24.04 and 26.04 both ship 1.13.0.
+
+**Parcellite** is genuinely still being worked on — the most recent commit, on 17 December
+2025, fixes building against GCC 15. But it is X11-only and it shells out to `xdotool`;
+the ChangeLog is full of xdotool quoting and segfault fixes. There is also a large
+packaging gap: upstream is on 1.2.5 with 1.2.6 marked TBD, while Ubuntu 24.04 and 26.04
+both ship 1.2.1 — a release dated January 2017. We have not found a stated reason for
+that, and it predates upstream's 1.2.5 switch away from autotools by seven years, so the
+build system is not the explanation.
+
+**ClipIt** is a Parcellite fork whose last tagged release was v1.4.5 in June 2020; the
+last commits, on 3 November 2024, merged a pt_BR translation update and a C99 build fix.
+Debian and Ubuntu have made the call for you — the package's own short description in the
+archive reads "lightweight GTK+ clipboard manager (deprecated)".
+
+If you are still on an X11 session and you want something tiny that sits in a tray icon,
+Parcellite will do it. If you are on Wayland, none of these three is a candidate: they are
+GTK3 applications built against the X11 backend, watching a signal that Wayland only
+delivers to a focused client.
+
+## Clipmer
+
+Ours, so weigh this section accordingly.
+
+Clipmer is an Electron application that runs as an XWayland client and polls Electron's
+clipboard API every 500 ms. Mechanically that is the least elegant approach on this page:
+it costs a timer that a protocol subscription would not, and it inherits whatever fidelity
+the compositor's XWayland selection bridge provides. What it buys is working identically
+on GNOME under X11 and under Wayland without depending on a shell extension that a GNOME
+release can break.
+
+It exists for one specific problem CopyQ does not address: a clipboard full of things you
+would rather not have on screen. Entries can be masked so they render as dots during a
+screen share, annotated with notes, and filed into folders.
+
+```bash
+curl -LO https://github.com/0x99M/clipmer/releases/latest/download/clipmer_3.2.0_amd64.deb
+sudo apt install ./clipmer_3.2.0_amd64.deb
+```
+
+The disclosures that matter if you are coming from CopyQ. Clipmer is **source-available
+under PolyForm Strict 1.0.0, not open source** — CopyQ is GPL-3.0-or-later, and if that is
+part of why you use it, this is a downgrade and you should stop here. We build and test on
+Ubuntu with GNOME, x86_64 only, where CopyQ runs on Linux, Windows and macOS. It has
+nothing to offer on Sway, Hyprland or niri that Ringboard does not do better and for free.
+The free tier keeps 100 entries; folders, notes and the minimal view are paid, at $9 once.
+And masking is a display flag, not encryption — we wrote up
+[what that does and does not protect](/blog/auditing-our-own-clipboard-manager), including
+the bugs we found in our own implementation of it.
+
+The [install guide](/install) has the `.rpm` and AppImage builds and the checksums.
+
+## When CopyQ is still the right answer
+
+This is the section that should stop you migrating, and it applies more often than the
+rest of this page.
+
+**You are on an X11 session.** Every Wayland caveat above evaporates. Auto-paste works,
+global shortcuts work through X11 directly, and CopyQ on X11 is simply the most capable
+clipboard manager available on Linux. Check with `echo $XDG_SESSION_TYPE` before you
+believe any Wayland argument applies to you.
+
+**You use the scripting.** Nothing here replaces it. Not GPaste's CLI, not Klipper's
+command actions, and certainly not Clipmer. If you have commands that transform items on
+copy, filter what gets stored, or drive CopyQ from other programs, migrating means
+rebuilding that from nothing.
+
+**You use more than one operating system.** CopyQ is the only tool in this article that
+runs on Linux, Windows and macOS. A shared muscle memory across machines is worth a
+dated-looking window.
+
+**You store more than text.** Tabs, tagging, pinned notes, an internal editor, images and
+arbitrary MIME types — and, as of 16.0.0, per-MIME size limits via
+`clipboard_mime_size_limit`, which the changelog documents as defaulting to `.*:100M`, so
+an enormous clipboard payload cannot exhaust memory. The GNOME extensions do not attempt
+most of this.
+
+**You care about licensing and longevity.** GPL-3.0-or-later, about twelve thousand stars,
+a repository open since 2009, and commits this month. Of everything on this page, two
+projects have declared reduced maintenance and one has stopped. CopyQ has not, and there
+is no sign it is going to.
+
+Put plainly: nothing here beats CopyQ on capability. Several things beat it on looking
+like the rest of your desktop, and one or two beat it on Wayland-native mechanism. Decide
+which of those you were actually shopping for.
+
+## Which one to actually try
+
+<SupportTable
+  headers={["Your situation", "Try", "Why"]}
+  rows={[
+    { name: "On Ubuntu 24.04 and CopyQ feels broken", cells: ["Current CopyQ", "24.04 ships 7.1.0; the Wayland fixes are in 10.0.0 and later"] },
+    { name: "On GNOME, want it to look native", cells: ["GPaste", "GTK4/libadwaita, real daemon, BSD-licensed, still active"] },
+    { name: "On GNOME, want the smallest thing", cells: ["Clipboard History", "One MIT extension, GNOME 40 to 50, no dependencies"] },
+    { name: "On KDE", cells: ["Klipper", "Already installed, already themed, part of plasma-workspace"] },
+    { name: "On Sway, Hyprland or niri", cells: ["Ringboard", "Binds ext-data-control-v1 directly; but cargo install, not apt"] },
+    { name: "Copying secrets you screen-share around", cells: ["Clipmer", "Per-entry masking, notes, folders — but GNOME only, and source-available, not open source"], highlight: true },
+    { name: "You use CopyQ's scripting", cells: ["CopyQ", "Nothing on this page replaces it"] },
+  ]}
+/>
+
+One last thing that is true regardless of which name you land on. Every tool here writes
+what you copy to disk, and none of them ask first. Diodon puts it in Zeitgeist, GPaste
+under `~/.local/share/gpaste/`, Clipmer in `~/.config/clipmer/`, and CopyQ under
+`~/.config/copyq` — `copyq info config` prints the exact path to the config file, and its
+parent directory holds the saved items. Whichever you switch to, go and read the file
+once. Migrating between clipboard managers is a good moment to notice what the old one had
+been keeping.

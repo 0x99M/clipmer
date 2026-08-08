@@ -28,6 +28,56 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "copyq-alternatives",
+    title: "CopyQ alternatives on Linux, compared honestly",
+    seoTitle: "CopyQ Alternatives on Linux, Compared",
+    metaDescription:
+      "A technical comparison of GPaste, Pano, Clipboard History, Klipper, Diodon, Parcellite, Ringboard and Clipmer — and when CopyQ is still better.",
+    description:
+      "CopyQ is not broken — it is the most capable clipboard manager on Linux and 16.0.0 shipped on 30 May 2026. People leave it over the dated Qt interface, the scripting they never use, or Wayland behaviour that is usually their distro shipping a three-year-old build. Here is what each alternative actually is, how it reads your clipboard, what it is licensed under, and when CopyQ is still the right answer.",
+    date: "2026-08-08",
+    tags: ["Clipboard", "Linux", "Wayland"],
+    readingMinutes: 11,
+    toc: [
+      { id: "why-people-actually-leave-copyq", title: "Why people actually leave CopyQ" },
+      { id: "the-version-your-distro-ships-is-probably-the-problem", title: "The version your distro ships is probably the problem" },
+      { id: "how-copyq-actually-reads-your-clipboard", title: "How CopyQ actually reads your clipboard" },
+      { id: "the-alternatives-at-a-glance", title: "The alternatives at a glance" },
+      { id: "gpaste", title: "GPaste" },
+      { id: "pano", title: "Pano" },
+      { id: "clipboard-history", title: "Clipboard History" },
+      { id: "klipper", title: "Klipper" },
+      { id: "the-gtk-old-guard-diodon-parcellite-and-clipit", title: "The GTK old guard: Diodon, Parcellite and ClipIt" },
+      { id: "clipmer", title: "Clipmer" },
+      { id: "when-copyq-is-still-the-right-answer", title: "When CopyQ is still the right answer" },
+      { id: "which-one-to-actually-try", title: "Which one to actually try" },
+    ],
+  },
+  {
+    slug: "best-clipboard-manager-wayland",
+    title: "The best clipboard manager for Wayland depends on your compositor",
+    seoTitle: "Best Clipboard Manager for Wayland",
+    metaDescription:
+      "What works depends on your compositor: per-compositor picks for GNOME, KDE, Hyprland and Sway, checked against the live protocol registry.",
+    description:
+      "On Wayland, which clipboard manager works is decided by your compositor, because the data-control protocols are not universally implemented. This is the per-compositor answer for GNOME, KDE Plasma, Hyprland, Sway and the rest, checked against the protocol registry, the compositor source trees and the distro package indexes in August 2026. It also covers the version traps that break the usual advice: wl-clipboard on KDE, Pano's upstream status, and how far behind Ubuntu's GPaste actually is.",
+    date: "2026-08-08",
+    tags: ["Wayland", "Clipboard", "Linux"],
+    readingMinutes: 8,
+    toc: [
+      { id: "why-the-answer-depends-on-your-compositor", title: "Why the answer depends on your compositor" },
+      { id: "check-what-your-session-supports-first", title: "Check what your session supports first" },
+      { id: "gnome-a-shell-extension-because-there-is-no-protocol", title: "GNOME: a shell extension, because there is no protocol" },
+      { id: "kde-plasma-klipper-is-already-running", title: "KDE Plasma: Klipper is already running" },
+      { id: "hyprland-cliphist-and-wl-clipboard", title: "Hyprland: cliphist and wl-clipboard" },
+      { id: "sway-the-same-stack", title: "Sway: the same stack" },
+      { id: "niri-cosmic-wayfire-river-and-the-rest", title: "niri, COSMIC, Wayfire, river and the rest" },
+      { id: "where-clipmer-fits-and-where-it-does-not", title: "Where Clipmer fits, and where it does not" },
+      { id: "the-short-version", title: "The short version" },
+      { id: "what-none-of-these-solve", title: "What none of these solve" },
+    ],
+  },
+  {
     slug: "auditing-our-own-clipboard-manager",
     title: "We audited our own clipboard manager",
     seoTitle: "Auditing an Electron Clipboard Manager",
@@ -122,6 +172,10 @@ export const POST_CONTENT: Record<
   string,
   () => Promise<{ default: ComponentType }>
 > = {
+  "copyq-alternatives": () =>
+    import("@/content/blog/copyq-alternatives.mdx"),
+  "best-clipboard-manager-wayland": () =>
+    import("@/content/blog/best-clipboard-manager-wayland.mdx"),
   "auditing-our-own-clipboard-manager": () =>
     import("@/content/blog/auditing-our-own-clipboard-manager.mdx"),
   "clipboard-managers-on-wayland": () =>

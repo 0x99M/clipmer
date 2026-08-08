@@ -1,0 +1,304 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+
+Your clipboard manager records nothing since you logged into Wayland, or you are setting
+up a new session and want to pick one that will still work in a year. Either way the
+useful question is not "which clipboard manager is best". It is "which ones can run at
+all on my compositor" — and that answer is different on GNOME, on KDE, and on Hyprland.
+
+This is a per-compositor guide. Everything in it was checked against the protocol
+registry, the compositor source trees and the distro package indexes on 8 August 2026,
+because this is a subject where a two-year-old recommendation is often simply wrong now.
+
+## Why the answer depends on your compositor
+
+Wayland's core protocol only offers the selection to a client that currently holds
+keyboard focus. A clipboard manager is by definition a program that wants to read the
+clipboard while it is *not* focused, so it needs a privileged protocol extension, and
+the compositor has to have chosen to implement one. Two extensions do that job:
+
+- `wlr-data-control-unstable-v1`, which came out of wlroots and was for years the only
+  option. The registry now carries an explicit notice on it: "This protocol is deprecated
+  and not intended for production use. For clipboard management, use the ext-data-control-v1
+  protocol."
+- [`ext-data-control-v1`](https://wayland.app/protocols/ext-data-control-v1), the
+  standardised successor. Same design, no vendor prefix, currently at staging status.
+
+Supporting one does not imply supporting the other, and that is the whole reason a
+generic ranking article gets this wrong. KWin implements `ext-data-control-v1` and not
+the wlroots one. Wayfire, river and phoc are the exact mirror image. Mutter implements
+neither.
+
+<SupportTable
+  headers={["Compositor", "ext-data-control-v1", "wlr-data-control"]}
+  rows={[
+    { name: "Mutter (GNOME)", cells: ["No", "No"] },
+    { name: "KWin (KDE)", cells: ["Yes", "No"] },
+    { name: "Sway", cells: ["Yes", "Yes"] },
+    { name: "Hyprland", cells: ["Yes", "Yes"] },
+    { name: "niri", cells: ["Yes", "Yes"] },
+    { name: "COSMIC", cells: ["Yes", "Yes"] },
+    { name: "labwc", cells: ["Yes", "Yes"] },
+    { name: "Mir", cells: ["Yes", "No"] },
+    { name: "Wayfire", cells: ["No", "Yes"] },
+    { name: "river", cells: ["No", "Yes"] },
+    { name: "phoc", cells: ["No", "Yes"] },
+    { name: "Muffin (Cinnamon)", cells: ["No", "No"] },
+    { name: "Weston", cells: ["No", "No"] },
+  ]}
+  caption="Read from the compositor support matrix at wayland.app on 8 August 2026. The registry tracked Mutter 49.2, KWin 6.6, Sway 1.11, Hyprland 0.52.1, niri 25.11, labwc 0.9.2, Mir 2.26, Wayfire 0.9.0, river 0.3.13, phoc 0.52, Muffin 6.6.0 and Weston 14.0.2 at the time. Support moves — check the registry rather than trusting this table a year from now."
+/>
+
+Two smaller compositors also implement both, if you happen to run one: Treeland, which is
+Deepin's, and Jay, an independent Rust compositor. The mechanics behind all of this — why
+the protocol exists, why portals are not the answer, what XWayland changes — are in
+[clipboard managers on Wayland](/blog/clipboard-managers-on-wayland).
+
+## Check what your session supports first
+
+Three commands, before you install anything. A good share of "my Wayland clipboard
+manager broke" reports turn out to be an X11 session, or a compositor that never had
+data-control in the first place.
+
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+```bash
+wayland-info | grep -i data_control
+```
+
+`wayland-info` is in the `wayland-utils` package on Debian and Ubuntu. If the grep prints
+nothing, no third-party clipboard manager can watch your clipboard, full stop.
+
+The definitive test is to try a data-control client directly:
+
+```bash
+wl-paste --watch echo "copied at $(date +%T)"
+```
+
+If that prints on every copy, cliphist and everything like it will work. If it exits with
+`Watch mode requires a compositor that supports the data-control protocol`, that is
+`wl-clipboard` telling you it found neither protocol in the registry — and it is the exact
+message a GNOME user gets.
+
+## GNOME: a shell extension, because there is no protocol
+
+Mutter implements neither data-control protocol, and nothing in the tree suggests that is
+about to change. The `wayland_protocols` list in Mutter's `src/meson.build` on `main` enumerates
+32 protocols today and contains no data-control entry of any kind. The issue asking for
+`wlr-data-control` support, [mutter#524](https://gitlab.gnome.org/GNOME/mutter/-/work_items/524),
+was opened and closed within two hours on 22 March 2019.
+
+So on GNOME, `cliphist`, `clipman`, `clipse` and every other `wl-paste --watch` pipeline
+fails, no matter how well they work for your friend on Hyprland. The working route is a
+GNOME Shell extension, which runs inside Mutter's own process and reaches its internal
+selection API rather than negotiating a protocol.
+
+**Install Clipboard History.** It is MIT-licensed, its `metadata.json` declares
+`shell-version` 46 through 50, its listing on the extensions site offers a build for every
+one of those versions, and it has around 585,000 downloads. Upstream is alive: the last
+commit to `master` was 21 April 2026. That range covers Ubuntu 24.04's GNOME Shell 46 and
+Ubuntu 26.04's GNOME Shell 50.1.
+
+```bash
+sudo apt install gnome-shell-extension-manager
+```
+
+Then search "Clipboard History" in Extension Manager and install it. The default shortcut
+is **Super + Shift + V**, set in the extension's own GSettings schema.
+
+**GPaste** is the more established project and it is in good health upstream —
+BSD-2-Clause, tagged `v50.7`, commits as recent as 7 August 2026. What you get from your
+distro is a different matter, and the usual version-lag warning needs one correction that
+most write-ups get wrong.
+
+<Callout type="warn" title="Ubuntu's GPaste is five GNOME cycles behind — but it does still enable">
+  Ubuntu 26.04 LTS ships GNOME Shell 50.1 and packages `gnome-shell-extension-gpaste` at
+  45.3-5, against 50.7 upstream. It is tempting to conclude the extension is out of range
+  and will not load. It is not: Debian and Ubuntu carry `support-gnome-49.patch` and
+  `support-gnome-50.patch` on top of 45.3, and the `metadata.json` actually installed to
+  `/usr/share/gnome-shell/extensions/` declares `shell-version` `["45", "46", "47", "48",
+  "49", "50"]`. GNOME Shell only loads extensions that claim the running version, and this
+  one claims it. The 24.04 package is patched the same way, declaring `["45", "46"]` for
+  Shell 46 — the case covered in
+  [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu). What you are running is
+  still 45-series code carried forward by distro patches rather than upstream 50.7, so if
+  you want current GPaste on Ubuntu you are building it yourself. Debian sid and Arch both
+  have 50.7.
+</Callout>
+
+**Pano** we can no longer recommend, and the reason comes from its author rather than
+from us. The README on `master` opens with "This project is no longer maintained, as I
+have transitioned to Hyprland", pointing people at Copyous instead. The repository is not
+archived, but that line is the most recent substantive change to it, committed on 22
+January 2026. The practical problem is separate and older: Pano's last stable release is
+`v22` from 15 November 2023, and its listing on the extensions site tops out at GNOME
+Shell 45, so on Shell 46 or later there is nothing there to install. The `v23-alpha`
+prereleases on GitHub claim support through Shell 49, but they were never published as a
+stable build, and the newest of them is from March 2025. If you already run Pano on an
+older Shell it has not stopped working; it is just no longer somewhere to start. GNOME has
+a `disable-extension-version-validation` key in `org.gnome.shell` that skips the
+compatibility check, and it is a poor trade — it skips it for every extension you have
+installed, to force one that upstream has stopped supporting.
+
+## KDE Plasma: Klipper is already running
+
+You do not need to install anything. Klipper ships as part of `plasma-workspace`, is
+GPL-2.0-or-later, and runs in a stock Plasma session. Its default global shortcut for
+showing clipboard items at the pointer is **Meta + V**.
+
+What is worth knowing is the defaults, because two of them surprise people:
+
+- History size defaults to **20** items. The maximum is 2048.
+- Images are **ignored by default** — `IgnoreImages` is `true` in `klipper.kcfg`, so
+  copied images never enter the history until you turn that off.
+- History is saved across sessions by default.
+
+Klipper is not compositor-internal, which is a common misconception. It reads the
+clipboard through `KSystemClipboard` in kguiaddons, and that code tries the
+`ext_data_control_manager_v1` implementation first, falls back to the
+`zwlr_data_control_manager_v1` one, and only then falls back to Qt's own clipboard.
+Klipper is an ordinary data-control client that happens to ship with the desktop.
+
+If you would rather run cliphist or another `wl-paste`-based tool on KDE, there is a
+version trap:
+
+<Callout type="warn" title="wl-clipboard only learned ext-data-control in 2.3.0">
+  KWin implements `ext-data-control-v1` and not the wlroots protocol, and `wl-clipboard`
+  did not support `ext-data-control-v1` until version 2.3.0, released 22 March 2026. Ubuntu
+  26.04 LTS packages `wl-clipboard` 2.2.1-2build1, and 24.04 packages 2.2.1-1build1 — 2.3.0
+  first appears in the 26.10 development series. So on Kubuntu, `wl-paste --watch` fails
+  with the "requires a compositor that supports the data-control protocol" message even
+  though KWin does support a data-control protocol. Arch ships 2.3.0-1, where it works. The
+  same trap applies on Mir, which is also ext-only.
+</Callout>
+
+## Hyprland: cliphist and wl-clipboard
+
+Hyprland implements both protocols, so this is the easy case, and cliphist is the first
+tool its own [wiki](https://wiki.hypr.land/Useful-Utilities/Clipboard-Managers/) lists.
+cliphist is GPL-3.0, actively maintained — most recent commit 8 June 2026, latest release
+`v0.7.0` from October 2025 — and stores text, images and arbitrary binary data.
+
+```bash
+sudo pacman -S cliphist wl-clipboard
+```
+
+Arch `extra` currently has cliphist 0.7.0-2 and wl-clipboard 2.3.0-1. Start the watchers
+from your Hyprland autostart:
+
+```bash
+wl-paste --type text --watch cliphist store
+wl-paste --type image --watch cliphist store
+```
+
+Then bind a picker. The wiki gives variants for rofi, dmenu, wofi and fuzzel; this is the
+fuzzel one:
+
+```bash
+cliphist list | fuzzel --dmenu --with-nth 2 | cliphist decode | wl-copy
+```
+
+One extra piece worth installing at the same time: `wl-clip-persist` (MIT, in Arch
+`extra`, and also on the Hyprland wiki page). On Wayland the copied data lives with the
+application that produced it, so closing the source window empties your clipboard;
+wl-clip-persist keeps the data alive after the owner exits. That is a real daily annoyance
+on tiling setups and it is not what cliphist solves.
+
+## Sway: the same stack
+
+Sway 1.11 implements both protocols too, so the Hyprland setup transfers unchanged. Run
+the two `wl-paste --watch cliphist store` lines from your config with `exec`, and bind the
+picker line with `bindsym`.
+
+```bash
+sudo apt install cliphist wl-clipboard
+```
+
+cliphist is packaged in Ubuntu, but well behind upstream: 0.4.0 on 24.04 and 0.5.0 on
+26.04 against 0.7.0. Sway supports the wlroots protocol, so Ubuntu's older `wl-clipboard`
+2.2.1 is not a problem here the way it is on KDE. If you want current cliphist, the
+project publishes static binaries on its releases page and also installs with
+`go install go.senan.xyz/cliphist@latest`.
+
+## niri, COSMIC, Wayfire, river and the rest
+
+For niri, COSMIC and labwc the answer is again cliphist plus wl-clipboard, with no
+caveats — all three implement both protocols.
+
+Wayfire, river and phoc implement only the deprecated `wlr-data-control`. In practice
+this costs you nothing today, because `wl-clipboard` tries `ext_data_control_manager_v1`
+first and falls back to `zwlr_data_control_manager_v1`, so every released version works
+on these compositors. It is a reason to keep an eye on them rather than a reason to
+avoid them: the protocol they depend on is the one the registry now marks deprecated.
+
+On Weston and on Cinnamon's Muffin, neither protocol is implemented, so no data-control
+clipboard manager can work. Cinnamon still offers an X11 session, and that remains the
+straightforward answer there.
+
+If you want one tool that follows you across all of these, CopyQ is the honest candidate —
+it falls back to XWayland where data-control is unavailable, but pasting from it is manual
+on Wayland and the version your distro ships matters more than usual.
+[CopyQ alternatives](/blog/copyq-alternatives) goes through that in detail.
+
+## Where Clipmer fits, and where it does not
+
+Clipmer is ours, so read this section with the appropriate suspicion.
+
+Clipmer is an Electron application, and Electron runs as an XWayland client by default. It
+polls Electron's clipboard API every 500 ms, and the compositor's XWayland selection bridge
+is what lets it see copies made in Wayland-native applications. That is a less elegant
+mechanism than speaking `ext-data-control-v1`, and it means Clipmer is built and tested for
+GNOME specifically — on Ubuntu 24.04.4 LTS.
+
+Be clear about what that rules out. **On Hyprland, Sway, niri or COSMIC, cliphist is the
+better answer**, and we would rather say that than sell you the wrong tool. It is free
+software, it speaks the protocol properly instead of going through a compatibility layer,
+it handles images and binary data, and it is what the compositor projects themselves
+recommend. On KDE, Klipper is already installed and already running.
+
+The case for Clipmer is narrow and specific: you are on GNOME, and you want per-entry
+masking so a copied database URL renders as dots during a screen share, plus notes and
+folders. The XWayland route also means clipboard *capture* does not depend on a shell
+extension staying compatible across GNOME releases — the failure mode Pano illustrates —
+though the optional auto-paste helper is a GNOME Shell extension and does.
+
+```bash
+curl -LO https://github.com/0x99M/clipmer/releases/latest/download/clipmer_3.2.0_amd64.deb
+sudo apt install ./clipmer_3.2.0_amd64.deb
+```
+
+Press **Ctrl + Shift + D** to open it. The free tier keeps 100 entries; folders, notes and
+the minimal view are paid. Builds are x86_64 only, and there are `.rpm` and AppImage
+packages — see the [install guide](/install). Clipmer is source-available under PolyForm
+Strict 1.0.0, which is **not** an open source licence. Every other tool this page
+recommends is free software — MIT, BSD-2 or GPL. If that matters to you, and on Linux it
+reasonably might, install one of them instead.
+
+## The short version
+
+<SupportTable
+  headers={["If you are on…", "Install", "Why"]}
+  rows={[
+    { name: "GNOME", cells: ["Clipboard History extension", "Mutter implements no data-control protocol; declares support through Shell 50"] },
+    { name: "GNOME, and you mask secrets", cells: ["Clipmer", "Per-entry masking; capture does not ride on a shell extension"], highlight: true },
+    { name: "KDE Plasma", cells: ["Nothing — use Klipper", "Ships with plasma-workspace, Meta+V, raise the 20-item default"] },
+    { name: "Hyprland", cells: ["cliphist + wl-clipboard", "Both protocols; the first tool the Hyprland wiki lists"] },
+    { name: "Sway, niri, COSMIC, labwc", cells: ["cliphist + wl-clipboard", "Both protocols, no caveats"] },
+    { name: "Wayfire, river, phoc", cells: ["cliphist + wl-clipboard", "wlr-data-control only; wl-clipboard falls back to it"] },
+    { name: "Weston, Cinnamon (Muffin)", cells: ["Nothing works on Wayland", "Neither protocol implemented"] },
+  ]}
+/>
+
+## What none of these solve
+
+Every option above ends the same way: a file on disk that accumulates everything you copy,
+including the passwords your password manager pasted, the API keys, the connection strings,
+and the session tokens. cliphist defaults to `$XDG_CACHE_HOME/cliphist/db`, GPaste stores
+under `~/.local/share/gpaste/`, Clipmer under `~/.config/clipmer/`.
+
+The data-control protocols decide *who* is allowed to read your clipboard. They have
+nothing to say about what the program that read it does next. That part is still entirely
+a property of the tool you picked, and it is worth spending a minute on the file before you
+forget it is there.
