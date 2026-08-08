@@ -118,38 +118,44 @@ export default function ProPage() {
       </div>
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-16 sm:py-24">
-        {/* ── Hero: two-column ── */}
-        <Reveal>
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-12 lg:items-center mb-14">
-            {/* Left column: copy */}
-            <div className="text-center lg:text-left">
+        {/* ── Hero: two-column ──
+            NOT wrapped in <Reveal>. This is above the fold, and Reveal animates
+            opacity from 0 on a whileInView trigger that cannot fire until React
+            hydrates — measured at 3.6-4.4s LCP on throttled mobile against a
+            1.5-2.1s FCP, on the one page that takes money. globals.css already
+            documents this trap for the homepage hero; this page was doing
+            exactly what that comment says not to. The entrance is CSS now,
+            translate-only, so the copy is paintable from the first frame. */}
+        <div data-pro-hero className="grid gap-10 lg:grid-cols-2 lg:gap-12 lg:items-center mb-14">
+          {/* Left column: copy */}
+          <div className="text-center lg:text-left">
               <p className="text-sm font-medium text-orange mb-4 tracking-wide uppercase">
                 Clipmer Pro
               </p>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-5 leading-[1.1]">
-                Pay once.
+                The clipboard manager,
                 <br />
-                <span className="text-orange">Yours forever.</span>
+                <span className="text-orange">unlocked.</span>
               </h1>
               <p className="text-lg text-muted-foreground max-w-md mx-auto lg:mx-0 leading-relaxed mb-8">
-                No subscription. No renewal emails. No seat count. Unlock
-                everything for less than a coffee.
+                Pay once, keep it forever. No subscription, no renewal emails,
+                no seat count &mdash; one payment of $9 unlocks folders, notes
+                and the full 200-entry history.
               </p>
 
               {/* Inline highlights */}
+              {/* Plain <li>: these are above the fold too, and animating them
+                  from opacity:0 on whileInView put three more invisible
+                  elements in the server-rendered HTML for no benefit. */}
               <ul className="flex flex-col gap-3 max-w-sm mx-auto lg:mx-0">
-                {highlights.map((h, i) => (
-                  <motion.li
+                {highlights.map((h) => (
+                  <li
                     key={h.label}
-                    initial={{ opacity: 0, x: -8 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 + i * 0.08 }}
                     className="flex items-center gap-2.5 text-sm text-muted-foreground"
                   >
                     <h.icon className="size-4 text-orange shrink-0" />
                     {h.label}
-                  </motion.li>
+                  </li>
                 ))}
               </ul>
             </div>
@@ -223,7 +229,6 @@ export default function ProPage() {
               </div>
             </div>
           </div>
-        </Reveal>
 
         {/* ── Section divider ── */}
         <Reveal delay={0.1}>
@@ -237,6 +242,39 @@ export default function ProPage() {
         {/* ── Feature comparison ── */}
         <Reveal delay={0.1}>
           <div className="mb-24">
+            {/* The table gives feature names only, which asserts value without
+                describing it. This says what the paid features actually do. */}
+            <div className="mx-auto mb-10 max-w-2xl">
+              <h2 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">
+                What Pro actually unlocks
+              </h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                <span className="text-foreground">Folders</span> turn the history
+                into somewhere you file things on purpose &mdash; a folder for
+                staging credentials, one for the SSH commands you retype every
+                week &mdash; and entries you file are exempt from the 200-entry
+                eviction, so they stay until you delete them.
+              </p>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                <span className="text-foreground">Inline notes</span> attach a
+                line of context to any entry, which is what makes a masked
+                credential usable: the value stays hidden behind dots while the
+                note tells you it is the staging database rather than production.
+                Search reads those notes as well as the content, so you can find
+                an entry you can no longer read.
+              </p>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                <span className="text-foreground">Minimal view</span> strips the
+                window down to the list alone for screen shares and demos, and{" "}
+                <span className="text-foreground">200 entries</span> doubles the
+                free tier&apos;s history. Masking itself is free and always will
+                be &mdash;{" "}
+                <Link href="/install" className="text-orange hover:underline">
+                  install Clipmer
+                </Link>{" "}
+                and use it without paying anything.
+              </p>
+            </div>
             <div className="rounded-xl border border-border overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -286,7 +324,7 @@ export default function ProPage() {
             id="lost-key"
             className="mx-auto max-w-md rounded-xl border border-border bg-card p-6 mb-24 scroll-mt-20"
           >
-            <h3 className="font-semibold mb-2">Lost your license key?</h3>
+            <h2 className="font-semibold mb-2">Lost your license key?</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Email{" "}
               <a
@@ -306,7 +344,7 @@ export default function ProPage() {
         <Reveal delay={0.1}>
           <div className="mx-auto max-w-2xl">
             <h2 className="text-xl font-bold text-center mb-10 text-muted-foreground">
-              Questions
+              Clipmer Pro questions
             </h2>
             <div className="divide-y divide-border">
               {[

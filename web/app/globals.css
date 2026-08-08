@@ -388,6 +388,24 @@
   [data-hero="fine"] {
     --hero-at: 0.78s;
   }
+
+  /* /pro's hero, same reasoning as above but stricter: it used framer-motion's
+     whileInView, so the copy was server-rendered at opacity:0 and stayed
+     invisible until hydration — LCP landed ~2s after FCP on throttled mobile.
+     This animates translate ONLY. The text is opaque in the first frame, so it
+     is a valid LCP candidate immediately and the entrance is decoration. */
+  @keyframes pro-hero-rise {
+    from {
+      translate: 0 16px;
+    }
+    to {
+      translate: 0 0;
+    }
+  }
+
+  [data-pro-hero] {
+    animation: pro-hero-rise 0.55s cubic-bezier(0.22, 0.75, 0.3, 1) both;
+  }
 }
 
 /* ───────────────────────── Nav: the Pro link ─────────────────────────
