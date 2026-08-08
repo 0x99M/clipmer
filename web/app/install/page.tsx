@@ -206,6 +206,36 @@ export default function InstallPage() {
           </p>
         </Section>
 
+        <Section title="Further reading">
+          <ul className="space-y-3 leading-relaxed text-muted-foreground">
+            <li>
+              <Link
+                href="/blog/clipboard-managers-on-wayland"
+                className="text-orange hover:underline"
+              >
+                Clipboard managers on Wayland
+              </Link>{" "}
+              &mdash; why GNOME ships no clipboard history, and what Clipmer does
+              instead.
+            </li>
+            <li>
+              <Link
+                href="/blog/clipboard-history-ubuntu"
+                className="text-orange hover:underline"
+              >
+                Clipboard history on Ubuntu
+              </Link>{" "}
+              &mdash; the five options that work, with install commands for each.
+            </li>
+            <li>
+              <Link href="/changelog" className="text-orange hover:underline">
+                Changelog
+              </Link>{" "}
+              &mdash; what changed in {VERSION} and every release before it.
+            </li>
+          </ul>
+        </Section>
+
         <Section title="Something not working?">
           <p className="leading-relaxed text-muted-foreground">
             Open an issue on{" "}

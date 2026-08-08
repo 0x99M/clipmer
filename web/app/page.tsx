@@ -5,6 +5,7 @@ import { Hero } from "@/components/sections/hero";
 import { Features } from "@/components/sections/features";
 import { HowItWorks } from "@/components/sections/how-it-works";
 import { DownloadSection } from "@/components/sections/download";
+import { FromTheBlog } from "@/components/sections/from-the-blog";
 import { Footer } from "@/components/sections/footer";
 
 // Title and description are inherited from the root layout, which already
@@ -52,6 +53,7 @@ export default function Home() {
       <Hero />
       <Features />
       <HowItWorks />
+      <FromTheBlog />
       <DownloadSection />
       <Footer />
     </>

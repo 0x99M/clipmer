@@ -647,8 +647,8 @@ export function Features() {
         <FadeUp>
           <div className="text-center mb-20 lg:mb-28">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything you need.{" "}
-              <span className="text-orange">Nothing you don&apos;t.</span>
+              A clipboard manager{" "}
+              <span className="text-orange">that keeps its mouth shut.</span>
             </h2>
             <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
               Your clipboard already handles passwords, API keys, and private

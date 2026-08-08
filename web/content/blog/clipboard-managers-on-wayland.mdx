@@ -198,11 +198,14 @@ XWayland-based tool.
 
 Every one of these except Clipmer is free software, and most are GPL. If all you need is
 a list of the last few things you copied, install GPaste or Pano and stop reading — they
-are good, they are free, and they will serve you well.
+are good, they are free, and they will serve you well. For the actual install commands,
+see [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu), which covers each of
+these against a real 24.04 system.
 
 ## How Clipmer does it, specifically
 
-Clipmer is an Electron application, and Electron runs as an XWayland client by default.
+Clipmer is [a clipboard manager for Linux](/install) you can install in one command. It
+is an Electron application, and Electron runs as an XWayland client by default.
 It reads the clipboard through Electron's clipboard API on a 500 ms poll, and the
 compositor's XWayland bridge is what lets it see copies made in Wayland-native
 applications.

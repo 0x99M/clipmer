@@ -61,7 +61,7 @@ secret at some point earlier, then reopen your clipboard manager.
 Not a masking bug, but the most interesting thing we found.
 
 On Wayland, `globalShortcut.register()` does not work — the compositor owns the
-keyboard. The workaround is to register a GNOME custom keybinding that signals the running
+keyboard, for [the same reason it forbids reading the clipboard](/blog/clipboard-managers-on-wayland). The workaround is to register a GNOME custom keybinding that signals the running
 process. That was built like this:
 
 ```js

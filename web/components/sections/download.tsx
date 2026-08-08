@@ -23,8 +23,10 @@ export function DownloadSection() {
 
         <FadeUp delay={0.1}>
           <p className="mt-4 text-muted-foreground text-lg">
-            Free version has everything most people need. Pro unlocks the rest.
-            Both run entirely offline — your clipboard stays on your machine.
+            A clipboard manager for Ubuntu, Fedora and any distro running GNOME
+            on Wayland or X11. The free version has everything most people need;
+            Pro unlocks the rest. Both run entirely offline — your clipboard
+            stays on your machine.
           </p>
         </FadeUp>
 
