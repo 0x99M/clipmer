@@ -6,6 +6,11 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://clipmer.app/sitemap.xml",
+    // The feed is a second discovery lane: it lists only recent posts, which is
+    // exactly what makes it useful to Google as a freshness signal.
+    sitemap: [
+      "https://clipmer.app/sitemap.xml",
+      "https://clipmer.app/blog/rss.xml",
+    ],
   };
 }

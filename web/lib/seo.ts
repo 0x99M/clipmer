@@ -43,6 +43,12 @@ export const OG_IMAGE = [{ url: "/opengraph-image", width: 1200, height: 630 }];
  *
  *   openGraph: { ...OG_BASE, url: canonical("/pro"), title: "…" }
  */
+/** Byline for articles. Rendered visibly by ArticleShell and marked up as a Person. */
+export const AUTHOR = {
+  name: "0x99M",
+  url: "https://github.com/0x99M",
+};
+
 export const OG_BASE = {
   type: "website",
   locale: "en_US",

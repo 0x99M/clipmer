@@ -18,7 +18,7 @@ const ubuntuMono = Ubuntu_Mono({
 export const metadata: Metadata = {
   title: "Clipmer — Secrets-Aware Clipboard Manager for Linux",
   description:
-    "Mask entries before a screen share, annotate them with notes, and file SSH commands, API keys, and connection strings into folders. A clipboard workbench for Linux engineers. 100% offline — nothing leaves your machine.",
+    "A clipboard manager for Linux that masks secrets. Hide entries before a screen share, add notes, and file SSH commands and API keys into folders.",
   keywords: [
     "clipboard manager linux",
     "clipboard manager for developers",
@@ -63,32 +63,10 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${ubuntu.variable} ${ubuntuMono.variable} dark antialiased`}
     >
-      <body className="min-h-screen bg-background text-foreground">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "Clipmer",
-              description:
-                "A secrets-aware clipboard manager for Linux. Mask entries before a screen share, annotate them with notes, and file SSH commands, API keys, and connection strings into folders. 100% offline, no telemetry.",
-              applicationCategory: "UtilitiesApplication",
-              operatingSystem: "Linux",
-              url: "https://clipmer.app",
-              downloadUrl:
-                "https://github.com/0x99M/clipmer/releases/latest",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "USD",
-              },
-              license: "https://clipmer.app/terms",
-            }),
-          }}
-        />
-        {children}
-      </body>
+      {/* The SoftwareApplication block lives on the homepage, not here: it was
+          being emitted on all 12 routes, so /privacy and every blog post also
+          declared themselves to be a free Linux application. See app/page.tsx. */}
+      <body className="min-h-screen bg-background text-foreground">{children}</body>
     </html>
   );
 }

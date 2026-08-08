@@ -5,33 +5,31 @@ import { SiteNav } from "@/components/site-nav";
 import { Footer } from "@/components/sections/footer";
 import { Badge } from "@/components/ui/badge";
 import { SORTED_POSTS, formatPostDate } from "@/lib/posts";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
+
+// "Blog — Clipmer" targeted a query nobody issues. This is the one page that
+// distributes crawl priority to the posts, so it names the subject instead.
+const TITLE = "Linux Clipboard Guides — Clipmer Blog";
+const DESCRIPTION =
+  "How the Linux clipboard actually works: clipboard managers on Wayland, clipboard history on Ubuntu, and keeping secrets out of what you copy.";
 
 export const metadata: Metadata = {
-  title: "Blog — Clipmer",
-  description:
-    "Technical writing on clipboard managers, the Wayland clipboard security model, and keeping secrets out of your clipboard on Linux.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: {
-    canonical: "https://clipmer.app/blog",
-    types: { "application/rss+xml": "https://clipmer.app/blog/rss.xml" },
+    canonical: canonical("/blog"),
+    types: ALTERNATE_TYPES,
   },
   openGraph: {
-    type: "website",
-    url: "https://clipmer.app/blog",
-    siteName: "Clipmer",
-    title: "Blog — Clipmer",
-    description:
-      "Technical writing on clipboard managers, the Wayland clipboard security model, and keeping secrets out of your clipboard on Linux.",
-    // Declaring `openGraph` replaces the root layout's resolved value, which
-    // drops the app/opengraph-image.tsx file convention — name it explicitly.
-    images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
+    ...OG_BASE,
+    url: canonical("/blog"),
+    title: TITLE,
+    description: DESCRIPTION,
   },
-  // Likewise `twitter`: without this the root layout's homepage title and
-  // description are inherited and contradict the og: tags on this page.
   twitter: {
     card: "summary_large_image",
-    title: "Blog — Clipmer",
-    description:
-      "Technical writing on clipboard managers, the Wayland clipboard security model, and keeping secrets out of your clipboard on Linux.",
+    title: TITLE,
+    description: DESCRIPTION,
   },
 };
 
@@ -43,10 +41,45 @@ export default function BlogIndex() {
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-14 sm:py-20">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Blog</h1>
-            <p className="mt-3 text-lg text-muted-foreground">
+            <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
+              Linux clipboard guides
+            </h1>
+            <p className="mt-3 text-lg leading-relaxed text-muted-foreground">
               How the Linux clipboard actually works, and how to keep secrets out of
               it.
+            </p>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Wayland deliberately forbids the one thing a clipboard manager needs to
+              do, which is why{" "}
+              <Link
+                href="/blog/clipboard-managers-on-wayland"
+                className="text-orange hover:underline"
+              >
+                clipboard history on Wayland is genuinely hard
+              </Link>{" "}
+              and why GNOME still ships none of it. If you just want something that
+              works today,{" "}
+              <Link
+                href="/blog/clipboard-history-ubuntu"
+                className="text-orange hover:underline"
+              >
+                five clipboard managers for Ubuntu
+              </Link>{" "}
+              covers the real install commands for each. We also{" "}
+              <Link
+                href="/blog/auditing-our-own-clipboard-manager"
+                className="text-orange hover:underline"
+              >
+                publish our own security audits
+              </Link>
+              , including the ones that found bugs in Clipmer itself.
+            </p>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
+              Clipmer is the clipboard manager we build.{" "}
+              <Link href="/install" className="text-orange hover:underline">
+                Install it on Linux
+              </Link>{" "}
+              in one command.
             </p>
           </div>
           <a
@@ -60,10 +93,12 @@ export default function BlogIndex() {
 
         <div className="mt-12 space-y-4">
           {SORTED_POSTS.map((post) => (
-            <Link
+            /* The whole card used to be one <Link>, which made each post's only
+               inbound anchor text a ~60-word blob. The link now wraps the title
+               and a stretched overlay restores whole-card clicking. */
+            <article
               key={post.slug}
-              href={`/blog/${post.slug}`}
-              className="group block rounded-xl border border-border bg-card/40 p-6 transition-colors hover:border-orange/40 hover:bg-surface/40"
+              className="group relative rounded-xl border border-border bg-card/40 p-6 transition-colors hover:border-orange/40 hover:bg-surface/40"
             >
               <div className="flex flex-wrap items-center gap-2">
                 {post.tags.map((tag) => (
@@ -78,7 +113,12 @@ export default function BlogIndex() {
               </div>
 
               <h2 className="mt-3 text-xl font-semibold leading-snug tracking-tight transition-colors group-hover:text-orange">
-                {post.title}
+                <Link
+                  href={`/blog/${post.slug}`}
+                  className="after:absolute after:inset-0 after:content-['']"
+                >
+                  {post.title}
+                </Link>
               </h2>
 
               <p className="mt-2 line-clamp-3 leading-relaxed text-muted-foreground">
@@ -97,7 +137,7 @@ export default function BlogIndex() {
                   <ArrowRight className="size-3.5" />
                 </span>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       </main>

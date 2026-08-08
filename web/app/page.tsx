@@ -23,9 +23,31 @@ export const metadata: Metadata = {
   },
 };
 
+// Entity markup, not a rich-result play: Google's Software App rich result
+// requires aggregateRating or review, and inventing either would be a policy
+// violation. This tells Google what Clipmer *is*. Homepage only — price "0"
+// describes the free tier and is only truthful here, not on /pro.
+const appSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Clipmer",
+  description:
+    "A secrets-aware clipboard manager for Linux. Mask entries before a screen share, annotate them with notes, and file SSH commands, API keys, and connection strings into folders. 100% offline, no telemetry.",
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Linux",
+  url: SITE,
+  downloadUrl: "https://github.com/0x99M/clipmer/releases/latest",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  license: canonical("/terms"),
+};
+
 export default function Home() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+      />
       <SiteNav />
       <Hero />
       <Features />

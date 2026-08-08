@@ -3,8 +3,22 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Download, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { formatPostDate, type Post } from "@/lib/posts";
+import { SORTED_POSTS, formatPostDate, type Post } from "@/lib/posts";
+import { AUTHOR } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+
+/**
+ * Posts sharing at least one tag, most-related first, falling back to the
+ * newest others so a post is never a dead end. Every post previously had
+ * exactly one inbound edge — from /blog — and none linked to each other.
+ */
+function relatedTo(post: Post, limit = 2): Post[] {
+  const others = SORTED_POSTS.filter((p) => p.slug !== post.slug);
+  const shared = (p: Post) => p.tags.filter((t) => post.tags.includes(t)).length;
+  return [...others]
+    .sort((a, b) => shared(b) - shared(a) || b.date.localeCompare(a.date))
+    .slice(0, limit);
+}
 
 export function ArticleShell({
   post,
@@ -13,6 +27,8 @@ export function ArticleShell({
   post: Post;
   children: ReactNode;
 }) {
+  const related = relatedTo(post);
+
   return (
     <article className="mx-auto w-full max-w-2xl px-6 py-12 sm:py-16">
       <Link
@@ -45,6 +61,18 @@ export function ArticleShell({
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-5 text-sm text-muted-foreground">
+          <span>
+            by{" "}
+            <a
+              href={AUTHOR.url}
+              rel="author noopener noreferrer"
+              target="_blank"
+              className="text-foreground/80 transition-colors hover:text-orange"
+            >
+              {AUTHOR.name}
+            </a>
+          </span>
+          <span aria-hidden>&middot;</span>
           <time dateTime={post.date}>{formatPostDate(post.date)}</time>
           <span aria-hidden>&middot;</span>
           <span className="inline-flex items-center gap-1.5">
@@ -84,6 +112,29 @@ export function ArticleShell({
       ) : null}
 
       <div className="mt-4">{children}</div>
+
+      {related.length > 0 ? (
+        <nav aria-label="Related posts" className="mt-14 border-t border-border pt-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Keep reading
+          </h2>
+          <ul className="mt-4 space-y-4">
+            {related.map((other) => (
+              <li key={other.slug}>
+                <Link
+                  href={`/blog/${other.slug}`}
+                  className="group block text-balance font-semibold leading-snug tracking-tight transition-colors hover:text-orange"
+                >
+                  {other.title}
+                </Link>
+                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                  {other.description}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
 
       <aside
         aria-label="About Clipmer"

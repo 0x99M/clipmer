@@ -13,6 +13,11 @@ export type Post = {
   /** <title> / OG title when it should differ from the h1. */
   seoTitle?: string;
   description: string;
+  /**
+   * Search-snippet copy, kept under ~158 chars. `description` is the full
+   * standfirst and is what OG, Twitter and the JSON-LD keep using.
+   */
+  metaDescription?: string;
   /** ISO publication date. */
   date: string;
   updated?: string;
@@ -25,7 +30,9 @@ export const POSTS: Post[] = [
   {
     slug: "auditing-our-own-clipboard-manager",
     title: "We audited our own clipboard manager",
-    seoTitle: "Auditing an Electron Clipboard Manager: What We Found",
+    seoTitle: "Auditing an Electron Clipboard Manager",
+    metaDescription:
+      "We audited Clipmer's own secret-masking and found the fastest way past it was the menu item directly above the button that turns it on.",
     description:
       "Clipmer's headline feature is masking secrets before a screen share. An audit found the fastest way past it was the menu item directly above the button that turns it on — plus a GNOME hotkey signed to a dead PID, a D-Bus check that authenticated nothing, and a three-line fix that was worse than the bug it closed.",
     date: "2026-08-05",
@@ -50,7 +57,9 @@ export const POSTS: Post[] = [
   {
     slug: "clipboard-managers-on-wayland",
     title: "Clipboard managers on Wayland: why it's hard and what actually works",
-    seoTitle: "Clipboard Managers on Wayland: Why It's Hard and What Works",
+    seoTitle: "Wayland Clipboard History: Why It's Hard",
+    metaDescription:
+      "Wayland forbids the one thing a clipboard manager needs to do. The security model, the two data-control protocols, and which compositors support them.",
     description:
       "Wayland deliberately forbids the one thing a clipboard manager needs to do. Here is the security model behind that, the two data-control protocols that work around it, which compositors implement which (GNOME implements neither), and how each Linux clipboard manager actually reads your clipboard.",
     date: "2026-08-01",
@@ -76,7 +85,9 @@ export const POSTS: Post[] = [
   {
     slug: "clipboard-history-ubuntu",
     title: "Clipboard history on Ubuntu: the complete guide",
-    seoTitle: "Clipboard History on Ubuntu 24.04 and 26.04: The Complete Guide",
+    seoTitle: "Clipboard History on Ubuntu 24.04",
+    metaDescription:
+      "Ubuntu ships no clipboard history. Five options that work — Clipboard History, GPaste, Pano, CopyQ and Clipmer — with real install commands.",
     description:
       "Ubuntu ships no clipboard history. Five options that work — Clipboard History, GPaste, Pano, CopyQ, and Clipmer — with every install command run against a real Ubuntu 24.04.4 LTS system, including the t64 package names Pano needs.",
     date: "2026-08-01",

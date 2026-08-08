@@ -6,15 +6,28 @@ import { InstallGuide } from "@/components/install/install-guide";
 import { CommandBlock } from "@/components/copy-button";
 import { TESTED_ON } from "@/lib/tested-on";
 import { CHECKSUMS_URL, VERSION } from "@/lib/release";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
+
+const TITLE = "Install Clipmer on Linux — Ubuntu, Fedora, AppImage";
+const DESCRIPTION =
+  "Install the Clipmer clipboard manager on Linux in one command — Ubuntu and Debian (.deb), Fedora and RHEL (.rpm), or any distro via AppImage.";
 
 export const metadata: Metadata = {
-  title: "Install Clipmer on Linux — Ubuntu, Fedora, AppImage",
-  description:
-    "Install Clipmer on Linux in one command. Copy-paste instructions for Ubuntu and Debian (.deb), Fedora and RHEL (.rpm), and any distribution (AppImage), plus what to do after installing.",
-  alternates: { canonical: "https://clipmer.app/install" },
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: {
+    canonical: canonical("/install"),
+    types: ALTERNATE_TYPES,
+  },
   openGraph: {
-    type: "article",
-    url: "https://clipmer.app/install",
+    ...OG_BASE,
+    url: canonical("/install"),
+    title: "Install Clipmer on Linux",
+    description:
+      "One command for Ubuntu, Fedora, or any distribution via AppImage — plus the two post-install steps that matter.",
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "Install Clipmer on Linux",
     description:
       "One command for Ubuntu, Fedora, or any distribution via AppImage — plus the two post-install steps that matter.",
