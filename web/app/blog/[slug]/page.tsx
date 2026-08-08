@@ -4,7 +4,14 @@ import { SiteNav } from "@/components/site-nav";
 import { Footer } from "@/components/sections/footer";
 import { ArticleShell } from "@/components/blog/article-shell";
 import { POSTS, POST_CONTENT, getPost } from "@/lib/posts";
-import { ALTERNATE_TYPES, AUTHOR, OG_BASE, SITE, canonical } from "@/lib/seo";
+import {
+  ALTERNATE_TYPES,
+  AUTHOR,
+  OG_BASE,
+  ORG_ID,
+  SITE,
+  canonical,
+} from "@/lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -79,7 +86,7 @@ export default async function PostPage({ params }: Params) {
       datePublished: post.date,
       dateModified: post.updated ?? post.date,
       author: { "@type": "Person", name: AUTHOR.name, url: AUTHOR.url },
-      publisher: { "@type": "Organization", name: "Clipmer", url: SITE },
+      publisher: { "@id": ORG_ID },
       mainEntityOfPage: { "@type": "WebPage", "@id": url },
       keywords: post.tags.join(", "),
     },

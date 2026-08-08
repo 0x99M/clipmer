@@ -49,6 +49,14 @@ export const AUTHOR = {
   url: "https://github.com/0x99M",
 };
 
+/**
+ * Stable JSON-LD node ids. Everything that needs to name the publisher points
+ * at ORG_ID rather than repeating an inline Organization stub, so Google sees
+ * one entity across the site instead of one per page.
+ */
+export const ORG_ID = `${SITE}/#org`;
+export const WEBSITE_ID = `${SITE}/#website`;
+
 export const OG_BASE = {
   type: "website",
   locale: "en_US",
