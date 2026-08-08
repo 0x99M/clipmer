@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Clipmer",
+  alternates: { canonical: canonical("/privacy"), types: ALTERNATE_TYPES },
 };
 
 export default function PrivacyPage() {

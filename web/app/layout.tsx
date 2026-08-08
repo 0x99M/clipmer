@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Ubuntu, Ubuntu_Mono } from "next/font/google";
+import { ALTERNATE_TYPES, OG_BASE, SITE } from "@/lib/seo";
 import "./globals.css";
 
 const ubuntu = Ubuntu({
@@ -30,17 +31,14 @@ export const metadata: Metadata = {
     "wayland clipboard manager",
   ],
   authors: [{ name: "Clipmer" }],
+  // Deliberately no `canonical` here. It is inherited by every page that does
+  // not set its own, which is how six routes ended up declaring themselves to
+  // be the homepage. Canonicals belong on the page. See lib/seo.ts.
   alternates: {
-    canonical: "https://clipmer.app",
-    types: {
-      "application/rss+xml": "https://clipmer.app/blog/rss.xml",
-    },
+    types: ALTERNATE_TYPES,
   },
   openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://clipmer.app",
-    siteName: "Clipmer",
+    ...OG_BASE,
     title: "Clipmer — Secrets-Aware Clipboard Manager for Linux",
     description:
       "Your clipboard is full of production secrets. Mask entries before you present, annotate them with notes, and keep SSH commands, API keys, and connection strings in their own folders. 100% offline, no telemetry.",
@@ -51,7 +49,7 @@ export const metadata: Metadata = {
     description:
       "Your clipboard is full of production secrets. Mask entries before you present, annotate them with notes, and keep SSH commands, API keys, and connection strings in their own folders. 100% offline, no telemetry.",
   },
-  metadataBase: new URL("https://clipmer.app"),
+  metadataBase: new URL(SITE),
 };
 
 export default function RootLayout({

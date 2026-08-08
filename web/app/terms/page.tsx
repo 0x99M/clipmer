@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Clipmer",
+  alternates: { canonical: canonical("/terms"), types: ALTERNATE_TYPES },
 };
 
 export default function TermsPage() {

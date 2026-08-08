@@ -1,8 +1,10 @@
 import { Metadata } from "next";
+import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
 export const metadata: Metadata = {
   title: "Refund Policy — Clipmer",
+  alternates: { canonical: canonical("/refund"), types: ALTERNATE_TYPES },
 };
 
 export default function RefundPage() {
