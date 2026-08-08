@@ -1,5 +1,7 @@
 # Clipmer
 
+**[clipmer.app](https://clipmer.app)** · [Install](https://clipmer.app/install) · [Changelog](https://clipmer.app/changelog)
+
 A secrets-aware clipboard manager for Linux. Your clipboard fills up with SSH
 commands, API keys, and connection strings — Clipmer lets you mask them before a
 screen share, annotate them with notes, and file them into folders, all from a
@@ -29,7 +31,7 @@ Download the latest release for Linux:
 - [.deb package](https://github.com/0x99M/clipmer/releases/latest) — Ubuntu/Debian
 - [AppImage](https://github.com/0x99M/clipmer/releases/latest) — any distro
 
-See [clipmer.app](https://clipmer.app) for more.
+Full install guide with checksums: [clipmer.app/install](https://clipmer.app/install).
 
 ## Repo Structure
 
