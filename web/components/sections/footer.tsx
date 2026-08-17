@@ -35,6 +35,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
             <Link href="/blog" className="hover:text-foreground transition-colors">Blog</Link>
             <Link href="/changelog" className="hover:text-foreground transition-colors">Changelog</Link>
+            <Link href="/wayland-clipboard-support" className="hover:text-foreground transition-colors">Wayland Support</Link>
             <Link href="/pro" className="hover:text-foreground transition-colors">Pro</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
