@@ -28,6 +28,31 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "linux-tools-worth-installing",
+    title: "Linux tools worth installing in 2026, and the versions Ubuntu gets wrong",
+    seoTitle: "Linux Tools Worth Installing in 2026",
+    metaDescription:
+      "Every version checked against a real Ubuntu 24.04 box: which tools apt gets right, which are years behind, and the two that install under a different name.",
+    description:
+      "Every \"must-have Linux tools\" list recommends the same tools and none of them tell you what apt actually installs. Ubuntu 24.04 ships fzf thirty releases behind upstream, a Flameshot that predates its own Wayland fix, and a Node.js that has been end-of-life since April 2025 \u2014 while the docker.io advice everyone still repeats is now wrong. Every version here was read from a real 24.04.4 system and compared against upstream on the same day.",
+    date: "2026-08-21",
+    tags: ["Linux", "Ubuntu", "Tools"],
+    readingMinutes: 10,
+    toc: [
+      { id: "why-every-list-like-this-is-wrong", title: "Why every list like this is wrong" },
+      { id: "what-ubuntu-actually-ships", title: "What Ubuntu actually ships" },
+      { id: "the-terminal-set", title: "The terminal set" },
+      { id: "flameshot-predates-its-own-wayland-fix", title: "Flameshot predates its own Wayland fix" },
+      { id: "keepassxc-is-six-security-releases-behind", title: "KeePassXC is six security releases behind" },
+      { id: "timeshift-and-what-it-does-not-back-up", title: "Timeshift, and what it does not back up" },
+      { id: "node-18-has-been-end-of-life-since-april-2025", title: "Node 18 has been end-of-life since April 2025" },
+      { id: "the-docker-io-advice-everyone-repeats-is-out-of-date", title: "The docker.io advice everyone repeats is out of date" },
+      { id: "clipboard-history-which-ubuntu-does-not-ship", title: "Clipboard history, which Ubuntu does not ship" },
+      { id: "how-to-check-any-of-this-yourself", title: "How to check any of this yourself" },
+      { id: "what-i-left-off-and-why", title: "What I left off, and why" },
+    ],
+  },
+  {
     slug: "copyq-alternatives",
     title: "CopyQ alternatives on Linux, compared honestly",
     seoTitle: "CopyQ Alternatives on Linux, Compared",
@@ -172,6 +197,8 @@ export const POST_CONTENT: Record<
   string,
   () => Promise<{ default: ComponentType }>
 > = {
+  "linux-tools-worth-installing": () =>
+    import("@/content/blog/linux-tools-worth-installing.mdx"),
   "copyq-alternatives": () =>
     import("@/content/blog/copyq-alternatives.mdx"),
   "best-clipboard-manager-wayland": () =>

@@ -1,0 +1,246 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+
+There are a hundred "must-have Linux tools" lists and they are largely the same list.
+htop, VLC, Timeshift, a screenshot tool, some Rust replacements for coreutils. The tools
+are fine. The problem is that not one of those lists tells you what you will actually get
+when you run `apt install`, which is frequently something years older than the thing being
+described — and occasionally something that has been end-of-life since last year.
+
+So this list is organised around that gap. Every version below was read from a real Ubuntu
+24.04.4 LTS system on 21 August 2026 and compared against the current upstream release on
+the same day. Where `apt` is fine, it says so. Where it is not, it says what to do instead.
+
+## Why every list like this is wrong
+
+Debian and Ubuntu freeze package versions at release and then backport security fixes for
+the life of the LTS. That is the right trade for a server and it is why 24.04 is stable.
+On a desktop it means the version of a fast-moving developer tool you get from `apt` is a
+snapshot of whenever the freeze happened, which for 24.04 was early 2024.
+
+For most tools that gap is invisible. For a few it is the whole story, and those are the
+ones worth knowing about before you spend an afternoon debugging behaviour that was fixed
+upstream eighteen months ago.
+
+## What Ubuntu actually ships
+
+<SupportTable
+  headers={["Tool", "Ubuntu 24.04", "Upstream", "Verdict"]}
+  rows={[
+    { name: "ripgrep", cells: ["14.1.0", "15.2.0", "apt is fine"] },
+    { name: "fd", cells: ["9.0.0", "10.4.2", "apt is fine — but see the name"] },
+    { name: "bat", cells: ["0.24.0", "0.26.1", "apt is fine — but see the name"] },
+    { name: "fzf", cells: ["0.44.1", "0.74.3", "Get it elsewhere"] },
+    { name: "eza", cells: ["0.18.2", "0.23.5", "apt is fine"] },
+    { name: "zoxide", cells: ["0.9.3", "0.10.0", "apt is fine"] },
+    { name: "htop", cells: ["3.3.0", "3.5.3", "apt is fine"] },
+    { name: "btop", cells: ["1.3.0", "1.4.7", "apt is fine"] },
+    { name: "Flameshot", cells: ["12.1.0", "14.0.0", "Get it elsewhere on Wayland"] },
+    { name: "KeePassXC", cells: ["2.7.6", "2.7.12", "Get it elsewhere"] },
+    { name: "Node.js", cells: ["18.19.1", "18.x is end-of-life", "Do not use apt"] },
+    { name: "Docker", cells: ["29.1.3", "current", "apt is fine — really"] },
+    { name: "Clipboard history", cells: ["Not shipped", "—", "Nothing to install"], highlight: true },
+  ]}
+  caption="Ubuntu column read with apt-cache policy on Ubuntu 24.04.4 LTS, 21 August 2026. Upstream column is the latest GitHub release on the same date. Both move — re-check rather than trusting this table in a year."
+/>
+
+## The terminal set
+
+ripgrep, fd, bat, eza and zoxide are the ones every list recommends, and every list is
+right to. They are genuinely better than what they replace, and four of the five are close
+enough to upstream in 24.04 that `apt` is the correct answer:
+
+```bash
+sudo apt install ripgrep fd-find bat eza zoxide
+```
+
+ripgrep at 14.1.0 against 15.2.0 upstream is one major version behind and you will not
+notice. eza, zoxide and btop are all within a release or two. Install them and move on.
+
+The exception is `fzf`, and it is not a small one. Ubuntu 24.04 ships **0.44.1**. Upstream
+is on **0.74.3**, released four days ago. That is roughly thirty releases of divergence,
+across which fzf gained and changed a great deal of its interface — so a large share of the
+fzf configuration you will find in blog posts and dotfiles repos simply does not parse
+against the version `apt` gives you. This is the single widest gap in the whole table.
+
+```bash
+# fzf, current, without apt
+git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install
+```
+
+### The two renamed binaries
+
+This wastes an afternoon for someone every single day, and no listicle mentions it. On
+Debian and Ubuntu, two of those five tools do not install under the name you expect:
+
+- `fd-find` installs `/usr/bin/fdfind`, not `fd`
+- `bat` installs `/usr/bin/batcat`, not `bat`
+
+It is not arbitrary. Both names were already taken in the archive: `/usr/bin/fd` belongs to
+**fdclone**, and `/usr/sbin/bat` belongs to **bacula-console-qt**. Debian renamed the
+newcomers rather than break the incumbents.
+
+<Callout type="note" title="The fix, and why an alias is better than a symlink">
+  Add these to your shell config rather than symlinking into `/usr/local/bin` — a symlink
+  is a file the package manager does not know about, and it will quietly shadow the real
+  binary if you ever install upstream `fd` or `bat` properly.
+
+  ```bash
+  alias fd=fdfind
+  alias bat=batcat
+  ```
+</Callout>
+
+## Flameshot predates its own Wayland fix
+
+Flameshot is the screenshot tool worth having — region select, annotate, copy, done. The
+packaged version is where it gets interesting.
+
+Ubuntu 24.04 ships **12.1.0**. Flameshot's Qt6 port, which brought a `grim`-based capture
+adapter and substantially better Wayland support, landed in **13.0.0**. Upstream is now on
+14.0.0.
+
+So the version Ubuntu packages is the one from *before* the fix for the display server
+Ubuntu itself defaults to. Users hit a "unable to capture" failure on GNOME Wayland and
+conclude the tool is broken; it is documented at length in
+[flameshot#4463](https://github.com/flameshot-org/flameshot/issues/4463), and the usual
+resolution is granting the app screenshot permission through the desktop portal, which is
+a thing you should not have to know.
+
+If you are on X11, `apt install flameshot` is fine. If you are on Wayland — which on Ubuntu
+24.04 and later you are, by default — install the Flatpak and get 14.0.0:
+
+```bash
+flatpak install flathub org.flameshot.Flameshot
+```
+
+## KeePassXC is six security releases behind
+
+24.04 packages **2.7.6**; upstream is **2.7.12**. Those are patch releases, so the gap
+looks small, and for most software it would be. For the application holding your entire
+password database, "six releases of fixes behind" is a different sentence.
+
+Ubuntu backports security fixes to packaged versions, so this is not an open vulnerability —
+but the upstream project ships its own PPA and Flatpak precisely so you do not have to
+rely on that for this category of software:
+
+```bash
+flatpak install flathub org.keepassxc.KeePassXC
+```
+
+## Timeshift, and what it does not back up
+
+Every list recommends Timeshift. Almost none of them mention the thing that matters: by
+default, **Timeshift does not back up your home directory**.
+
+That is deliberate and correct — it is a system-restore tool, meant to roll back a bad
+update or a broken driver, not a backup. But people install it, see "snapshot taken", and
+believe their documents are covered. They are not.
+
+<Callout type="warn" title="Timeshift is not your backup">
+  Timeshift restores the operating system. If your disk dies, or you delete the wrong
+  directory, it will not help you. Pair it with something that actually copies your data
+  off the machine — Déjà Dup for a GUI, or `restic`/`borg` if you want deduplicated,
+  encrypted, scriptable backups. Two different jobs, two different tools.
+</Callout>
+
+## Node 18 has been end-of-life since April 2025
+
+This is the one with real consequences. `apt install nodejs` on Ubuntu 24.04 gives you
+**Node 18.19.1**. Node 18 left maintenance on **30 April 2025** — over a year ago. It
+receives no upstream security fixes at all.
+
+It is worse than it looks, because Node 20 also reached end of maintenance on 30 April 2026.
+The supported lines today are 22, 24 and 26. Installing Node from `apt` on this release
+means starting a new project on a runtime that has been unsupported for sixteen months.
+
+Use a version manager instead. `fnm` and `nvm` both work; `fnm` is faster and a single
+binary:
+
+```bash
+curl -fsSL https://fnm.vercel.app/install | bash
+fnm install --lts
+```
+
+## The docker.io advice everyone repeats is out of date
+
+Here is one where the folklore has gone stale, and this list would be dishonest if it
+repeated it.
+
+"Never use `apt install docker.io`, it is ancient, always add Docker's own repository" was
+correct for years. It is not correct on 24.04 today. The archive currently carries
+**29.1.3**, which is current. Ubuntu has been keeping it updated.
+
+If you need Docker's own repo for a specific reason — Compose V2 plugin packaging, or a
+version pinned by your CI — add it. But if you just want Docker on your laptop:
+
+```bash
+sudo apt install docker.io
+sudo usermod -aG docker "$USER"   # then log out and back in
+```
+
+That is a real difference between checking and copying the previous list.
+
+## Clipboard history, which Ubuntu does not ship
+
+The one category on this list where `apt` has nothing to give you at all. GNOME ships no
+clipboard history, so everything you copy is gone the moment you copy the next thing — and
+on Wayland the situation is stricter than most people realise, because the core protocol
+deliberately forbids an unfocused application from reading the selection.
+
+What works depends entirely on your compositor. On GNOME it has to be a Shell extension,
+because Mutter implements neither data-control protocol. On Hyprland, Sway or KDE, `cliphist`
+and friends work natively and are the right answer. We keep a
+[per-compositor support matrix](/wayland-clipboard-support) that tells you which case you
+are in, and [the full guide for Ubuntu specifically](/blog/clipboard-history-ubuntu) with
+install commands for each option.
+
+**Clipmer** is ours, and the honest positioning is this: it is an Electron application that
+reads the clipboard under XWayland, which is why it works on GNOME where the protocol-based
+tools cannot. It adds folders, searchable notes, and the ability to mask an entry so it
+renders as dots before you share your screen — because the actual risk with clipboard
+history is that it is a plaintext file containing every API key and connection string you
+have copied this week.
+
+If you are on Hyprland or Sway and all you want is a list of recent copies, install
+`cliphist` and keep your money. If you are on GNOME and want history that survives a
+screen-share, [Clipmer is one command](/install). For the neighbours — GPaste, CopyQ,
+Klipper, Pano — we wrote them up
+[honestly and at length](/blog/copyq-alternatives).
+
+## How to check any of this yourself
+
+None of the above needs to be taken on faith, and by the time you read it some of it will
+have moved. Two commands settle it.
+
+What your machine would actually install:
+
+```bash
+apt-cache policy fzf nodejs flameshot keepassxc
+```
+
+What upstream is on, without opening a browser:
+
+```bash
+curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep '"tag_name"'
+```
+
+If the gap is a patch release, use `apt`. If it is thirty releases, or the packaged version
+predates a fix for your display server, or the runtime is end-of-life — go around it.
+
+## What I left off, and why
+
+A list is also what it excludes.
+
+**System cleaners** — Stacer, BleachBit and the rest. On a modern Ubuntu there is very
+little to clean, and the categories these tools offer to empty include ones you will miss.
+`sudo apt autoremove` and `journalctl --vacuum-time=2weeks` cover the honest version.
+
+**"Rust replacements for everything."** `ls`, `cat` and `grep` have replacements worth
+having, which is why they are above. `cd`, `du`, `ps` and `top` mostly do not; you will
+install six binaries, learn two, and carry four forever.
+
+**Anything I could not check.** Every version in this article came from `apt-cache policy`
+on a real 24.04.4 box and the GitHub releases API, both on 21 August 2026. Tools I could
+not verify that way are not on the list, which is the entire difference between this and
+the article it would otherwise have been.
