@@ -10,6 +10,7 @@ import {
 } from "@/components/feature-tile";
 import { buttonVariants } from "@/components/ui/button";
 import { CopyInstallGroup } from "@/components/install/copy-install-group";
+import { HeroStats } from "@/components/sections/hero-stats";
 import { cn } from "@/lib/utils";
 
 const CAPABILITIES = [
@@ -451,7 +452,7 @@ export function Hero() {
             {/* Fine print: reassurance first, upsell second. */}
             <div
               data-hero="fine"
-              className="mt-4 flex flex-col items-center gap-1.5 text-xs leading-relaxed text-muted-foreground"
+              className="mt-8 flex flex-col items-center gap-1.5 text-xs leading-relaxed text-muted-foreground"
             >
               <p className="max-w-[58ch]">
                 Source-available, not open source &mdash; read and audit every
@@ -467,6 +468,8 @@ export function Hero() {
                 license.
               </p>
             </div>
+
+            <HeroStats />
           </>
         </div>
       </section>

@@ -382,11 +382,12 @@
   [data-hero="cta"] {
     --hero-at: 0.6s;
   }
-  [data-hero="install"] {
-    --hero-at: 0.68s;
-  }
   [data-hero="fine"] {
-    --hero-at: 0.78s;
+    --hero-at: 0.9s;
+  }
+  /* The band closes the hero, one beat behind the fine print. */
+  [data-hero="stats"] {
+    --hero-at: 1s;
   }
 
   /* /pro's hero, same reasoning as above but stricter: it used framer-motion's
