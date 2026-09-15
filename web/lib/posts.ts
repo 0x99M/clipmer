@@ -87,6 +87,7 @@ export const POSTS: Post[] = [
     description:
       "On Wayland, which clipboard manager works is decided by your compositor, because the data-control protocols are not universally implemented. This is the per-compositor answer for GNOME, KDE Plasma, Hyprland, Sway and the rest, checked against the protocol registry, the compositor source trees and the distro package indexes in August 2026. It also covers the version traps that break the usual advice: wl-clipboard on KDE, Pano's upstream status, and how far behind Ubuntu's GPaste actually is.",
     date: "2026-08-08",
+    updated: "2026-09-15",
     tags: ["Wayland", "Clipboard", "Linux"],
     readingMinutes: 8,
     toc: [
@@ -138,6 +139,7 @@ export const POSTS: Post[] = [
     description:
       "Wayland deliberately forbids the one thing a clipboard manager needs to do. Here is the security model behind that, the two data-control protocols that work around it, which compositors implement which (GNOME implements neither), and how each Linux clipboard manager actually reads your clipboard.",
     date: "2026-08-01",
+    updated: "2026-09-15",
     tags: ["Wayland", "Linux", "Clipboard"],
     readingMinutes: 7,
     toc: [
