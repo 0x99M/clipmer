@@ -26,6 +26,8 @@ this query set:
 
 - `wayland clipboard history`
 - `clipboard history ubuntu 24.04`
+- `clipboard history ubuntu 26.04` — added 15 September 2026, when that guide was
+  extended to 26.04. Additive only, so the original set stays comparable.
 - `copyq alternatives`
 - `best clipboard manager wayland`
 - `clipmer` / `clipmer pro` (brand baseline)

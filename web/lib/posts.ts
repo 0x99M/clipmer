@@ -162,24 +162,29 @@ export const POSTS: Post[] = [
   {
     slug: "clipboard-history-ubuntu",
     title: "Clipboard history on Ubuntu: the complete guide",
-    seoTitle: "Clipboard History on Ubuntu 24.04",
+    seoTitle: "Clipboard History on Ubuntu 24.04 and 26.04",
     metaDescription:
-      "Ubuntu ships no clipboard history. Five options that work — Clipboard History, GPaste, Pano, CopyQ and Clipmer — with real install commands.",
+      "Ubuntu ships no clipboard history. Four options that work on 24.04 and 26.04 — Clipboard History, GPaste, CopyQ and Clipmer — with checked install commands.",
     description:
-      "Ubuntu ships no clipboard history. Five options that work — Clipboard History, GPaste, Pano, CopyQ, and Clipmer — with every install command run against a real Ubuntu 24.04.4 LTS system, including the t64 package names Pano needs.",
+      "Ubuntu ships no clipboard history. Four options that work on both Ubuntu 24.04 and 26.04 LTS — Clipboard History, GPaste, CopyQ, and Clipmer — with install commands checked on each release, what happened to Pano, and what to do when an extension stops loading after the upgrade.",
     date: "2026-08-01",
+    updated: "2026-09-15",
     tags: ["Ubuntu", "GNOME", "Clipboard"],
-    readingMinutes: 4,
+    readingMinutes: 6,
     toc: [
       { id: "first-check-which-session-you-are-in", title: "First, check which session you are in" },
       { id: "option-1-clipboard-history-extension", title: "Option 1: Clipboard History extension" },
       { id: "option-2-gpaste", title: "Option 2: GPaste" },
-      { id: "option-3-pano", title: "Option 3: Pano" },
-      { id: "option-4-copyq", title: "Option 4: CopyQ" },
-      { id: "option-5-clipmer", title: "Option 5: Clipmer" },
+      { id: "option-3-copyq", title: "Option 3: CopyQ" },
+      { id: "option-4-clipmer", title: "Option 4: Clipmer" },
       {
         id: "which-one-should-you-actually-install",
         title: "Which one should you actually install",
+      },
+      { id: "what-happened-to-pano", title: "What happened to Pano" },
+      {
+        id: "upgraded-from-24-04-check-your-extensions-still-load",
+        title: "Upgraded from 24.04? Check your extensions still load",
       },
       { id: "setting-a-keyboard-shortcut", title: "Setting a keyboard shortcut" },
       {

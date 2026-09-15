@@ -3,10 +3,20 @@ import { Callout } from "@/components/blog/callout";
 
 Ubuntu still ships no clipboard history. Copy something, copy something else, and the
 first thing is gone — there is no built-in way to get it back, and there has never been
-one in any Ubuntu release.
+one in any Ubuntu release, 26.04 LTS included.
 
-This guide covers the five options that actually work, with every command run against a
-real Ubuntu 24.04.4 LTS install rather than copied from older guides.
+This guide covers the four options that work on both current LTS releases, Ubuntu 24.04
+and 26.04. It was first written against a real Ubuntu 24.04.4 LTS install, then
+re-checked for Ubuntu 26.04.1 LTS on 15 September 2026: every apt command against the
+26.04 archive, the GPaste and CopyQ commands against the packages' own contents, and every
+extension against the GNOME Shell versions its listing actually offers.
+
+<Callout type="note" title="Updated for Ubuntu 26.04">
+  This guide now covers 26.04 LTS as well as 24.04 LTS. The revision also fixes two things
+  the first version got wrong: it recommended Pano, which has no build for either
+  release's GNOME Shell, and it showed `gpaste-client get 3`, which GPaste reads as an item
+  ID rather than a position.
+</Callout>
 
 ## First, check which session you are in
 
@@ -27,13 +37,16 @@ Which session you are in decides what a clipboard manager can even do. Wayland f
 any client from reading a selection it does not own, which is why several of the options
 below are GNOME Shell extensions rather than ordinary applications —
 [clipboard managers on Wayland](/blog/clipboard-managers-on-wayland) explains the
-security model and the protocols that work around it.
+security model and the protocols that work around it. On Kubuntu or another desktop
+rather than GNOME, [the best clipboard manager for Wayland](/blog/best-clipboard-manager-wayland)
+has the pick for yours.
 
 ## Option 1: Clipboard History extension
 
 The simplest thing that works on GNOME, and the one to try first. It is a GNOME Shell
 extension, so it runs inside the compositor and works on Wayland without any protocol
-support.
+support. Its current build lists GNOME Shell 46 through 50, so the same extension covers
+24.04 and 26.04.
 
 Install [Clipboard History](https://extensions.gnome.org/extension/4839/clipboard-history/)
 from the GNOME Extensions site, or use the Extension Manager app:
@@ -59,38 +72,25 @@ to the GNOME Shell section, and enable both toggles — the extension does not a
 enable itself on install, which is the single most common reason people conclude GPaste
 "doesn't work."
 
-GPaste also gives you a CLI, which is genuinely useful in scripts:
+Ubuntu 26.04 packages GPaste 45.3, carried forward with distro patches while upstream has
+moved on to the 50 series. The patches are what matter here: the extension the 26.04
+package installs lists GNOME Shell 50, so it loads. Lag like this is normal for Ubuntu —
+[Linux tools worth installing](/blog/linux-tools-worth-installing) measures it across the
+rest of apt.
+
+GPaste also gives you a CLI, which is genuinely useful in scripts. By default `history`
+labels each item with an ID and `get` expects that ID; `--use-index` switches both to
+plain numbers:
 
 ```bash
-gpaste-client history
-gpaste-client get 3
+gpaste-client history --use-index
+gpaste-client get --use-index 3
 ```
 
-## Option 3: Pano
-
-Prettier than the alternatives, with typed previews for links, colors, and code. It needs
-two libraries plus their introspection data, none of which are installed by default:
-
-```bash
-sudo apt install libgda-5.0-4t64 gir1.2-gda-5.0 libgsound0t64 gir1.2-gsound-1.0
-```
-
-<Callout type="note" title="Why the t64 suffix">
-  Ubuntu 24.04's 64-bit `time_t` transition renamed these libraries from `libgda-5.0-4`
-  and `libgsound0` to `libgda-5.0-4t64` and `libgsound0t64`. The old names still work —
-  the renamed packages declare `Provides:` for them, so `apt install libgda-5.0-4`
-  resolves to the t64 package. The `gir1.2-*` introspection packages were unaffected. The
-  names above are the real ones, which is what you want if you are reading the output of
-  `apt policy` and wondering why the old name shows no candidate version.
-</Callout>
-
-Then install [Pano](https://extensions.gnome.org/extension/5278/pano/) from the GNOME
-Extensions site and restart the shell by logging out and back in.
-
-## Option 4: CopyQ
+## Option 3: CopyQ
 
 The power-user option, and the only one here that is genuinely cross-platform. Tabs,
-scripting, an editor for stored items, and filters:
+scripting, an editor for stored items, and filters. Ubuntu 26.04 packages CopyQ 13.0.0:
 
 ```bash
 sudo apt install copyq
@@ -98,9 +98,11 @@ sudo apt install copyq
 
 CopyQ is an X11-first application. Under a Wayland session it runs through XWayland and
 its Wayland support has known rough edges, particularly around global shortcuts. If you
-are on Wayland and want CopyQ specifically, expect to spend time on configuration.
+are on Wayland and want CopyQ specifically, expect to spend time on configuration — and if
+CopyQ is what you are trying to leave, [CopyQ alternatives](/blog/copyq-alternatives)
+compares the options.
 
-## Option 5: Clipmer
+## Option 4: Clipmer
 
 Ours, so treat this section with the appropriate suspicion. Clipmer is built for people
 whose clipboard is full of things they would rather not display: it can mask individual
@@ -112,9 +114,10 @@ curl -LO https://github.com/0x99M/clipmer/releases/latest/download/clipmer_3.2.1
 sudo apt install ./clipmer_3.2.1_amd64.deb
 ```
 
-Press **Ctrl + Shift + D** to open it. The free version keeps 100 entries. There are
-`.rpm` and AppImage builds too — see the [install guide](/install) for those, and for
-verifying the download against the published checksums.
+Press **Ctrl + Shift + D** to open it. The free version keeps 100 entries. Clipmer is
+tested on Ubuntu 24.04.4 and 26.04.1 LTS; on 26.04, auto-paste needs 3.2.1 or later.
+There are `.rpm` and AppImage builds too — see the [install guide](/install) for those,
+and for verifying the download against the published checksums.
 
 The honest trade-off: Clipmer is source-available under PolyForm Strict, **not** open
 source, and the folders, notes, and minimal view are paid. Everything above is free
@@ -128,11 +131,47 @@ might — GPaste is the better choice and we would rather you were happy than co
   rows={[
     { name: "Something that just works", cells: ["Clipboard History", "One extension, no daemon, works on Wayland"] },
     { name: "The most mature option", cells: ["GPaste", "Real daemon, CLI, longest track record"] },
-    { name: "The best-looking option", cells: ["Pano", "Typed previews, but two extra dependencies"] },
     { name: "Scripting and power features", cells: ["CopyQ", "Tabs and scripting; X11-first"] },
     { name: "To not leak secrets on a call", cells: ["Clipmer", "Per-entry masking, notes, folders"], highlight: true },
   ]}
 />
+
+## What happened to Pano
+
+Earlier versions of this guide recommended Pano. It is no longer an option on either LTS
+release: its listing on the GNOME Extensions site offers builds for GNOME Shell 42 through
+45 only, so there is nothing to install on 24.04's Shell 46 or 26.04's Shell 50. Its author
+has also stopped maintaining it — the details are in
+[CopyQ alternatives](/blog/copyq-alternatives#pano).
+
+The author points people to [Copyous](https://extensions.gnome.org/extension/8834/copyous/)
+instead. It is GPL-3.0, and its listing covers GNOME Shell 48 through 50, which makes it an
+option on 26.04 but not on 24.04. We have not tested it, so it is a pointer here rather than
+a section.
+
+## Upgraded from 24.04? Check your extensions still load
+
+Ubuntu 24.04 runs GNOME Shell 46 and 26.04 runs GNOME Shell 50. GNOME only loads an
+extension whose `metadata.json` lists the Shell version that is running, so an extension
+can survive the upgrade still switched on and doing nothing. We hit this ourselves: it is
+what broke Clipmer's auto-paste helper until [3.2.1](/changelog).
+
+List your extensions, then ask GNOME about the one that stopped working:
+
+```bash
+gnome-extensions list
+gnome-extensions info clipboard-history@alexsaveau.dev
+```
+
+`State: ACTIVE` means it loaded. `State: OUT OF DATE` means the build you have does not
+list your Shell version. For an extension from the GNOME Extensions site, update or
+reinstall it from Extension Manager, which fetches the build made for your Shell if one
+exists — Clipboard History has one; Pano does not. GPaste from apt needs nothing, because
+the 26.04 package already lists Shell 50.
+
+GNOME also has a `disable-extension-version-validation` setting that skips the check.
+Leave it off: it applies to every extension you have installed, not only the one you want
+back.
 
 ## Setting a keyboard shortcut
 
@@ -148,8 +187,8 @@ gpaste-client ui
 copyq toggle
 ```
 
-Extensions like Clipboard History and Pano set their own shortcut in the extension's
-preferences instead, since they run inside the shell.
+Extensions set their own shortcut in their preferences instead, since they run inside the
+shell — Clipboard History's default is **Super + Shift + V**.
 
 ## One thing worth knowing before you install any of these
 
