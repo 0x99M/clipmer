@@ -9,9 +9,17 @@ const DBUS_INTERFACE = `
   </interface>
 </node>`;
 
+// GNOME 51 removed Clutter.get_default_backend(); the stage's Clutter context
+// is its replacement. Shells that predate the context API keep the old call, so
+// the one extension still loads on every version metadata.json lists.
+function getClutterBackend() {
+  const context = global.stage.get_context?.();
+  return context ? context.get_backend() : Clutter.get_default_backend();
+}
+
 class PasteService {
   constructor() {
-    const seat = Clutter.get_default_backend().get_default_seat();
+    const seat = getClutterBackend().get_default_seat();
     this._device = seat.create_virtual_device(
       Clutter.InputDeviceType.KEYBOARD_DEVICE
     );

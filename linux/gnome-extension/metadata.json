@@ -2,6 +2,6 @@
   "uuid": "clipmer-paste@clipmer.local",
   "name": "Clipmer Paste Helper",
   "description": "Enables paste simulation for Clipmer app",
-  "shell-version": ["46", "47", "48", "49"],
+  "shell-version": ["46", "47", "48", "49", "50", "51"],
   "url": ""
 }
