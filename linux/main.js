@@ -503,10 +503,16 @@ ipcMain.handle('simulate-paste', () => {
             'by design — test auto-paste with the packaged build.'
           );
         } else if (message.includes('ServiceUnknown') || message.includes('was not provided')) {
-          console.log(
-            'Auto-paste unavailable: the Clipmer Paste Helper extension is not ' +
-            'running. Enable it, then log out and back in.'
-          );
+          // "Enable it and log out" was the only advice here, and it is wrong
+          // for the commonest cause: an enabled helper that GNOME refuses to
+          // load because its version is not listed. Report what Shell says.
+          getPasteExtensionState().then((state) => {
+            console.log(
+              `Auto-paste unavailable: the paste helper is not running (GNOME Shell ` +
+              `reports ${state ? `state ${state}` : 'no such extension yet'}). ` +
+              'Settings shows what to do.'
+            );
+          });
         } else {
           console.log('Auto-paste failed:', message.trim());
         }
@@ -1039,9 +1045,11 @@ ipcMain.handle('set-autostart', (_event, enabled) => setAutostart(enabled));
 
 // ─── Paste extension ────────────────────────────────────────────────────────────
 
+const PASTE_EXTENSION_ID = 'clipmer-paste@clipmer.local';
+
 function installPasteExtension() {
   const os = require('os');
-  const extId = 'clipmer-paste@clipmer.local';
+  const extId = PASTE_EXTENSION_ID;
   const extDir = path.join(
     os.homedir(),
     '.local/share/gnome-shell/extensions',
@@ -1073,7 +1081,7 @@ function installPasteExtension() {
 // rather than just flip a flag in our own store.
 function removePasteExtension() {
   const os = require('os');
-  const extId = 'clipmer-paste@clipmer.local';
+  const extId = PASTE_EXTENSION_ID;
   const extDir = path.join(os.homedir(), '.local/share/gnome-shell/extensions', extId);
 
   try {
@@ -1090,6 +1098,41 @@ function removePasteExtension() {
     console.log('Could not remove paste extension:', err.message);
   }
 }
+
+// What GNOME Shell reports for the paste helper: 'ACTIVE', 'OUT OF DATE',
+// 'ERROR', 'INACTIVE' and so on. null means Shell has not registered it — it
+// only scans for extensions at login — and 'UNAVAILABLE' means there is no
+// gnome-extensions tool, so this is not a GNOME session. LC_ALL=C because the
+// "State:" label is translated.
+function getPasteExtensionState() {
+  return new Promise((resolve) => {
+    const { execFile } = require('child_process');
+    execFile(
+      'gnome-extensions',
+      ['info', PASTE_EXTENSION_ID],
+      { timeout: 5000, env: { ...process.env, LC_ALL: 'C' } },
+      (err, stdout) => {
+        if (err) return resolve(err.code === 'ENOENT' ? 'UNAVAILABLE' : null);
+        const match = /^\s*State:\s*(.+?)\s*$/m.exec(stdout);
+        resolve(match ? match[1] : null);
+      }
+    );
+  });
+}
+
+// Why auto-paste is switched on but cannot work, for the settings pane — or
+// null when it should work. The toggle alone used to read ON while GNOME
+// refused to load the helper and every paste did nothing.
+ipcMain.handle('get-auto-paste-status', async () => {
+  if (!store.get('autoPaste')) return null;
+  const state = await getPasteExtensionState();
+  // GNOME 49 renamed ENABLED to ACTIVE; older Shells still print ENABLED.
+  if (state === 'ACTIVE' || state === 'ENABLED') return null;
+  if (state === 'OUT OF DATE') return 'out-of-date';
+  if (state === 'ERROR') return 'error';
+  if (state === 'UNAVAILABLE') return 'not-gnome';
+  return 'not-running';
+});
 
 ipcMain.handle('get-auto-paste', () => store.get('autoPaste') || false);
 ipcMain.handle('get-auto-scroll-top', () => store.get('autoScrollTop') !== false);

@@ -251,6 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (result === 'needs-restart') {
       await withModal(() => alert('Almost there! Log out and log back in to activate auto-paste.'));
     }
+    refreshAutoPasteStatus();
   });
 
   // Auto-scroll toggle
@@ -485,7 +486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.clipboardManager.getShortcut().then((s) => { recorder.textContent = s; });
       showShortcutHint('Could not reset the shortcut');
     });
-    window.clipboardManager.setAutoPaste(false);
+    window.clipboardManager.setAutoPaste(false).then(refreshAutoPasteStatus);
     fontSlider.value = 13;
     applyFontSize(13);
     document.getElementById('font-size-value').textContent = '13px';
@@ -868,6 +869,26 @@ async function selectEntryById(entryId) {
 
 // ─── Settings ───────────────────────────────────────────────────────────────────
 
+// Auto-paste can be switched on and still do nothing — most often because GNOME
+// refused to load the helper. Say why beside the toggle rather than letting
+// every paste fail silently. Checked when Settings opens, because the helper's
+// state only changes at login or when the toggle flips.
+const AUTO_PASTE_STATUS_TEXT = {
+  'out-of-date': 'Not running: your GNOME version is newer than this paste helper supports. Update Clipmer, then log out and back in.',
+  'error': 'Not running: GNOME could not start the paste helper. Turn auto-paste off and on again, then log out and back in.',
+  'not-running': 'Not running yet. Log out and back in to start the paste helper.',
+  'not-gnome': 'Auto-paste needs GNOME. On this desktop, choosing an entry copies it without pasting.',
+};
+
+async function refreshAutoPasteStatus() {
+  const el = document.getElementById('auto-paste-status');
+  if (!el) return;
+  const status = await window.clipboardManager.getAutoPasteStatus();
+  const text = (status && AUTO_PASTE_STATUS_TEXT[status]) || '';
+  el.textContent = text;
+  el.hidden = !text;
+}
+
 async function toggleSettings() {
   // Folders and Settings are mutually exclusive; close folders first if needed
   if (foldersViewOpen) toggleFoldersView();
@@ -883,6 +904,7 @@ async function toggleSettings() {
     emptyEl.style.display = 'none';
     searchBar.style.display = 'none';
     settingsView.style.display = '';
+    refreshAutoPasteStatus();
     await renderStats();
   } else {
     settingsView.style.display = 'none';

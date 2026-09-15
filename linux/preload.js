@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('clipboardManager', {
   setShortcut: (shortcut) => ipcRenderer.invoke('set-shortcut', shortcut),
   getAutoPaste: () => ipcRenderer.invoke('get-auto-paste'),
   setAutoPaste: (enabled) => ipcRenderer.invoke('set-auto-paste', enabled),
+  getAutoPasteStatus: () => ipcRenderer.invoke('get-auto-paste-status'),
   getAutoScrollTop: () => ipcRenderer.invoke('get-auto-scroll-top'),
   setAutoScrollTop: (v) => ipcRenderer.invoke('set-auto-scroll-top', v),
   getAutoClearSearch: () => ipcRenderer.invoke('get-auto-clear-search'),
