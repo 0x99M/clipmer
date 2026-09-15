@@ -35,14 +35,15 @@ export const CHECKSUMS_URL = `${BASE}/SHA256SUMS`;
 export const SUPPORTED_ARCH = "x86_64";
 
 /**
- * Published releases, v2.0.6 through the current tag. Counted on 2026-09-12
- * with `gh api repos/0x99M/clipmer/releases --jq '.[].tag_name' | wc -l`.
- * Hardcoded for the same reason DOWNLOADS is — bump it when cutting a release.
+ * Published releases, v2.0.6 through the current tag. 10 were counted on
+ * 2026-09-15 with `gh api repos/0x99M/clipmer/releases --jq '.[].tag_name' | wc -l`,
+ * plus v3.2.1, which this value ships alongside. Hardcoded for the same reason
+ * DOWNLOADS is — bump it when cutting a release.
  */
-export const RELEASE_COUNT = 10;
+export const RELEASE_COUNT = 11;
 
 /**
- * GitHub release asset download counts, read on 2026-09-12 with
+ * GitHub release asset download counts, read on 2026-09-15 with
  * `gh api repos/0x99M/clipmer/releases --paginate --jq '.[].assets[]'`.
  *
  * Hardcoded deliberately: the site never calls api.github.com at build or
@@ -55,7 +56,7 @@ export const RELEASE_COUNT = 10;
  */
 export const DOWNLOADS = {
   /** Bump whenever the counts below are refreshed. */
-  measuredOn: "2026-09-12",
+  measuredOn: "2026-09-15",
   total: 90,
   /** Ordered by count, so the line reads as a ranking. */
   byFormat: [
