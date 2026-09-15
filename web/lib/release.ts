@@ -5,7 +5,7 @@
  * strings across components — which is how the blog install commands silently
  * went stale at 3.1.0.
  */
-export const VERSION = "3.2.0";
+export const VERSION = "3.2.1";
 export const TAG = `v${VERSION}`;
 
 const BASE = `https://github.com/0x99M/clipmer/releases/download/${TAG}`;
