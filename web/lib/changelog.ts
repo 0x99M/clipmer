@@ -25,6 +25,25 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.2.1",
+    date: "2026-09-15",
+    highlight: "Auto-paste on Ubuntu 26.04",
+    changes: [
+      {
+        type: "fixed",
+        text: "Auto-paste works again on GNOME 50, the version Ubuntu 26.04 LTS ships. The paste helper only declared support up to GNOME 49, so GNOME refused to load it and choosing an entry copied it without pasting. Log out and back in once after updating.",
+      },
+      {
+        type: "changed",
+        text: "The paste helper now declares GNOME 51 too, and no longer uses the API GNOME 51 removes.",
+      },
+      {
+        type: "added",
+        text: "Settings now says when auto-paste is switched on but cannot work, and what to do about it, instead of showing it as on while nothing pastes.",
+      },
+    ],
+  },
+  {
     version: "3.2.0",
     date: "2026-08-05",
     highlight: "Masking now holds everywhere",
