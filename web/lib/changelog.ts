@@ -26,7 +26,7 @@ export type Release = {
 export const CHANGELOG: Release[] = [
   {
     version: "3.2.1",
-    date: "2026-09-15",
+    date: "2026-09-16",
     highlight: "Auto-paste on Ubuntu 26.04",
     changes: [
       {
