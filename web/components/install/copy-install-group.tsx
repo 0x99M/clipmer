@@ -31,7 +31,7 @@ const OPTIONS = [
     id: "appimage",
     label: "AppImage",
     hint: "Any distro",
-    command: `mkdir -p ~/Applications && curl -L -o ~/Applications/Clipmer.AppImage ${ASSETS.appImage.url} && chmod +x ~/Applications/Clipmer.AppImage`,
+    command: `mkdir -p ~/Applications && curl -L -o ~/Applications/Clipmer.AppImage.part ${ASSETS.appImage.url} && chmod +x ~/Applications/Clipmer.AppImage.part && mv -f ~/Applications/Clipmer.AppImage.part ~/Applications/Clipmer.AppImage`,
   },
 ] as const;
 

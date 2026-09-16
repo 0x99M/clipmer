@@ -181,6 +181,12 @@ export default function InstallPage() {
             </code>{" "}
             rather than inside the app.
           </p>
+          <p className="mt-3 leading-relaxed text-muted-foreground">
+            Then quit Clipmer from the tray and open it again — closing the window only
+            hides it, so the old version keeps running until you do. If auto-paste is on,
+            log out and back in once as well, since GNOME only loads its helper when your
+            session starts.
+          </p>
           <p className="mt-3 text-sm text-muted-foreground">
             The{" "}
             <Link href="/changelog" className="text-orange hover:underline">

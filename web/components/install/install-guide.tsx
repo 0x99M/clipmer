@@ -46,11 +46,11 @@ const METHODS: {
     steps: [
       {
         label: "Download and make it executable",
-        command: `mkdir -p ~/Applications && curl -L -o ~/Applications/Clipmer.AppImage ${ASSETS.appImage.url} && chmod +x ~/Applications/Clipmer.AppImage`,
+        command: `mkdir -p ~/Applications && curl -L -o ~/Applications/Clipmer.AppImage.part ${ASSETS.appImage.url} && chmod +x ~/Applications/Clipmer.AppImage.part && mv -f ~/Applications/Clipmer.AppImage.part ~/Applications/Clipmer.AppImage`,
       },
       { label: "Run it", command: "~/Applications/Clipmer.AppImage" },
     ],
-    note: "The AppImage runs with the Chromium sandbox disabled, because AppImages mount on a nosuid filesystem where the sandbox helper cannot be setuid root. The .deb and .rpm keep it enabled — prefer those if your distro supports them.",
+    note: "It downloads beside the old file and renames it into place, so the same command updates an existing install — Linux refuses to write over a program while it is running, and a half-finished download never replaces a working one. The AppImage also runs with the Chromium sandbox disabled, because AppImages mount on a nosuid filesystem where the sandbox helper cannot be setuid root. The .deb and .rpm keep it enabled — prefer those if your distro supports them.",
   },
 ];
 
