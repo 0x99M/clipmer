@@ -326,8 +326,8 @@ export function HowItWorks() {
         <FadeUp>
           <div className="text-center mb-16 lg:mb-24">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Three keystrokes.{" "}
-              <span className="text-orange">Zero friction.</span>
+              Three keystrokes:{" "}
+              <span className="text-orange">Ctrl+C, Ctrl+Shift+D, Enter.</span>
             </h2>
             <p className="mt-4 text-muted-foreground text-lg">
               Install it once. You&apos;ll forget it&apos;s there — until the day you need a copy from an hour ago.
