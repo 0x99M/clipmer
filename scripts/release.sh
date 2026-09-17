@@ -103,9 +103,18 @@ fi
 # NOTE: hero.tsx no longer carries a version string. Its mockup title bar shows
 # the live "N masked" pill instead, so there is nothing here to rewrite.
 
+# ── Refresh the hardcoded release counts ──────────────────────────────
+# The homepage band shows real download and release figures. They are baked into
+# lib/release.ts because the site never calls api.github.com at build or request
+# time, so something has to refresh them or they rot into a number nobody has
+# checked. Runs after the upload, so the release being shipped is counted, and it
+# refuses to fail a release that has already been published.
+node "$WEB/scripts/refresh-release-counts.mjs" \
+  || echo "WARNING: release counts not refreshed"
+
 echo "Updated:"
 echo "  web/package.json"
-echo "  web/lib/release.ts"
+echo "  web/lib/release.ts (version, download and release counts)"
 
 # ── Verify ────────────────────────────────────────────────────────────
 echo ""

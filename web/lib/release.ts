@@ -35,20 +35,20 @@ export const CHECKSUMS_URL = `${BASE}/SHA256SUMS`;
 export const SUPPORTED_ARCH = "x86_64";
 
 /**
- * Published releases, v2.0.6 through the current tag. 10 were counted on
- * 2026-09-15 with `gh api repos/0x99M/clipmer/releases --jq '.[].tag_name' | wc -l`,
- * plus v3.2.1, which this value ships alongside. Hardcoded for the same reason
- * DOWNLOADS is — bump it when cutting a release.
+ * Published releases, v2.0.6 through the current tag. Hardcoded for the same
+ * reason DOWNLOADS is, and refreshed by the same script — see below.
  */
 export const RELEASE_COUNT = 11;
 
 /**
- * GitHub release asset download counts, read on 2026-09-15 with
- * `gh api repos/0x99M/clipmer/releases --paginate --jq '.[].assets[]'`.
+ * GitHub release asset download counts.
  *
  * Hardcoded deliberately: the site never calls api.github.com at build or
- * request time — the same rule lib/changelog.ts:18 documents — so these do not
- * self-update. Re-run that command and edit the numbers when cutting a release.
+ * request time — the same rule lib/changelog.ts:18 documents. Because baked-in
+ * numbers rot, scripts/release.sh rewrites this block through
+ * scripts/refresh-release-counts.mjs after every upload. Run that script by hand
+ * to refresh between releases; editing the values here directly also works, but
+ * the next release overwrites them.
  *
  * Packages only. The SHA256SUMS downloads are excluded, because fetching a
  * checksum is not an install. The counts still include bots, mirrors and
@@ -56,12 +56,12 @@ export const RELEASE_COUNT = 11;
  */
 export const DOWNLOADS = {
   /** Bump whenever the counts below are refreshed. */
-  measuredOn: "2026-09-15",
-  total: 90,
+  measuredOn: "2026-09-17",
+  total: 95,
   /** Ordered by count, so the line reads as a ranking. */
   byFormat: [
-    { label: ".deb", count: 46 },
-    { label: "AppImage", count: 30 },
-    { label: ".rpm", count: 14 },
+    { label: ".deb", count: 49 },
+    { label: "AppImage", count: 31 },
+    { label: ".rpm", count: 15 },
   ],
 } as const;
