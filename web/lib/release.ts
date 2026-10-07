@@ -56,12 +56,12 @@ export const RELEASE_COUNT = 11;
  */
 export const DOWNLOADS = {
   /** Bump whenever the counts below are refreshed. */
-  measuredOn: "2026-09-24",
-  total: 97,
+  measuredOn: "2026-10-07",
+  total: 104,
   /** Ordered by count, so the line reads as a ranking. */
   byFormat: [
-    { label: ".deb", count: 50 },
-    { label: "AppImage", count: 32 },
-    { label: ".rpm", count: 15 },
+    { label: ".deb", count: 55 },
+    { label: "AppImage", count: 33 },
+    { label: ".rpm", count: 16 },
   ],
 } as const;
