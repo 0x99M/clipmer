@@ -4,8 +4,14 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
+// Deliberately not a no-reply address. This email tells the buyer to contact
+// support@clipmer.app if their key goes missing, so a reply has to reach a
+// human — support@ is a Cloudflare Email Routing address that forwards to the
+// support inbox. Sending from no-reply@ dropped those replies silently.
 const FROM = () =>
-  process.env.RESEND_FROM || "Clipmer <noreply@clipmer.app>";
+  process.env.RESEND_FROM || "Clipmer Support <support@clipmer.app>";
+
+const REPLY_TO = () => process.env.RESEND_REPLY_TO || "support@clipmer.app";
 
 function renderHtml(licenseKey: string): string {
   return `
@@ -33,6 +39,7 @@ export async function sendLicenseEmail(args: {
   try {
     const { data, error } = await getResend().emails.send({
       from: FROM(),
+      replyTo: REPLY_TO(),
       to: args.to,
       subject: "Your Clipmer Pro License Key",
       html: renderHtml(args.licenseKey),
