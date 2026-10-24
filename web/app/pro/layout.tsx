@@ -12,7 +12,7 @@ import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
 
 const TITLE = "Clipmer Pro — $9 One-Time License, No Subscription";
 const DESCRIPTION =
-  "Unlock folders, inline notes, 200 entries of history, and search across notes. One payment of $9 — no subscription, no account, and it keeps working offline.";
+  "Unlock folders, inline notes, encrypted backups and 200 entries of history. One payment of $9 — no subscription, no account, and it keeps working offline.";
 
 export const metadata: Metadata = {
   title: TITLE,

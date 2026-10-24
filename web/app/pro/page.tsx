@@ -25,6 +25,7 @@ const features = [
   { name: "Folders", free: false, pro: true },
   { name: "Inline notes", free: false, pro: true },
   { name: "Smart search", free: "Content only", pro: "Content + notes" },
+  { name: "Encrypted backup & restore", free: false, pro: true },
   { name: "Auto-paste (Wayland)", free: true, pro: true },
   { name: "Dark & light themes", free: true, pro: true },
   { name: "Accent color", free: true, pro: true },
@@ -139,8 +140,8 @@ export default function ProPage() {
               </h1>
               <p className="text-lg text-muted-foreground max-w-md mx-auto lg:mx-0 leading-relaxed mb-8">
                 Pay once, keep it forever. No subscription, no renewal emails,
-                no seat count &mdash; one payment of $9 unlocks folders, notes
-                and the full 200-entry history.
+                no seat count &mdash; one payment of $9 unlocks folders, notes,
+                encrypted backups and the full 200-entry history.
               </p>
 
               {/* Inline highlights */}
@@ -249,11 +250,12 @@ export default function ProPage() {
                 What Pro actually unlocks
               </h2>
               <p className="mt-4 leading-relaxed text-muted-foreground">
-                <span className="text-foreground">Folders</span> turn the history
-                into somewhere you file things on purpose &mdash; a folder for
-                staging credentials, one for the SSH commands you retype every
-                week &mdash; and entries you file are exempt from the 200-entry
-                eviction, so they stay until you delete them.
+                <span className="text-foreground">Folders</span>{" "}
+                turn the history into somewhere you file things on purpose
+                &mdash; a folder for staging credentials, one for the SSH
+                commands you retype every week &mdash; and entries you file are
+                exempt from the 200-entry eviction, so they stay until you
+                delete them.
               </p>
               <p className="mt-4 leading-relaxed text-muted-foreground">
                 <span className="text-foreground">Inline notes</span> attach a
@@ -264,11 +266,23 @@ export default function ProPage() {
                 an entry you can no longer read.
               </p>
               <p className="mt-4 leading-relaxed text-muted-foreground">
+                <span className="text-foreground">Encrypted backup</span>{" "}
+                exports your history, notes and folders to one file, locked with a
+                password you choose &mdash; scrypt derives the key, AES-256-GCM
+                does the encryption, and without the password the file is noise.
+                It stays 100% offline: no account, no upload, no copy of your
+                password anywhere. Restoring merges the file into your current
+                history, recognising the entries you already have instead of
+                duplicating them, or replaces it outright if that is what you
+                want. Your license key is deliberately left out of the file, so
+                a backup can&apos;t activate Pro for anyone else.
+              </p>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
                 <span className="text-foreground">Minimal view</span> strips the
                 window down to the list alone for screen shares and demos, and{" "}
-                <span className="text-foreground">200 entries</span> doubles the
-                free tier&apos;s history. Masking itself is free and always will
-                be &mdash;{" "}
+                <span className="text-foreground">200 entries</span>{" "}
+                doubles the free tier&apos;s history. Masking itself is free
+                and always will be &mdash;{" "}
                 <Link href="/install" className="text-orange hover:underline">
                   install Clipmer
                 </Link>{" "}
@@ -363,6 +377,10 @@ export default function ProPage() {
                 {
                   q: "Does Clipmer phone home or send my data anywhere?",
                   a: "No. The app is 100% offline — no telemetry, no analytics, no license server ping. Your clipboard history never leaves your machine. License validation happens locally using a public key baked into the app.",
+                },
+                {
+                  q: "What if I forget my backup password?",
+                  a: "The file stays encrypted, and there is nothing anyone can do about that — us included. The key is derived from your password alone, Clipmer keeps no copy of it, and there is no server involved to reset anything. That is what makes a backup safe to keep on a USB stick or in cloud storage, but it does mean the password belongs in your password manager.",
                 },
                 {
                   q: "What if Clipmer doesn't work for me?",
