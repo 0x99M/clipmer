@@ -16,6 +16,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const Store = require('electron-store');
 const license = require('./license');
+const backup = require('./backup');
 
 // AppImages mount on a nosuid filesystem, so chrome-sandbox cannot be SUID
 // root and the renderer crashes with SIGTRAP. Disable the sandbox only there;
@@ -685,6 +686,213 @@ ipcMain.handle('get-stats', () => {
     groupedEntries,
     totalBytes,
   };
+});
+
+// ─── Backup ─────────────────────────────────────────────────────────────────────
+
+// A native file dialog takes focus, which the blur handler reads as "the user
+// left" — so the window would hide itself behind its own dialog. The renderer
+// already brackets its own confirm()s this way (withModal in app.js); this is
+// the equivalent for the dialogs the main process owns. The previous value is
+// restored rather than cleared, because the settings pane that launched this is
+// still open and still wants suppression.
+async function withDialogSuppressed(fn) {
+  const previous = blurHideSuppressed;
+  blurHideSuppressed = true;
+  try {
+    return await fn();
+  } finally {
+    blurHideSuppressed = previous;
+  }
+}
+
+// Fixed strings on purpose: a raw error message here would put filesystem paths
+// and internal detail straight into the settings pane.
+function backupErrorMessage(err) {
+  switch (err && err.code) {
+    case 'not_a_backup': return 'That file is not a Clipmer backup';
+    case 'unsupported_version': return 'That backup was written by a newer version of Clipmer';
+    case 'bad_params': return 'That backup file is malformed';
+    case 'bad_password': return 'Wrong password, or the file has been modified';
+    case 'corrupt': return 'That backup file is damaged';
+    case 'too_large': return 'That file is too large to be a Clipmer backup';
+    case 'weak_password':
+      return `Password must be at least ${backup.MIN_PASSWORD_CHARS} characters`;
+    default: return 'Could not read that backup file';
+  }
+}
+
+function defaultBackupDir() {
+  // getPath('documents') is synthesized from XDG and can name a directory that
+  // was never created, which leaves the dialog opening on nothing.
+  try {
+    const docs = app.getPath('documents');
+    if (fs.existsSync(docs)) return docs;
+  } catch {}
+  return app.getPath('home');
+}
+
+function defaultBackupName() {
+  const d = new Date();
+  const stamp = [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+  return `clipmer-backup-${stamp}.json`;
+}
+
+async function readBackupFile(filePath) {
+  const stat = await fs.promises.stat(filePath);
+  // Checked before the read, not after: parseEnvelope cannot judge the size of
+  // a file it has already had to load into memory.
+  if (stat.size > backup.MAX_FILE_BYTES) throw new backup.BackupError('too_large');
+  return fs.promises.readFile(filePath, 'utf8');
+}
+
+ipcMain.handle('export-backup', async (_event, password) => {
+  if (!license.isPro()) return { success: false, error: 'Pro required' };
+  if (typeof password !== 'string' || password.length < backup.MIN_PASSWORD_CHARS) {
+    return { success: false, error: backupErrorMessage({ code: 'weak_password' }) };
+  }
+
+  try {
+    const result = await withDialogSuppressed(() =>
+      dialog.showSaveDialog(mainWindow, {
+        title: 'Export encrypted backup',
+        defaultPath: path.join(defaultBackupDir(), defaultBackupName()),
+        filters: [{ name: 'Clipmer backup', extensions: ['json'] }],
+      })
+    );
+    if (result.canceled || !result.filePath) return { success: false, canceled: true };
+
+    // GTK does not append the filter's extension, so a name typed without one
+    // saves as a bare file that the import dialog's own *.json filter then
+    // hides from the user who just made it.
+    const target = path.extname(result.filePath) ? result.filePath : `${result.filePath}.json`;
+
+    // Commit whatever the debounce is still holding, so the file matches what
+    // the list is showing rather than trailing it by up to 400ms.
+    flushHistory();
+
+    // History and folders only. licenseKey and licenseEmail live in the same
+    // store and are deliberately left out: a backup is a thing people mail to
+    // themselves, and a signed Pro key inside one is a key handed out.
+    const envelope = await backup.encrypt({
+      payload: { history: clipboardHistory, groups },
+      password,
+      appVersion: app.getVersion(),
+    });
+
+    await fs.promises.writeFile(target, JSON.stringify(envelope, null, 2), { mode: 0o600 });
+    // `mode` above only applies when the file is created, so overwriting an
+    // existing backup would keep its old permissions. The contents are
+    // encrypted, but a world-readable clipboard backup is still nobody else's
+    // business — and clipmer-data.json already got this wrong once.
+    try {
+      await fs.promises.chmod(target, 0o600);
+    } catch {}
+
+    return {
+      success: true,
+      path: target,
+      entries: clipboardHistory.length,
+      folders: groups.length,
+    };
+  } catch (err) {
+    console.error('Backup export failed:', err);
+    return {
+      success: false,
+      error: err && err.code ? backupErrorMessage(err) : 'Could not write the backup file',
+    };
+  }
+});
+
+// Split from the apply step so the user picks a file, sees what is in it, and is
+// only then asked for a password — and so an unreadable file is rejected before
+// anyone bothers typing one.
+ipcMain.handle('import-backup-pick', async () => {
+  if (!license.isPro()) return { success: false, error: 'Pro required' };
+  try {
+    const result = await withDialogSuppressed(() =>
+      dialog.showOpenDialog(mainWindow, {
+        title: 'Import encrypted backup',
+        properties: ['openFile'],
+        filters: [
+          { name: 'Clipmer backup', extensions: ['json'] },
+          { name: 'All files', extensions: ['*'] },
+        ],
+      })
+    );
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return { success: false, canceled: true };
+    }
+    const filePath = result.filePaths[0];
+    const { meta } = backup.parseEnvelope(await readBackupFile(filePath));
+    return { success: true, path: filePath, meta };
+  } catch (err) {
+    if (!(err instanceof backup.BackupError)) console.error('Backup pick failed:', err);
+    return { success: false, error: backupErrorMessage(err) };
+  }
+});
+
+ipcMain.handle('import-backup-apply', async (_event, args) => {
+  if (!license.isPro()) return { success: false, error: 'Pro required' };
+  const filePath = args && typeof args.path === 'string' ? args.path : '';
+  const password = args && typeof args.password === 'string' ? args.password : '';
+  const mode = args && args.mode === 'replace' ? 'replace' : 'merge';
+  if (!filePath) return { success: false, error: 'No file selected' };
+  if (!password) return { success: false, error: 'Password required' };
+
+  try {
+    // Re-read rather than caching the parse from the pick step: the file may
+    // have changed in between, and keeping a decrypted payload alive between
+    // two IPC calls is worse than paying for the read twice.
+    const { header, params } = backup.parseEnvelope(await readBackupFile(filePath));
+    const payload = await backup.decrypt({ header, params, password });
+
+    // applyImport returns fresh arrays and leaves these two alone, so a throw
+    // anywhere above this point leaves live state exactly as it was.
+    const merged = backup.applyImport({
+      current: { history: clipboardHistory, groups },
+      incoming: payload,
+      mode,
+      limit: MAX_HISTORY,
+    });
+
+    clipboardHistory = merged.history;
+    groups = merged.groups;
+
+    // lastClipboardText is deliberately not touched — see clearHistory(). An
+    // import does not change the system clipboard, and resetting the tracker
+    // would have the next poll re-add whatever is still on it as a brand new,
+    // unmasked record.
+
+    // Written straight through rather than debounced: an import is one
+    // deliberate change and must not be lost to a crash in the next 400ms.
+    persistHistory({ immediate: true });
+    store.set('groups', groups);
+
+    // Replace mode can remove the folder the list is currently filtered to,
+    // which would leave an empty list and no visible way back.
+    const activeFilter = store.get('activeFilter');
+    if (activeFilter && activeFilter !== 'all' && !groups.some((g) => g.id === activeFilter)) {
+      store.set('activeFilter', 'all');
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('filter-reset');
+      }
+    }
+
+    emitGroupsUpdated();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('history-updated', getVisibleHistory());
+    }
+
+    return { success: true, mode, ...merged.stats };
+  } catch (err) {
+    if (!(err instanceof backup.BackupError)) console.error('Backup import failed:', err);
+    return { success: false, error: backupErrorMessage(err) };
+  }
 });
 
 ipcMain.handle('get-theme', () => store.get('theme') || 'dark');

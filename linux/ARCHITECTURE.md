@@ -67,6 +67,9 @@ All IPC goes through `contextBridge` in `preload.js`. The renderer never accesse
 | `clear-history` | — | — | Delete all entries |
 | `hide-window` | — | — | Hide the popup window |
 | `toggle-expand` | — | `boolean` | Toggle compact/expanded mode, returns new state |
+| `export-backup` | `password` | `{ success, path, entries, folders }` | Write an encrypted backup (Pro) |
+| `import-backup-pick` | — | `{ success, path, meta }` | Pick and validate a backup, no password yet (Pro) |
+| `import-backup-apply` | `{ path, password, mode }` | `{ success, ...stats }` | Decrypt and merge or replace (Pro) |
 
 ### Main → Renderer (send/on)
 
@@ -95,6 +98,47 @@ All IPC goes through `contextBridge` in `preload.js`. The renderer never accesse
 - Persisted to `electron-store` on every change
 - Text-only — image clipboard content is ignored; legacy image entries are
   pruned from the store on startup
+
+## Encrypted Backup
+
+Export and import live in `backup.js`, which imports nothing from electron: it is
+a pure transform over plain objects, so the crypto and the merge rules can be
+exercised with plain `node`. `main.js` owns the file dialogs, the store writes
+and the window broadcasts.
+
+The file is JSON, so it stays inspectable and versionable:
+
+```js
+{
+  format: 'clipmer-backup',
+  version: 1,
+  header: {
+    app, exportedAt, entries, folders,  // describes a file before its password is asked for
+    cipher: 'aes-256-gcm',
+    kdf: { name: 'scrypt', N: 131072, r: 8, p: 1, salt },
+    iv,
+  },
+  tag,         // GCM auth tag
+  ciphertext,  // AES-256-GCM over JSON { history, groups }
+}
+```
+
+- **KDF** — scrypt, N=2^17 r=8 p=1, 16-byte random salt, 32-byte key, through the
+  async `crypto.scrypt`. `scryptSync` would hold the main process for the whole
+  derivation, freezing the tray and the hotkey along with it.
+- **AAD** — the entire header, serialized with recursively sorted keys. Editing
+  the KDF parameters, the salt or the advertised counts fails the tag check;
+  reformatting the JSON does not.
+- **Deliberately excluded** — `licenseKey` and `licenseEmail`. A backup is a
+  thing people mail to themselves, and a signed Pro key inside one is a key
+  handed out.
+- **On import** everything is re-clamped against the live ceilings and every
+  `preview` is recomputed from its `content`: a file carrying a mismatched pair
+  is a way to show one thing and paste another. Merge dedupes on content (the
+  same identity `addEntry` uses), rewrites colliding ids and translates folder
+  membership through that map. `hidden` survives a merge in whichever direction
+  it was set, and filed entries keep their exemption from the cap.
+- Backups are written mode `0600`, including on overwrite.
 
 ## Global Shortcut (Wayland Workaround)
 

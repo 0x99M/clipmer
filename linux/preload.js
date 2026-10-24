@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld('clipboardManager', {
   setRememberPosition: (v) => ipcRenderer.invoke('set-remember-position', v),
   getAutostart: () => ipcRenderer.invoke('get-autostart'),
   setAutostart: (v) => ipcRenderer.invoke('set-autostart', v),
+  exportBackup: (password) => ipcRenderer.invoke('export-backup', password),
+  pickBackupFile: () => ipcRenderer.invoke('import-backup-pick'),
+  applyBackup: ({ path, password, mode }) =>
+    ipcRenderer.invoke('import-backup-apply', { path, password, mode }),
   getLicenseInfo: () => ipcRenderer.invoke('license:info'),
   activateLicense: (key) => ipcRenderer.invoke('license:activate', key),
   deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),

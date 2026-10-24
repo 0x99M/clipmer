@@ -34,6 +34,12 @@ let viewerRevealed = false;
 let entryMenuOpen = false;
 let entryMenuTarget = null;
 let entryMenuView = 'main'; // 'main' | 'folders'
+let backupOverlayOpen = false;
+let backupOverlayMode = null; // 'export' | 'import'
+let backupPendingPath = null;
+// The key derivation takes a few hundred milliseconds. Without this, a second
+// Enter starts another export on top of the first one.
+let backupBusy = false;
 
 // Frozen "now" used to format entry timestamps. Refreshed only when the window
 // becomes visible, so the displayed times don't drift while the user looks at
@@ -619,6 +625,24 @@ function applyProGating() {
       row.querySelector('.pro-badge')?.remove();
     }
   });
+
+  // Backup is Pro. The badge goes on the description and the lock on the
+  // buttons, so a free user can still read what the feature is before deciding
+  // whether it is worth paying for.
+  const backupActions = document.getElementById('backup-actions-row');
+  const backupLabel = document.querySelector('#backup-label-row .settings-label-text');
+  if (backupActions && backupLabel) {
+    backupActions.classList.toggle('pro-locked', !proActive);
+    const badge = backupLabel.querySelector('.pro-badge');
+    if (!proActive && !badge) {
+      const el = document.createElement('span');
+      el.className = 'pro-badge';
+      el.textContent = 'PRO';
+      backupLabel.appendChild(el);
+    } else if (proActive && badge) {
+      badge.remove();
+    }
+  }
 
   // Search bar (free tier)
   searchEl.disabled = false;
@@ -1265,6 +1289,20 @@ function handleKeyDown(e) {
     return;
   }
 
+  // The backup password prompt owns the keyboard while it is up. It has to come
+  // before the settingsOpen branch below: it opens from the settings pane, so
+  // otherwise Escape would close settings out from under it.
+  if (backupOverlayOpen) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (!backupBusy) closeBackupOverlay();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      submitBackupOverlay();
+    }
+    return;
+  }
+
   // If viewer is open, Escape closes it (everything else ignored)
   if (viewerOpen) {
     if (e.key === 'Escape') {
@@ -1863,6 +1901,226 @@ document.getElementById('viewer-copy').addEventListener('click', () => {
     window.clipboardManager.hideWindow();
   }
 });
+
+// ─── Encrypted backup ───────────────────────────────────────────────────────────
+
+// Mirrors backup.js. Main rejects a short password regardless of what the UI
+// lets through — this only buys a better message than a round trip would give.
+const BACKUP_MIN_PASSWORD = 8;
+
+function showBackupMessage(text, kind) {
+  const el = document.getElementById('backup-message');
+  el.textContent = text || '';
+  el.className = kind ? `license-message ${kind}` : 'license-message';
+  el.style.display = text ? 'block' : 'none';
+}
+
+function setBackupOverlayError(text) {
+  const el = document.getElementById('backup-overlay-error');
+  el.textContent = text || '';
+  el.style.display = text ? 'block' : 'none';
+}
+
+function countLabel(n, singular, plural) {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
+// The counts come out of the backup's header, which is covered by the auth tag —
+// so this describes the file without having to decrypt it, and cannot be edited
+// to misdescribe what is inside.
+function formatBackupMeta(meta) {
+  if (!meta) return '';
+  const parts = [];
+  if (typeof meta.entries === 'number') parts.push(countLabel(meta.entries, 'entry', 'entries'));
+  if (typeof meta.folders === 'number' && meta.folders > 0) {
+    parts.push(countLabel(meta.folders, 'folder', 'folders'));
+  }
+  const when = meta.exportedAt ? new Date(meta.exportedAt) : null;
+  if (when && !Number.isNaN(when.getTime())) {
+    parts.push(when.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }));
+  }
+  return parts.join(' · ');
+}
+
+function summarizeImport(result) {
+  const parts = [`Added ${countLabel(result.added, 'entry', 'entries')}`];
+  if (result.duplicates) parts.push(`${result.duplicates} already here`);
+  if (result.foldersAdded) parts.push(`${countLabel(result.foldersAdded, 'new folder', 'new folders')}`);
+  if (result.foldersMerged) parts.push(`${countLabel(result.foldersMerged, 'folder', 'folders')} merged`);
+  // Named rather than left for the user to notice the count came up short.
+  if (result.dropped) parts.push(`${result.dropped} dropped at the history cap`);
+  if (result.skipped) parts.push(`${result.skipped} unreadable`);
+  return parts.join(' · ');
+}
+
+function openBackupOverlay(mode, picked) {
+  backupOverlayOpen = true;
+  backupOverlayMode = mode;
+  backupPendingPath = mode === 'import' ? picked.path : null;
+
+  const title = document.getElementById('backup-overlay-title');
+  const desc = document.getElementById('backup-overlay-desc');
+  const meta = document.getElementById('backup-overlay-meta');
+  const confirmField = document.getElementById('backup-confirm-field');
+  const modeField = document.getElementById('backup-mode-field');
+  const confirmBtn = document.getElementById('backup-overlay-confirm');
+
+  if (mode === 'export') {
+    title.textContent = 'Export backup';
+    // Says hidden entries are included, because the whole point of marking one
+    // hidden is that it should not turn up where you did not expect it.
+    desc.textContent =
+      'Your history, notes and folders go into one encrypted file — hidden '
+      + 'entries included. There is no recovery: forget this password and the '
+      + 'file can never be opened again.';
+    meta.textContent = '';
+    confirmField.style.display = '';
+    modeField.style.display = 'none';
+    confirmBtn.textContent = 'Export';
+  } else {
+    title.textContent = 'Import backup';
+    desc.textContent = 'Enter the password this backup was created with.';
+    meta.textContent = formatBackupMeta(picked && picked.meta);
+    confirmField.style.display = 'none';
+    modeField.style.display = '';
+    confirmBtn.textContent = 'Import';
+  }
+
+  document.getElementById('backup-password').value = '';
+  document.getElementById('backup-password-confirm').value = '';
+  const mergeRadio = document.querySelector('input[name="backup-mode"][value="merge"]');
+  if (mergeRadio) mergeRadio.checked = true;
+  setBackupOverlayError('');
+  showBackupMessage('');
+
+  document.getElementById('backup-overlay').style.display = 'flex';
+  document.getElementById('backup-password').focus();
+}
+
+function closeBackupOverlay() {
+  backupOverlayOpen = false;
+  backupOverlayMode = null;
+  backupPendingPath = null;
+  // A password left in an input would still be sitting in the DOM afterwards,
+  // and still be there the next time the overlay opened.
+  document.getElementById('backup-password').value = '';
+  document.getElementById('backup-password-confirm').value = '';
+  setBackupOverlayError('');
+  document.getElementById('backup-overlay').style.display = 'none';
+}
+
+function selectedBackupMode() {
+  const checked = document.querySelector('input[name="backup-mode"]:checked');
+  return checked && checked.value === 'replace' ? 'replace' : 'merge';
+}
+
+async function submitBackupOverlay() {
+  if (backupBusy) return;
+
+  const password = document.getElementById('backup-password').value;
+  if (!password) {
+    setBackupOverlayError('Enter a password');
+    return;
+  }
+
+  if (backupOverlayMode === 'export') {
+    if (password.length < BACKUP_MIN_PASSWORD) {
+      setBackupOverlayError(`Password must be at least ${BACKUP_MIN_PASSWORD} characters`);
+      return;
+    }
+    if (password !== document.getElementById('backup-password-confirm').value) {
+      setBackupOverlayError('The two passwords do not match');
+      return;
+    }
+  }
+
+  const mode = backupOverlayMode === 'import' ? selectedBackupMode() : null;
+  if (mode === 'replace') {
+    const ok = await withModal(() =>
+      confirm(
+        'Replace your clipboard history?\n\n'
+        + 'Everything in Clipmer now — entries, notes and folders — is discarded '
+        + "and replaced by the contents of this backup. This can't be undone."
+      )
+    );
+    if (!ok) return;
+  }
+
+  backupBusy = true;
+  const confirmBtn = document.getElementById('backup-overlay-confirm');
+  const previousLabel = confirmBtn.textContent;
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = backupOverlayMode === 'export' ? 'Encrypting…' : 'Decrypting…';
+  setBackupOverlayError('');
+
+  try {
+    if (backupOverlayMode === 'export') {
+      const result = await window.clipboardManager.exportBackup(password);
+      // A dismissed save dialog leaves the overlay up with the password intact,
+      // so picking a different location does not mean typing it again.
+      if (result.canceled) return;
+      if (!result.success) {
+        setBackupOverlayError(result.error || 'Export failed');
+        return;
+      }
+      closeBackupOverlay();
+      const what = result.folders
+        ? `${countLabel(result.entries, 'entry', 'entries')} and ${countLabel(result.folders, 'folder', 'folders')}`
+        : countLabel(result.entries, 'entry', 'entries');
+      showBackupMessage(`Saved ${what} to ${result.path}`, 'success');
+    } else {
+      const result = await window.clipboardManager.applyBackup({
+        path: backupPendingPath,
+        password,
+        mode,
+      });
+      if (!result.success) {
+        setBackupOverlayError(result.error || 'Import failed');
+        return;
+      }
+      closeBackupOverlay();
+      showBackupMessage(summarizeImport(result), 'success');
+      // The list repairs itself from main's history-updated and groups-updated
+      // broadcasts; the stats block is only read when the pane is opened, so it
+      // needs asking again.
+      await renderStats();
+    }
+  } catch {
+    setBackupOverlayError('Something went wrong');
+  } finally {
+    backupBusy = false;
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = previousLabel;
+  }
+}
+
+// Wired at module level like the viewer controls above — the script is at the
+// end of body, so the elements exist.
+document.getElementById('export-backup-btn').addEventListener('click', () => {
+  openBackupOverlay('export');
+});
+
+document.getElementById('import-backup-btn').addEventListener('click', async () => {
+  showBackupMessage('');
+  // The file is picked and validated before any password is asked for, so an
+  // unreadable file never costs the user a typed password.
+  const picked = await window.clipboardManager.pickBackupFile();
+  if (!picked.success) {
+    // A dismissed dialog is not an error worth reporting.
+    if (!picked.canceled) showBackupMessage(picked.error || 'Could not read that file', 'error');
+    return;
+  }
+  openBackupOverlay('import', picked);
+});
+
+document.getElementById('backup-overlay-cancel').addEventListener('click', closeBackupOverlay);
+document.getElementById('backup-overlay-close').addEventListener('click', closeBackupOverlay);
+document.getElementById('backup-backdrop').addEventListener('click', () => {
+  // Not mid-derivation: closing would leave the pending result with nowhere to
+  // report itself.
+  if (!backupBusy) closeBackupOverlay();
+});
+document.getElementById('backup-overlay-confirm').addEventListener('click', submitBackupOverlay);
 
 // Dismiss entry actions menu on outside click
 document.addEventListener('click', (e) => {

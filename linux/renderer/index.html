@@ -199,6 +199,20 @@
         <h3 class="settings-title">Statistics</h3>
         <div id="stats-content"></div>
       </div>
+      <div class="settings-section" id="backup-section">
+        <h3 class="settings-title">Backup</h3>
+        <div class="settings-row" id="backup-label-row">
+          <span class="settings-label">
+            <span class="settings-label-text">Encrypted backup</span>
+            <span class="settings-hint">History, notes and folders in one password-protected file. Your license key is never included.</span>
+          </span>
+        </div>
+        <div class="settings-row license-btn-row" id="backup-actions-row">
+          <button id="export-backup-btn" class="license-btn">Export&hellip;</button>
+          <button id="import-backup-btn" class="license-btn">Import&hellip;</button>
+        </div>
+        <div id="backup-message" class="license-message" style="display:none"></div>
+      </div>
       <div class="settings-section danger-zone">
         <h3 class="settings-title danger-title">Danger zone</h3>
         <div class="settings-row">
@@ -285,6 +299,48 @@
       <div class="viewer-footer">
         <button id="viewer-reveal" class="viewer-action" style="display:none">Reveal</button>
         <button id="viewer-copy" class="viewer-action">Copy</button>
+      </div>
+    </div>
+  </div>
+  <div id="backup-overlay" class="viewer-overlay" style="display:none">
+    <div class="viewer-backdrop" id="backup-backdrop"></div>
+    <div class="viewer-panel backup-panel">
+      <div class="viewer-header">
+        <span id="backup-overlay-title" class="viewer-title">Export backup</span>
+        <span id="backup-overlay-meta" class="viewer-meta"></span>
+        <button id="backup-overlay-close" class="viewer-close" title="Cancel (Esc)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="backup-body">
+        <p id="backup-overlay-desc" class="backup-desc"></p>
+        <label class="backup-field">
+          <span class="backup-field-label">Password</span>
+          <input type="password" id="backup-password" class="backup-input" spellcheck="false" autocomplete="off">
+        </label>
+        <label class="backup-field" id="backup-confirm-field">
+          <span class="backup-field-label">Confirm password</span>
+          <input type="password" id="backup-password-confirm" class="backup-input" spellcheck="false" autocomplete="off">
+        </label>
+        <div class="backup-field" id="backup-mode-field" style="display:none">
+          <span class="backup-field-label">Existing history</span>
+          <label class="backup-radio">
+            <input type="radio" name="backup-mode" value="merge" checked>
+            <span>Merge &mdash; keep what is here and add what is missing</span>
+          </label>
+          <label class="backup-radio">
+            <input type="radio" name="backup-mode" value="replace">
+            <span>Replace &mdash; discard everything here first</span>
+          </label>
+        </div>
+        <p id="backup-overlay-error" class="backup-error" style="display:none"></p>
+      </div>
+      <div class="viewer-footer">
+        <button id="backup-overlay-cancel" class="license-btn">Cancel</button>
+        <button id="backup-overlay-confirm" class="viewer-action">Export</button>
       </div>
     </div>
   </div>

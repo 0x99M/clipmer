@@ -1623,3 +1623,98 @@ body.folders-open #fab {
 .viewer-action:hover {
   background: var(--accent-hover);
 }
+
+/* ─── Backup ────────────────────────────────────────────────────────────────── */
+
+/* The description row carries a hint beneath its label, a shape only the danger
+   zone had styled until now. */
+#backup-section .settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+#backup-section .settings-label-text {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+#backup-label-row {
+  align-items: flex-start;
+}
+
+.backup-panel {
+  max-width: 460px;
+}
+
+.backup-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.backup-desc {
+  margin: 0;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.backup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.backup-field-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.backup-input {
+  padding: 7px 9px;
+  background: var(--surface-input);
+  border: 1px solid var(--border-input);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: var(--font-size-small);
+  outline: none;
+}
+
+.backup-input:focus {
+  border-color: var(--accent);
+}
+
+.backup-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: var(--font-size-small);
+  line-height: 1.4;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.backup-radio input {
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Replace is the destructive half of an import, so it reads as a warning the
+   moment it is chosen rather than only in the confirm that follows. */
+.backup-radio:has(input[value="replace"]:checked) span {
+  color: #f87171;
+}
+
+.backup-error {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: #f87171;
+}
