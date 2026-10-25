@@ -25,6 +25,25 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.3.0",
+    date: "2026-10-25",
+    highlight: "Encrypted backup and restore",
+    changes: [
+      {
+        type: "added",
+        text: "Pro can export your history, notes and folders to a single encrypted file, from Settings → License → Backup. You choose the password and the file is unreadable without it — the key is derived from your password with scrypt, and the contents are encrypted with AES-256-GCM. Nothing is uploaded and no account is involved.",
+      },
+      {
+        type: "added",
+        text: "Importing a backup either merges it into your current history or replaces it. A merge recognises the entries you already have instead of duplicating them, so importing the same file twice changes nothing, and your notes, folders and hidden entries come back with it.",
+      },
+      {
+        type: "added",
+        text: "Your license key is deliberately left out of the backup file, so a backup kept on a USB stick or in cloud storage cannot activate Pro for anyone else. The file is written so that only your user account can read it.",
+      },
+    ],
+  },
+  {
     version: "3.2.1",
     date: "2026-09-16",
     highlight: "Auto-paste on Ubuntu 26.04",
