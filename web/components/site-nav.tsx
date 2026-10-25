@@ -94,11 +94,26 @@ export function SiteNav() {
         aria-label="Main"
         className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6"
       >
+        {/* The mark beside the name, the lockup the app icon now makes
+            possible. The mark is decorative, so the link's accessible name is
+            the word alone, and it carries its own width and height so the row
+            does not shift as the SVG loads. 26px on phones, 30px from `sm` —
+            the nav keeps its 64px height either way. */}
         <Link
           href="/"
-          className="shrink-0 rounded-md text-[0.9375rem] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-80"
+          className="flex shrink-0 items-center gap-[9px] rounded-md text-foreground transition-opacity hover:opacity-80 sm:gap-2.5"
         >
-          Clipmer
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/clipmer-mark.svg"
+            alt=""
+            width={25}
+            height={30}
+            className="h-[26px] w-auto sm:h-[30px]"
+          />
+          <span className="text-[18px] font-semibold tracking-[-0.01em] sm:text-[20px]">
+            Clipmer
+          </span>
         </Link>
 
         {/* Desktop */}

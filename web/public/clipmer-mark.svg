@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3.5 1.6 17 20.4" width="25" height="30" role="img" aria-label="Clipmer">
+    <title>Clipmer</title>
+    <mask id="clipmer-mark">
+      <rect x="3.5" y="1.6" width="17" height="20.4" fill="#000"/>
+      <rect x="3.5" y="4" width="17" height="18" rx="3.2" fill="#fff"/>
+      <rect x="8.5" y="1.6" width="7" height="4.6" rx="2.3" fill="#fff"/>
+      <rect x="7" y="9.8" width="10" height="1.8" rx="0.9" fill="#000"/>
+      <circle cx="8.4" cy="14.3" r="1.15" fill="#000"/>
+      <circle cx="12" cy="14.3" r="1.15" fill="#000"/>
+      <circle cx="15.6" cy="14.3" r="1.15" fill="#000"/>
+      <rect x="7" y="17" width="6.6" height="1.8" rx="0.9" fill="#000"/>
+    </mask>
+    <rect x="3.5" y="1.6" width="17" height="20.4" fill="#E95420" mask="url(#clipmer-mark)"/>
+</svg>

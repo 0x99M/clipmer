@@ -126,6 +126,59 @@ def tray_glyph(size, geom, colour=ORANGE, inset=0.04):
     return img
 
 
+def mark_svg(geom, colour=ORANGE):
+    """The mark alone as SVG, for the site nav.
+
+    The nav sits over the hero's radial glow and grid, so the punched rows have
+    to be real holes rather than rows painted in the background colour — hence
+    a mask rather than two fills. The viewBox is cropped to the ink, so a CSS
+    height of 30px makes the *mark* 30px tall instead of a 24-unit grid with
+    padding baked into it.
+
+    Vector rather than one of the PNGs because the nav is the one place the
+    mark is laid out against text, where a raster edge at 30px next to live
+    type is visible.
+    """
+    x0 = min(geom["body"][0], geom["clasp"][0])
+    y0 = min(geom["body"][1], geom["clasp"][1])
+    x1 = max(geom["body"][0] + geom["body"][2], geom["clasp"][0] + geom["clasp"][2])
+    y1 = max(geom["body"][1] + geom["body"][3], geom["clasp"][1] + geom["clasp"][3])
+    w, h = x1 - x0, y1 - y0
+
+    def n(v):
+        return f"{v:g}"
+
+    def rect(x, y, rw, rh, r, fill):
+        return (f'<rect x="{n(x)}" y="{n(y)}" width="{n(rw)}" height="{n(rh)}" '
+                f'rx="{n(r)}" fill="{fill}"/>')
+
+    parts = [rect(*geom["body"], "#fff"), rect(*geom["clasp"], "#fff")]
+    for row in geom["rows"]:
+        if row[0] == "rect":
+            parts.append(rect(*row[1:], "#000"))
+        else:
+            _, cy, r, cxs = row
+            for cx in cxs:
+                parts.append(
+                    f'<circle cx="{n(cx)}" cy="{n(cy)}" r="{n(r)}" fill="#000"/>'
+                )
+
+    hex_colour = "#%02X%02X%02X" % colour[:3]
+    box = f'<rect x="{n(x0)}" y="{n(y0)}" width="{n(w)}" height="{n(h)}"'
+    indent = "\n    "
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{n(x0)} {n(y0)} {n(w)} {n(h)}" '
+        f'width="{n(round(30 * w / h))}" height="30" role="img" aria-label="Clipmer">'
+        f'{indent}<title>Clipmer</title>'
+        f'{indent}<mask id="clipmer-mark">'
+        f'{indent}  {box} fill="#000"/>'
+        + "".join(f"{indent}  {part}" for part in parts)
+        + f'{indent}</mask>'
+        f'{indent}{box} fill="{hex_colour}" mask="url(#clipmer-mark)"/>'
+        "\n</svg>\n"
+    )
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     repo = os.path.dirname(os.path.dirname(here))
@@ -170,6 +223,14 @@ def main():
                        app_tile(16, TINY, glyph_frac=GLYPH_FRAC_16)],
     )
     written.append((path, "48/32/16", "full, small, tiny"))
+
+    # The site nav's brand lockup. public/ rather than app/, because app/ is
+    # where Next claims filenames like icon.png for metadata — this one is
+    # referenced by <img src> and is nothing to do with the tab or the OG card.
+    path = os.path.join(repo, "web", "public", "clipmer-mark.svg")
+    with open(path, "w") as fh:
+        fh.write(mark_svg(FULL))
+    written.append((path, "vector", "full, transparent"))
 
     # iOS applies its own squircle mask, so this one ships square.
     path = os.path.join(web, "apple-icon.png")
