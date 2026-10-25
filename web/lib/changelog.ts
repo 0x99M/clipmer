@@ -25,6 +25,21 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.3.1",
+    date: "2026-10-25",
+    highlight: "A new icon",
+    changes: [
+      {
+        type: "changed",
+        text: "Clipmer has a new icon: a clipboard whose middle row is masked as three dots — the same thing the app does to an entry you hide. It replaces the grey circle with an orange dot above it, which read as a notification badge and all but disappeared at small sizes.",
+      },
+      {
+        type: "changed",
+        text: "The tray icon is drawn for the size the panel shows it at, rather than being an app icon shrunk down, and it now stands out against a light panel as well as a dark one.",
+      },
+    ],
+  },
+  {
     version: "3.3.0",
     date: "2026-10-25",
     highlight: "Encrypted backup and restore",
