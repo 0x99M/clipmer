@@ -1,5 +1,6 @@
 import { SupportTable } from "@/components/blog/support-table";
 import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
 
 CopyQ is not a bad clipboard manager. It is probably the most capable one on Linux, the
 repository dates to October 2009, and 16.0.0 shipped on 30 May 2026 with commits landing
@@ -294,10 +295,7 @@ It exists for one specific problem CopyQ does not address: a clipboard full of t
 would rather not have on screen. Entries can be masked so they render as dots during a
 screen share, annotated with notes, and filed into folders.
 
-```bash
-curl -LO https://github.com/0x99M/clipmer/releases/latest/download/clipmer_3.3.0_amd64.deb
-sudo apt install ./clipmer_3.3.0_amd64.deb
-```
+<InstallCommand />
 
 The disclosures that matter if you are coming from CopyQ. Clipmer is **source-available
 under PolyForm Strict 1.0.0, not open source** — CopyQ is GPL-3.0-or-later, and if that is

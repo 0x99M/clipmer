@@ -1,5 +1,6 @@
 import { SupportTable } from "@/components/blog/support-table";
 import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
 
 Your clipboard manager records nothing since you logged into Wayland, or you are setting
 up a new session and want to pick one that will still work in a year. Either way the
@@ -268,10 +269,7 @@ folders. The XWayland route also means clipboard *capture* does not depend on a 
 extension staying compatible across GNOME releases — the failure mode Pano illustrates —
 though the optional auto-paste helper is a GNOME Shell extension and does.
 
-```bash
-curl -LO https://github.com/0x99M/clipmer/releases/latest/download/clipmer_3.3.0_amd64.deb
-sudo apt install ./clipmer_3.3.0_amd64.deb
-```
+<InstallCommand />
 
 Press **Ctrl + Shift + D** to open it. The free tier keeps 100 entries; folders, notes and
 the minimal view are paid. Builds are x86_64 only, and there are `.rpm` and AppImage

@@ -20,6 +20,26 @@ if ! grep -q "version: \"$VERSION\"" "$CHANGELOG_TS"; then
 fi
 echo "Changelog entry for $VERSION found."
 
+# ── Refuse hybrid download URLs ───────────────────────────────────────
+# A /releases/latest/download/<pinned filename> URL is a floating alias aimed at
+# a pinned name. Publishing a release moves `latest` immediately, so the already
+# deployed site keeps asking `latest` for an asset name only the *previous*
+# release has, and every such command 404s until master is pushed. Every
+# download URL on the site must therefore name its own tag, which means reading
+# it from web/lib/release.ts.
+#
+# This is a precondition, not a post-upload rewrite: once the release exists the
+# damage is done, and editing the repo cannot fix the site already serving.
+HYBRID=$(grep -rnE "github\.com/[^ \"'\`]*releases/latest/download" \
+  "$REPO_ROOT/web/app" "$REPO_ROOT/web/components" "$REPO_ROOT/web/content" || true)
+if [[ -n "$HYBRID" ]]; then
+  echo "ERROR: /releases/latest/download/ URLs in web/ — these 404 the moment $TAG is published:"
+  echo "$HYBRID" | sed 's/^/  /'
+  echo "Build the URL from web/lib/release.ts (ASSETS, CHECKSUMS_URL) instead."
+  exit 1
+fi
+echo "No hybrid download URLs."
+
 # ── Locate dist files ─────────────────────────────────────────────────
 DEB="$REPO_ROOT/linux/dist/clipmer_${VERSION}_amd64.deb"
 APPIMAGE="$REPO_ROOT/linux/dist/Clipmer-${VERSION}.AppImage"
@@ -76,8 +96,6 @@ echo ""
 echo "Updating web/ version references ..."
 
 WEB="$REPO_ROOT/web"
-DEB_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/clipmer_${VERSION}_amd64.deb"
-APPIMAGE_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/Clipmer-${VERSION}.AppImage"
 
 # web/package.json — sync version
 npm --prefix "$WEB" version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null
@@ -89,16 +107,11 @@ sed -i -E \
   "s|^export const VERSION = \"[0-9.]+\";|export const VERSION = \"${VERSION}\";|" \
   "$WEB/lib/release.ts"
 
-# Blog posts quote versioned asset filenames in install commands. GitHub's
-# /releases/latest/download/ still needs the exact asset name, so these cannot be
-# made version-agnostic and have to be rewritten on every release.
-if compgen -G "$WEB/content/blog/*.mdx" >/dev/null; then
-  sed -i \
-    -e "s|clipmer_[0-9.]\+_amd64\.deb|clipmer_${VERSION}_amd64.deb|g" \
-    -e "s|clipmer-[0-9.]\+\.x86_64\.rpm|clipmer-${VERSION}.x86_64.rpm|g" \
-    -e "s|Clipmer-[0-9.]\+\.AppImage|Clipmer-${VERSION}.AppImage|g" \
-    "$WEB"/content/blog/*.mdx
-fi
+# NOTE: blog posts no longer quote asset filenames. The install command is
+# <InstallCommand />, which reads ASSETS from lib/release.ts, so the single
+# substitution above covers the posts too — and there is nothing left for a sed
+# to leave behind at the previous version, which is how they went stale at
+# 3.1.0.
 
 # NOTE: hero.tsx no longer carries a version string. Its mockup title bar shows
 # the live "N masked" pill instead, so there is nothing here to rewrite.
