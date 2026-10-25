@@ -1,6 +1,6 @@
 {
   "name": "clipmer",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "Secrets-aware clipboard manager for Linux",
   "author": {
     "name": "Mustafa",
