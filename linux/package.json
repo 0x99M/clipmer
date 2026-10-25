@@ -22,6 +22,7 @@
   "build": {
     "appId": "com.clipmer.app",
     "productName": "Clipmer",
+    "files": ["**/*", "!assets/make-icons.py"],
     "linux": {
       "target": ["AppImage", "deb", "rpm"],
       "icon": "assets/icons/",
