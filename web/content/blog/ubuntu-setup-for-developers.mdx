@@ -1,0 +1,133 @@
+import { Callout } from "@/components/blog/callout";
+
+You have a fresh Ubuntu install and you want to write code on it today. This is the short
+list, in the order you should do it, with the commands to copy.
+
+No version tables, no benchmarks, no arguments about editors. If you want the reasoning
+behind any of it, there is a longer piece at the end.
+
+## The short version
+
+If you just want the machine working, run this and skip to the next section:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y build-essential git curl wget unzip \
+  ripgrep fd-find bat htop tmux
+```
+
+That is a working development machine. Everything below is either an explanation of what
+you just installed, or the handful of things `apt` cannot give you.
+
+## What each of those is for
+
+**build-essential** — the compiler, `make`, and the headers that half of all `npm install`
+and `pip install` commands quietly need. Install it first and you will never see the class
+of error where a package fails to build for no visible reason.
+
+**git** — set your identity before your first commit, not after:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+git config --global init.defaultBranch main
+```
+
+**ripgrep, fd-find, bat** — faster, friendlier replacements for `grep`, `find` and `cat`.
+Worth the muscle memory.
+
+<Callout type="note" title="Two of them install under a different name">
+  On Ubuntu, `fd-find` gives you a binary called `fdfind`, and `bat` gives you `batcat` —
+  both names were already taken by older packages. Add these to your `~/.bashrc`:
+
+  ```bash
+  alias fd=fdfind
+  alias bat=batcat
+  ```
+</Callout>
+
+**tmux** — so a long-running process survives your SSH session dropping. Learn two
+shortcuts: `Ctrl-b d` to detach, `tmux attach` to come back. That is enough to be useful.
+
+## The one thing not to install from apt
+
+Language runtimes. Ubuntu freezes package versions when a release is cut and holds them for
+years, which is correct for stability and wrong for the thing you build software with — the
+Node.js in Ubuntu 24.04 has been end-of-life since April 2025.
+
+Use a version manager instead. You will need more than one version eventually anyway:
+
+```bash
+# Node
+curl -fsSL https://fnm.vercel.app/install | bash
+fnm install --lts
+
+# Python
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv python install          # latest, or name a version: uv python install 3.13
+```
+
+Both install to your home directory, need no `sudo`, and let you switch versions per
+project.
+
+## Your editor
+
+Install VS Code however suits you — the Snap and the `.deb` from
+[code.visualstudio.com](https://code.visualstudio.com/) are both fine.
+
+If someone tells you to avoid the Snap because it is sandboxed, that advice is wrong: the
+official VS Code snap uses **classic** confinement, which means no sandbox and the same
+access to your filesystem the `.deb` has. The only real difference is how it updates — Snap
+on its own schedule, `.deb` through `apt` once you add Microsoft's repository.
+
+If you already have an editor you like, keep it. This is the least important decision on
+the page and the one people spend the most time on.
+
+## Docker, if you need it
+
+```bash
+sudo apt install -y docker.io
+sudo usermod -aG docker "$USER"
+```
+
+Then **log out and back in** — group membership is only read at login, and this is the step
+everyone misses before concluding Docker is broken.
+
+## Two things people set up too late
+
+Both of these get installed after the day they were needed. Do them now.
+
+**Backups.** Ubuntu ships Déjà Dup — open "Backups", point it at an external drive or a
+remote, turn on the schedule. Five minutes. If you prefer something scriptable, `restic` is
+the answer.
+
+**Clipboard history.** Ubuntu ships none at all, so everything you copy is destroyed by the
+next thing you copy. This bites hardest when you are moving connection strings and tokens
+between a terminal and a browser, which is most of the day.
+
+GNOME needs a Shell extension for this, because the Wayland protocol will not let a normal
+application read the clipboard in the background — the
+[full explanation is here](/blog/clipboard-managers-on-wayland), and the
+[Ubuntu-specific options with install commands are here](/blog/clipboard-history-ubuntu).
+
+Ours is [Clipmer](/install): history plus folders, notes, and the ability to mask an entry
+so it shows as dots when you are sharing your screen. If you are on Hyprland or Sway rather
+than stock Ubuntu, `cliphist` is free and does the history part well — our
+[compositor support matrix](/wayland-clipboard-support) will tell you which case you are in.
+
+## What to skip
+
+**System cleaners** like Stacer and BleachBit. There is very little to clean on a modern
+Ubuntu, and some of what they offer to delete you will miss. `sudo apt autoremove` covers
+the honest version.
+
+**Custom kernels, tweak scripts, and "make Ubuntu fast" guides.** Your machine is not slow.
+
+**Debating the terminal emulator.** The one that shipped is fine. Come back to this in six
+months if it still bothers you.
+
+---
+
+That is the whole setup. If you want to know which of these Ubuntu packages are current and
+which are years behind upstream — including the one that is thirty releases old — that is
+the [longer companion piece](/blog/linux-tools-worth-installing).

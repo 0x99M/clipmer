@@ -28,6 +28,33 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "ubuntu-setup-for-developers",
+    title: "Ubuntu setup for developers: the short list",
+    seoTitle: "Ubuntu Setup for Developers",
+    metaDescription:
+      "A fresh Ubuntu install to a working development machine: one apt command, the two tools that install under a different name, and what not to take from apt.",
+    description:
+      "A fresh Ubuntu install to a working development machine in about four minutes. One apt command for the whole base, the two packages that install under a different binary name, the one category you should never take from apt, and the things people set up the day after they needed them \u2014 backups and a clipboard history.",
+    date: "2026-10-25",
+    tags: ["Ubuntu", "Linux", "Tools"],
+    readingMinutes: 4,
+    toc: [
+      { id: "the-short-version", title: "The short version" },
+      { id: "what-each-of-those-is-for", title: "What each of those is for" },
+      {
+        id: "the-one-thing-not-to-install-from-apt",
+        title: "The one thing not to install from apt",
+      },
+      { id: "your-editor", title: "Your editor" },
+      { id: "docker-if-you-need-it", title: "Docker, if you need it" },
+      {
+        id: "two-things-people-set-up-too-late",
+        title: "Two things people set up too late",
+      },
+      { id: "what-to-skip", title: "What to skip" },
+    ],
+  },
+  {
     slug: "linux-tools-worth-installing",
     title: "Linux tools worth installing in 2026, and the versions Ubuntu gets wrong",
     seoTitle: "Linux Tools Worth Installing in 2026",
@@ -204,6 +231,8 @@ export const POST_CONTENT: Record<
   string,
   () => Promise<{ default: ComponentType }>
 > = {
+  "ubuntu-setup-for-developers": () =>
+    import("@/content/blog/ubuntu-setup-for-developers.mdx"),
   "linux-tools-worth-installing": () =>
     import("@/content/blog/linux-tools-worth-installing.mdx"),
   "copyq-alternatives": () =>
