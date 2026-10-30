@@ -25,6 +25,17 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.4.1",
+    date: "2026-10-30",
+    highlight: "A scrollbar that matches the rest of the window",
+    changes: [
+      {
+        type: "fixed",
+        text: "The folder list and the backup panel drew the system scrollbar rather than Clipmer’s — a wide pale bar with stepper arrows, which stood out badly against the dark window. Both now use the same slim scrollbar as the history list.",
+      },
+    ],
+  },
+  {
     version: "3.4.0",
     date: "2026-10-30",
     highlight: "KDE Plasma, folder tabs, and a window that remembers its size",

@@ -475,28 +475,44 @@ body.expanded .entry-preview {
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
 
+/* Every scrolling container belongs on these lists. One left off falls back to
+   the platform scrollbar, which under a light GTK theme is a wide white bar
+   with stepper arrows — unmissable against a dark panel. That is how the
+   folder list and the backup panel shipped with one. */
 #history-list::-webkit-scrollbar,
 #settings-view::-webkit-scrollbar,
-.viewer-body::-webkit-scrollbar {
+#folders-view-content::-webkit-scrollbar,
+.settings-pane::-webkit-scrollbar,
+.viewer-body::-webkit-scrollbar,
+.backup-body::-webkit-scrollbar {
   width: 6px;
 }
 
 #history-list::-webkit-scrollbar-track,
 #settings-view::-webkit-scrollbar-track,
-.viewer-body::-webkit-scrollbar-track {
+#folders-view-content::-webkit-scrollbar-track,
+.settings-pane::-webkit-scrollbar-track,
+.viewer-body::-webkit-scrollbar-track,
+.backup-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
 #history-list::-webkit-scrollbar-thumb,
 #settings-view::-webkit-scrollbar-thumb,
-.viewer-body::-webkit-scrollbar-thumb {
+#folders-view-content::-webkit-scrollbar-thumb,
+.settings-pane::-webkit-scrollbar-thumb,
+.viewer-body::-webkit-scrollbar-thumb,
+.backup-body::-webkit-scrollbar-thumb {
   background: var(--border-default);
   border-radius: 3px;
 }
 
 #history-list::-webkit-scrollbar-thumb:hover,
 #settings-view::-webkit-scrollbar-thumb:hover,
-.viewer-body::-webkit-scrollbar-thumb:hover {
+#folders-view-content::-webkit-scrollbar-thumb:hover,
+.settings-pane::-webkit-scrollbar-thumb:hover,
+.viewer-body::-webkit-scrollbar-thumb:hover,
+.backup-body::-webkit-scrollbar-thumb:hover {
   background: var(--border-input);
 }
 
@@ -1096,23 +1112,6 @@ body.folders-open #fab {
 
 .settings-pane.active {
   display: block;
-}
-
-.settings-pane::-webkit-scrollbar {
-  width: 6px;
-}
-
-.settings-pane::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.settings-pane::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: 3px;
-}
-
-.settings-pane::-webkit-scrollbar-thumb:hover {
-  background: var(--border-input);
 }
 
 .settings-section {
