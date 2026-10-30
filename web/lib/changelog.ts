@@ -25,6 +25,17 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.4.2",
+    date: "2026-10-30",
+    highlight: "Folder tabs stay with the history list",
+    changes: [
+      {
+        type: "fixed",
+        text: "The folder tabs introduced in 3.4.0 stayed on screen when you opened Settings or the folder editor, leaving a row of history filters above a screen with nothing to filter. They now go away with the list and come back when you return to it.",
+      },
+    ],
+  },
+  {
     version: "3.4.1",
     date: "2026-10-30",
     highlight: "A scrollbar that matches the rest of the window",

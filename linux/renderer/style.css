@@ -1738,6 +1738,17 @@ body.folders-open #fab {
   display: none;
 }
 
+/* Settings and Folders replace the list rather than covering it, so the strip
+   has to come down with it — it belongs to the history view, and a row of
+   filters above a folder editor is just wrong. Keyed on the body classes both
+   toggles already set, the way #fab is, rather than another style.display line
+   in each toggle for the next view to forget. The entry viewer needs no rule:
+   it is a fixed inset:0 overlay. */
+body.settings-open #folder-tabs,
+body.folders-open #folder-tabs {
+  display: none;
+}
+
 /* The strip scrolls past about four folders at the 380px minimum width, and a
    visible scrollbar there would eat more height than the tabs themselves. */
 #folder-tabs::-webkit-scrollbar {
