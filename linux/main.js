@@ -123,9 +123,13 @@ app.on('second-instance', () => {
 // ─── Window ─────────────────────────────────────────────────────────────────────
 
 function createWindow() {
+  // The window has always been resizable and has always remembered where it
+  // was, but never how big it was, so every launch reset it to 380x500.
+  const startSize = savedWindowSize();
+
   mainWindow = new BrowserWindow({
-    width: 380,
-    height: 500,
+    width: startSize.width,
+    height: startSize.height,
     frame: false,
     resizable: true,
     minWidth: 380,
@@ -249,11 +253,38 @@ function showWindow() {
   mainWindow.focus();
 }
 
-function persistPosition() {
+function persistBounds() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   if (store.get('rememberPosition') === false) return;
   const bounds = mainWindow.getBounds();
   store.set('lastWindowPosition', { x: bounds.x, y: bounds.y });
+  // Expanded is a temporary zoom, not a size anyone chose. Recording it would
+  // make the next launch open at 800x900 and strand the user's own size for
+  // good, since nothing else ever writes this key.
+  if (!isExpanded) {
+    store.set('lastWindowSize', { width: bounds.width, height: bounds.height });
+  }
+}
+
+// Clamped on the way out rather than on the way in, so a size written while a
+// large monitor was attached cannot open a window taller than the screen it is
+// actually being shown on. COLLAPSED_SIZE doubles as the floor because it is
+// what minWidth/minHeight are set to.
+function savedWindowSize() {
+  // With remembering switched off, persistBounds stops updating the stored
+  // size, so whatever is on disk is stale by definition — fall back to stock
+  // rather than restoring a size from whenever the setting was last on.
+  if (store.get('rememberPosition') === false) return { ...COLLAPSED_SIZE };
+
+  const saved = store.get('lastWindowSize');
+  if (!saved || typeof saved.width !== 'number' || typeof saved.height !== 'number') {
+    return { ...COLLAPSED_SIZE };
+  }
+  const area = activeWorkArea();
+  return {
+    width: Math.round(Math.min(Math.max(saved.width, COLLAPSED_SIZE.width), area.width)),
+    height: Math.round(Math.min(Math.max(saved.height, COLLAPSED_SIZE.height), area.height)),
+  };
 }
 
 // The single place the window is hidden, so position is saved on every route
@@ -261,7 +292,7 @@ function persistPosition() {
 // remember it.
 function hideWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
-  persistPosition();
+  persistBounds();
   mainWindow.hide();
 }
 
@@ -926,6 +957,11 @@ ipcMain.handle('get-effective-shortcut', () => {
     requested: store.get('shortcut') || DEFAULT_SHORTCUT,
     effective: effectiveShortcut,
     bound,
+    // Which fallback the settings pane may truthfully point at when nothing
+    // bound. It used to claim the GNOME shortcut regardless, which is wrong on
+    // every other desktop — and on Plasma it was wrong in the one case the
+    // message exists to explain.
+    desktop: desktopEnv(),
   };
 });
 
@@ -956,17 +992,20 @@ ipcMain.handle('set-shortcut', (_event, shortcut) => {
       store.set('shortcut', shortcut);
       effectiveShortcut = shortcut;
       registerGnomeShortcut();
+      registerKdeShortcut();
       return { success: true, bound: false };
     }
     store.set('shortcut', previous);
     registerGlobalShortcut();
     registerGnomeShortcut();
+    registerKdeShortcut();
     return { success: false, error: 'That shortcut is already in use' };
   }
 
   effectiveShortcut = shortcut;
   store.set('shortcut', shortcut);
   registerGnomeShortcut();
+  registerKdeShortcut();
   return { success: true, bound: true };
 });
 
@@ -978,7 +1017,9 @@ ipcMain.handle('toggle-expand', () => {
   if (!mainWindow) return isExpanded;
 
   const area = activeWorkArea();
-  const target = isExpanded ? COLLAPSED_SIZE : EXPANDED_SIZE;
+  // Collapsing returns to whatever size the user last chose, not to a stock
+  // 380x500 that would throw away a deliberate resize every time.
+  const target = isExpanded ? savedWindowSize() : EXPANDED_SIZE;
 
   // 800x900 was applied unconditionally. On a 1366x768 laptop that put y at
   // -79, pushing the drag strip — the only draggable surface outside minimal
@@ -997,7 +1038,7 @@ ipcMain.handle('toggle-expand', () => {
   isExpanded = !isExpanded;
   // Re-centring discards a deliberate placement, so record the new one rather
   // than leaving a stale position to be restored later.
-  persistPosition();
+  persistBounds();
   return isExpanded;
 });
 
@@ -1135,19 +1176,39 @@ function shellQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
+// Which desktop is running decides which registration path can work at all.
+// Matched by substring and case-insensitively because the variable holds a
+// colon-separated list in practice: Ubuntu reports "ubuntu:GNOME", and Plasma
+// reports "KDE" on some sessions and "KDE:plasma" on others.
+function desktopEnv() {
+  const raw = (process.env.XDG_CURRENT_DESKTOP || '').toLowerCase();
+  if (raw.includes('kde') || raw.includes('plasma')) return 'kde';
+  if (raw.includes('gnome') || raw.includes('unity')) return 'gnome';
+  return 'other';
+}
+
+// The one command both desktop bindings run. The PID is read when the key is
+// PRESSED, not when the binding is written. Previously `$(cat …)` sat inside a
+// double-quoted string handed to a shell at registration time, so the running
+// process's PID was baked into dconf — the hotkey worked until the next restart
+// and then silently signalled a dead process. The /proc check makes a stale PID
+// harmless rather than sending SIGUSR1 (default disposition: terminate) to
+// whatever recycled it.
+function toggleScript() {
+  return (
+    `p=$(cat ${shellQuote(PID_FILE)} 2>/dev/null); ` +
+    `[ -n "$p" ] && grep -qs clipmer /proc/$p/cmdline && kill -USR1 "$p"`
+  );
+}
+
+function toggleCommand() {
+  return `bash -c ${shellQuote(toggleScript())}`;
+}
+
 // Register a GNOME custom keyboard shortcut. It signals the running instance;
 // the SIGUSR1 handler toggles the window.
 function registerGnomeShortcut() {
-  // The PID is read when the key is PRESSED, not when the binding is written.
-  // Previously `$(cat …)` sat inside a double-quoted string handed to a shell at
-  // registration time, so the running process's PID was baked into dconf — the
-  // hotkey worked until the next restart and then silently signalled a dead
-  // process. The /proc check makes a stale PID harmless rather than sending
-  // SIGUSR1 (default disposition: terminate) to whatever recycled it.
-  const script =
-    `p=$(cat ${shellQuote(PID_FILE)} 2>/dev/null); ` +
-    `[ -n "$p" ] && grep -qs clipmer /proc/$p/cmdline && kill -USR1 "$p"`;
-  const command = `bash -c ${shellQuote(script)}`;
+  const command = toggleCommand();
 
   try {
     const paths = readCustomKeybindingPaths();
@@ -1176,6 +1237,128 @@ function unregisterGnomeShortcut() {
     writeCustomKeybindingPaths(paths.filter((p) => p !== KEYBINDING_PATH));
   } catch {}
 }
+
+// ─── KDE Plasma shortcut ───────────────────────────────────────────────────────
+
+// Plasma has no equivalent of GNOME's custom-keybinding schema. It binds global
+// shortcuts to a .desktop file, so the file has to exist before the binding can
+// name it, and the binding itself lives in a group named after that file.
+const KDE_DESKTOP_FILE = 'clipmer-toggle.desktop';
+
+// Plasma names two modifiers differently from Electron: Super is Meta, and the
+// Cmd aliases do not exist. The key itself needs no translation.
+function toKdeBinding(shortcut) {
+  const MAP = {
+    Super: 'Meta',
+    Control: 'Ctrl',
+    CmdOrCtrl: 'Ctrl',
+    CommandOrControl: 'Ctrl',
+    Option: 'Alt',
+  };
+  return shortcut.split('+').map((part) => MAP[part] || part).join('+');
+}
+
+// Plasma 6 ships kwriteconfig6 and Plasma 5 kwriteconfig5. Try the newer one
+// first and fall through only on ENOENT — any other failure is a real error and
+// must not be masked by retrying against a tool that is not there either.
+function kwriteconfig(args) {
+  const { execFileSync } = require('child_process');
+  for (const bin of ['kwriteconfig6', 'kwriteconfig5']) {
+    try {
+      execFileSync(bin, args, { timeout: 5000, stdio: 'ignore' });
+      return true;
+    } catch (err) {
+      if (err.code === 'ENOENT') continue;
+      throw err;
+    }
+  }
+  return false;
+}
+
+// `Exec=` is NOT a shell string. The desktop-entry spec gives it its own
+// grammar: double quotes are the quoting character, `"`, backtick, `$` and `\`
+// have to be backslash-escaped inside them, and a literal `%` has to be
+// doubled or it reads as a field code. Shell quoting pushed through unchanged
+// produces an Exec line the spec cannot parse.
+function desktopExecQuote(value) {
+  const escaped = value.replace(/(["`$\\])/g, '\\$1').replace(/%/g, '%%');
+  return `"${escaped}"`;
+}
+
+// Guarded internally, like registerGnomeShortcut: set-shortcut calls this
+// outside the startup wrapper, and an escaping throw there would reject the IPC
+// and tell the user their shortcut failed when it had in fact been saved.
+function registerKdeShortcut() {
+  if (desktopEnv() !== 'kde') return;
+
+  const os = require('os');
+  const appsDir = path.join(os.homedir(), '.local', 'share', 'applications');
+  const desktopPath = path.join(appsDir, KDE_DESKTOP_FILE);
+  const shortcut = store.get('shortcut') || DEFAULT_SHORTCUT;
+
+  try {
+    // Rather than encode the toggle through both the shell's quoting and the
+    // desktop entry's, write it to a file and point Exec at that path. One path
+    // needs no escaping beyond quoting, and setAutostart() already writes a
+    // launcher script for the same reason.
+    const scriptPath = path.join(app.getPath('userData'), 'clipmer-toggle.sh');
+    fs.writeFileSync(scriptPath, `#!/bin/sh\n${toggleScript()}\n`, { mode: 0o755 });
+
+    // NoDisplay keeps this out of the application menu — it is a binding
+    // target, not something anyone should launch. The X-KDE line is what files
+    // it under Shortcuts → Commands rather than as an application launcher.
+    fs.mkdirSync(appsDir, { recursive: true });
+    fs.writeFileSync(
+      desktopPath,
+      [
+        '[Desktop Entry]',
+        'Type=Application',
+        'Name=Clipmer Toggle',
+        `Exec=${desktopExecQuote(scriptPath)}`,
+        'NoDisplay=true',
+        'StartupNotify=false',
+        'X-KDE-GlobalAccel-CommandShortcut=true',
+        '',
+      ].join('\n'),
+      { mode: 0o644 }
+    );
+
+    // kwriteconfig edits in place and only the group it is given, so the rest
+    // of the user's shortcuts are left untouched — the same reason the GNOME
+    // path reads the existing path list instead of overwriting it. Never
+    // hand-write kglobalshortcutsrc: it holds every global shortcut on the
+    // system. The value is `<active>,<default>,<description>`.
+    const wrote = kwriteconfig([
+      '--file', 'kglobalshortcutsrc',
+      '--group', KDE_DESKTOP_FILE,
+      '--key', '_launch',
+      `${toKdeBinding(shortcut)},none,Toggle Clipmer`,
+    ]);
+
+    if (!wrote) {
+      console.log('Neither kwriteconfig6 nor kwriteconfig5 found; skipped KDE shortcut');
+      return;
+    }
+
+    kwriteconfig([
+      '--file', 'kglobalshortcutsrc',
+      '--group', KDE_DESKTOP_FILE,
+      '--key', '_k_friendly_name',
+      'Clipmer',
+    ]);
+
+    console.log(`KDE shortcut registered: ${toKdeBinding(shortcut)}`);
+  } catch (err) {
+    console.log('Could not register KDE shortcut:', err.message);
+  }
+}
+
+// Deliberately NOT removed on quit, which is where this differs from the GNOME
+// path. kglobalaccel only picks up changes to its config on a daemon restart or
+// a fresh login, so writing the binding on every launch and deleting it on every
+// quit would leave it in whichever state the last logout happened to catch.
+// Leaving it in place is safe: the command no-ops against a stale PID file,
+// which is exactly what the /proc check in toggleScript() is for.
 
 // ─── SIGUSR1 handler (Wayland shortcut toggle) ─────────────────────────────────
 
@@ -1456,6 +1639,7 @@ app.whenReady().then(() => {
     ['legacy shortcut cleanup', cleanupLegacyShortcut],
     ['global shortcut', registerGlobalShortcut],
     ['GNOME shortcut', registerGnomeShortcut],
+    ['KDE shortcut', registerKdeShortcut],
     ['paste extension', () => { if (store.get('autoPaste')) installPasteExtension(); }],
   ]) {
     try {

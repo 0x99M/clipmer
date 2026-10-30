@@ -142,13 +142,21 @@ The file is JSON, so it stays inspectable and versionable:
 
 ## Global Shortcut (Wayland Workaround)
 
-Electron's `globalShortcut` API silently fails on Wayland — it reports registration as successful but the callback never fires. This app uses a three-layer approach:
+Electron's `globalShortcut` API silently fails on Wayland — it reports registration as successful but the callback never fires. The signal path is the workaround, and each desktop needs its own way to trigger it:
 
 1. **`globalShortcut.register()`** — works on X11 sessions
-2. **GNOME custom shortcut** — registered via `gsettings` on startup, runs `kill -USR1 <pid>` to signal the app
-3. **`SIGUSR1` handler** — `process.on('SIGUSR1', toggleWindow)` receives the signal and toggles
+2. **GNOME custom shortcut** — registered via `gsettings` on startup, runs `kill -USR1 <pid>`
+3. **KDE Plasma shortcut** — a `NoDisplay` `.desktop` file in `~/.local/share/applications/` plus a `_launch` entry in `kglobalshortcutsrc`, written with `kwriteconfig6`/`kwriteconfig5`
+4. **`SIGUSR1` handler** — `process.on('SIGUSR1', toggleWindow)` receives the signal and toggles
 
-A PID file is written to `~/.config/electron-clipboard-manager/clipboard-manager.pid` on startup and cleaned up on quit.
+`desktopEnv()` reads `XDG_CURRENT_DESKTOP` by substring, because it holds a colon-separated list (`ubuntu:GNOME`, `KDE:plasma`). Both desktop registrations build their command from the single `toggleCommand()`.
+
+Two deliberate asymmetries between the GNOME and KDE paths:
+
+- **GNOME unregisters on quit, KDE does not.** `kglobalaccel` only reloads its config on a daemon restart or a fresh login, so writing on launch and deleting on quit would leave the binding in whichever state the last logout caught. Leaving it is safe — the command no-ops against a stale PID file, which is what the `/proc` check is for. The cost is that a Plasma shortcut takes effect only after the next login, which the settings pane now says.
+- **`kglobalshortcutsrc` is never hand-written.** It holds every global shortcut on the system. `kwriteconfig` edits in place and only the group it is given, the same reason the GNOME path reads the existing path list rather than overwriting it.
+
+A PID file is written to `~/.config/clipmer/clipmer.pid` on startup and cleaned up on quit.
 
 ## Window Management
 
@@ -156,7 +164,9 @@ A PID file is written to `~/.config/electron-clipboard-manager/clipboard-manager
 - **Always on top** to float above other windows
 - **No blur-to-hide** — the window hides only via: shortcut toggle, Escape key, clicking an entry, or tray menu. This avoids a Linux WM bug where frameless windows receive immediate blur events before the user can interact.
 - **Show/hide, never close** — the `close` event is intercepted; only Quit from the tray menu actually closes
-- **Expand/collapse** — toggles between 380x500 and 800x900, re-centers on screen
+- **Resizable, and the size is remembered** — `lastWindowSize` is written by `persistBounds()` on every route out, alongside `lastWindowPosition`, and restored in `createWindow()` clamped to the 380x500 minimum and to the work area. A size recorded on a larger monitor cannot open a window taller than the screen it lands on.
+- **Expand/collapse** — expands to 800x900; collapsing returns to the remembered size rather than a stock 380x500, so a deliberate resize survives the round trip. `persistBounds()` skips the size write while expanded, since the zoom is not a chosen size.
+- Both the size and the position are gated on the one `rememberPosition` setting, labelled "Remember window size and position".
 - **Centered positioning** — always centers on `screen.getPrimaryDisplay().workAreaSize`. Does NOT use `tray.getBounds()` (returns zeros on GNOME)
 
 ## Tray
@@ -168,7 +178,7 @@ A PID file is written to `~/.config/electron-clipboard-manager/clipboard-manager
 ## Persistence
 
 - `electron-store@8.2.0` (last CJS-compatible version)
-- Store file: `~/.config/electron-clipboard-manager/clipboard-history.json`
+- Store file: `~/.config/clipmer/clipmer-data.json`
 - Automatic `.bak` corruption recovery via `conf` underneath
 - Loads on startup with try/catch fallback to `[]`
 

@@ -19,6 +19,9 @@ let selectedIndex = -1;
 let searchMode = 'content';
 let activeFilter = 'all';  // 'all' | group.id
 let filterMenuOpen = false;
+// Which desktop is hosting us, read from main on the first shortcut query.
+// 'other' until then, which is the honest default: it promises no fallback.
+let hostDesktop = 'other';
 let settingsOpen = false;
 let foldersViewOpen = false;
 let autoScrollTop = true;
@@ -364,6 +367,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // accelerator that does nothing.
   window.clipboardManager.getEffectiveShortcut().then((s) => {
     if (!s) return;
+    if (s.desktop) hostDesktop = s.desktop;
     recorder.textContent = s.requested;
     // Two distinct cases, and the old single condition could match neither:
     // when the fallback binds, bound is true; when nothing binds, effective
@@ -371,7 +375,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (s.effective !== s.requested) {
       showShortcutHint(`Using ${s.effective} — ${s.requested} was unavailable.`);
     } else if (!s.bound) {
-      showShortcutHint(`${s.requested} could not be registered. The GNOME shortcut still works.`);
+      showShortcutHint(unboundHint(s.requested));
     }
   });
 
@@ -402,12 +406,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
 
     // Require at least one modifier
-    if (!e.ctrlKey && !e.shiftKey && !e.altKey) return;
+    if (!e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) return;
 
     const parts = [];
     if (e.ctrlKey) parts.push('Ctrl');
     if (e.shiftKey) parts.push('Shift');
     if (e.altKey) parts.push('Alt');
+    // Electron and GNOME call this Super, Plasma calls it Meta, and the DOM
+    // calls it metaKey. Emitting 'Meta' here would make the GNOME path write
+    // <Meta>, a different and usually unmapped modifier — so it has to be
+    // normalised to Super at the point of capture. main.js already accepted
+    // Super as a modifier; nothing could ever produce one.
+    if (e.metaKey) parts.push('Super');
 
     // Map the DOM key name to Electron's accelerator name. These differ — the
     // arrows are 'ArrowUp' in the DOM but 'Up' to Electron, and passing the DOM
@@ -441,7 +451,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .setShortcut(accelerator)
       .then((result) => {
         if (result && result.success) {
-          if (result.bound === false) showShortcutHint('Saved. Uses the GNOME shortcut on Wayland.');
+          if (result.bound === false) showShortcutHint(savedUnboundHint());
           return;
         }
         recorder.textContent = previous;
@@ -1493,9 +1503,104 @@ function debounce(fn, ms) {
   };
 }
 
+// ─── Shortcut hints ─────────────────────────────────────────────────────────────
+
+// Electron's globalShortcut never fires on Wayland, so on a Wayland session the
+// hotkey always comes from a desktop-specific fallback. These said "the GNOME
+// shortcut still works" on every desktop, which was false on Plasma — the one
+// place the message was most likely to be read.
+function unboundHint(requested) {
+  if (hostDesktop === 'gnome') {
+    return `${requested} could not be registered. The GNOME shortcut still works.`;
+  }
+  if (hostDesktop === 'kde') {
+    return `${requested} is registered with Plasma. It starts working after your next login.`;
+  }
+  return `${requested} could not be registered. This desktop may not allow global shortcuts on Wayland.`;
+}
+
+function savedUnboundHint() {
+  if (hostDesktop === 'gnome') return 'Saved. Uses the GNOME shortcut on Wayland.';
+  if (hostDesktop === 'kde') return 'Saved. Takes effect on Plasma after your next login.';
+  return 'Saved, but nothing on this desktop could bind it.';
+}
+
+// ─── Folder tabs ────────────────────────────────────────────────────────────────
+
+// Reads and writes the same activeFilter the filter button does, so the two
+// controls can never disagree. Called from updateFilterLabel() rather than from
+// each of its callers, which is what keeps every existing path in sync.
+function renderFolderTabs() {
+  const strip = document.getElementById('folder-tabs');
+  if (!strip) return;
+
+  // With no folders there is nothing to separate, and a lone "All" tab would
+  // cost 30px of a 500px window to say nothing.
+  if (groupsData.length === 0) {
+    strip.hidden = true;
+    strip.textContent = '';
+    return;
+  }
+
+  strip.hidden = false;
+  strip.textContent = '';
+
+  // Counts are against the history actually loaded, matching what the filter
+  // button's badge reports — a folder's memberIds can outlive the entries.
+  const ids = new Set(historyData.map((e) => e.id));
+  const tabs = [
+    { id: 'all', name: 'All', count: historyData.length },
+    ...groupsData.map((g) => ({
+      id: g.id,
+      name: g.name,
+      count: g.memberIds.filter((id) => ids.has(id)).length,
+    })),
+  ];
+
+  tabs.forEach((tab) => {
+    const isActive = activeFilter === tab.id;
+    const btn = document.createElement('button');
+    btn.className = 'folder-tab' + (isActive ? ' active' : '');
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    btn.setAttribute('aria-controls', 'history-list');
+    // Arrow keys are the list's, not the strip's, so tabs are reached with Tab
+    // like any other button. Shift+Tab still cycles the filter app-wide.
+    btn.title = tab.name;
+
+    const name = document.createElement('span');
+    name.className = 'folder-tab-name';
+    name.textContent = tab.name;
+    btn.appendChild(name);
+
+    const count = document.createElement('span');
+    count.className = 'folder-tab-count';
+    count.textContent = String(tab.count);
+    btn.appendChild(count);
+
+    btn.addEventListener('click', async () => {
+      if (activeFilter === tab.id) return;
+      activeFilter = tab.id;
+      await window.clipboardManager.setActiveFilter(tab.id);
+      selectedIndex = -1;
+      visibleCount = PAGE_SIZE;
+      applyFilter();
+    });
+
+    strip.appendChild(btn);
+  });
+
+  // Shift+Tab cycles the filter, so the active tab has to be brought back into
+  // view when the strip is wider than the window.
+  const active = strip.querySelector('.folder-tab.active');
+  if (active) active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
 // ─── Filter dropdown ────────────────────────────────────────────────────────────
 
 function updateFilterLabel() {
+  renderFolderTabs();
+
   const btn = document.getElementById('filter-btn');
   const icon = document.getElementById('filter-btn-icon');
   const count = document.getElementById('filter-count');

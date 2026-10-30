@@ -25,6 +25,33 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.4.0",
+    date: "2026-10-30",
+    highlight: "KDE Plasma, folder tabs, and a window that remembers its size",
+    changes: [
+      {
+        type: "added",
+        text: "The keyboard shortcut now registers on KDE Plasma. Electron's own shortcut API never fires on Wayland, and the fallback behind it only ever spoke GNOME's language — so on Plasma no combination worked at all, however it was set. Clipmer now writes a Plasma shortcut as well. Plasma reads its shortcut configuration at login, so it starts working after you next log in.",
+      },
+      {
+        type: "added",
+        text: "Folders now appear as a row of tabs above the list, each with the number of entries in it. The filter button is still there and the two always agree: choosing a tab updates the button, and choosing from the button moves the tab. The row only appears once you have a folder, so nothing changes if you do not use them.",
+      },
+      {
+        type: "added",
+        text: "The window remembers how big you made it, not only where you put it. Collapsing from the expanded view now returns to your size instead of snapping back to the default one. The setting that controls this is now called “Remember window size and position”.",
+      },
+      {
+        type: "fixed",
+        text: "The Super key can be used in a shortcut. The recorder ignored it completely and insisted on Ctrl, Shift or Alt, so a combination like Super+V could not be entered at all — even though everything behind the recorder already accepted it.",
+      },
+      {
+        type: "fixed",
+        text: "Settings no longer claims the GNOME shortcut is still working when you are not running GNOME. It now names whichever fallback your desktop actually has, or says plainly that there is not one.",
+      },
+    ],
+  },
+  {
     version: "3.3.1",
     date: "2026-10-25",
     highlight: "A new icon",

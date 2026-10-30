@@ -1718,3 +1718,84 @@ body.folders-open #fab {
   line-height: 1.4;
   color: #f87171;
 }
+
+/* ─── Folder tabs ───────────────────────────────────────────────────────────── */
+
+/* Added alongside the filter button rather than replacing it, which is what the
+   request asked for. Hidden entirely when no folders exist, so it costs no
+   vertical space in the default 380x500 window. */
+#folder-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 16px;
+  background: var(--surface-base);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#folder-tabs[hidden] {
+  display: none;
+}
+
+/* The strip scrolls past about four folders at the 380px minimum width, and a
+   visible scrollbar there would eat more height than the tabs themselves. */
+#folder-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.folder-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  max-width: 140px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: var(--font-size-label);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+}
+
+.folder-tab:hover {
+  color: var(--text-primary);
+}
+
+.folder-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.folder-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+/* A long folder name truncates rather than pushing the count out of reach. */
+.folder-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-tab-count {
+  flex-shrink: 0;
+  font-size: var(--font-size-xxs);
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border-radius: 8px;
+  padding: 1px 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.folder-tab.active .folder-tab-count {
+  color: var(--accent);
+  background: var(--accent-muted);
+}
