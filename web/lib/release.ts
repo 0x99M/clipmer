@@ -38,7 +38,7 @@ export const SUPPORTED_ARCH = "x86_64";
  * Published releases, v2.0.6 through the current tag. Hardcoded for the same
  * reason DOWNLOADS is, and refreshed by the same script — see below.
  */
-export const RELEASE_COUNT = 13;
+export const RELEASE_COUNT = 14;
 
 /**
  * GitHub release asset download counts.
@@ -56,12 +56,12 @@ export const RELEASE_COUNT = 13;
  */
 export const DOWNLOADS = {
   /** Bump whenever the counts below are refreshed. */
-  measuredOn: "2026-10-25",
-  total: 141,
+  measuredOn: "2026-10-30",
+  total: 157,
   /** Ordered by count, so the line reads as a ranking. */
   byFormat: [
-    { label: ".deb", count: 73 },
-    { label: "AppImage", count: 43 },
-    { label: ".rpm", count: 25 },
+    { label: ".deb", count: 82 },
+    { label: "AppImage", count: 47 },
+    { label: ".rpm", count: 28 },
   ],
 } as const;
