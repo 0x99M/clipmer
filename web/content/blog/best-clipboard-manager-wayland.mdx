@@ -82,9 +82,17 @@ wl-paste --watch echo "copied at $(date +%T)"
 ```
 
 If that prints on every copy, cliphist and everything like it will work. If it exits with
-`Watch mode requires a compositor that supports the data-control protocol`, that is
-`wl-clipboard` telling you it found neither protocol in the registry — and it is the exact
-message a GNOME user gets.
+an error instead, read the exact wording, because it changed in `wl-clipboard` 2.3.0:
+
+- `Watch mode requires a compositor that supports the wlroots data-control protocol` comes
+  from 2.2.1, the version Ubuntu 24.04 and 26.04 ship. 2.2.1 only knows the wlroots
+  protocol, so this means the compositor does not offer *that* one.
+- `Watch mode requires a compositor that supports the data-control protocol` comes from
+  2.3.0 and later, which tries both protocols and found neither.
+
+On GNOME you get one or the other whichever version you have, because Mutter implements
+neither protocol. On KDE, the wlroots wording is the version trap covered in the KDE
+section below, not a missing protocol.
 
 ## GNOME: a shell extension, because there is no protocol
 
@@ -171,11 +179,12 @@ version trap:
 <Callout type="warn" title="wl-clipboard only learned ext-data-control in 2.3.0">
   KWin implements `ext-data-control-v1` and not the wlroots protocol, and `wl-clipboard`
   did not support `ext-data-control-v1` until version 2.3.0, released 22 March 2026. Ubuntu
-  26.04 LTS packages `wl-clipboard` 2.2.1-2build1, and 24.04 packages 2.2.1-1build1 — 2.3.0
-  first appears in the 26.10 development series. So on Kubuntu, `wl-paste --watch` fails
-  with the "requires a compositor that supports the data-control protocol" message even
-  though KWin does support a data-control protocol. Arch ships 2.3.0-1, where it works. The
-  same trap applies on Mir, which is also ext-only.
+  26.04 LTS packages `wl-clipboard` 2.2.1-2build1, and 24.04 packages 2.2.1-1build1. So on
+  Kubuntu LTS, `wl-paste --watch` fails with "Watch mode requires a compositor that supports
+  the wlroots data-control protocol" — literally true, since KWin has no wlroots protocol,
+  and still misleading, because KWin does support a data-control protocol, just not the one
+  2.2.1 can use. Ubuntu 26.10, released 15 October 2026, packages 2.3.0-1, and Arch ships
+  2.3.0-1 too; on either, it works. The same trap applies on Mir, which is also ext-only.
 </Callout>
 
 ## Hyprland: cliphist and wl-clipboard
@@ -227,10 +236,37 @@ measures across the rest of apt. Sway supports the wlroots protocol, so Ubuntu's
 project publishes static binaries on its releases page and also installs with
 `go install go.senan.xyz/cliphist@latest`.
 
-## niri, COSMIC, Wayfire, river and the rest
+## niri: cliphist, but not on Mod+V
 
-For niri, COSMIC and labwc the answer is again cliphist plus wl-clipboard, with no
-caveats — all three implement both protocols.
+niri implements both protocols, so the stack is the same as on Hyprland: cliphist plus
+wl-clipboard. The niri-specific catch is the key most cliphist guides bind. niri's default
+`config.kdl` already uses **Mod + V** for `toggle-window-floating` and **Mod + Shift + V**
+for `switch-focus-between-floating-and-tiling`, so a clipboard picker on Mod + V means
+giving up the floating toggle. **Mod + Alt + V** is unbound in the default config.
+
+Start the watchers from `~/.config/niri/config.kdl`:
+
+```kdl
+spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
+spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
+```
+
+Then add the picker inside the `binds` block:
+
+```kdl
+Mod+Alt+V { spawn "sh" "-c" "cliphist list | fuzzel --dmenu --with-nth 2 | cliphist decode | wl-copy"; }
+```
+
+`spawn` runs a program with each argument as its own string and no shell, which is why the
+pipeline goes through `sh -c`. niri 25.08 added `spawn-sh` as shorthand for exactly this,
+and the default config now uses it: on 25.08 or later, `spawn-sh` followed by the same
+pipeline as a single string is equivalent. The bindings above were checked against the
+default config on niri's `main` branch in October 2026.
+
+## COSMIC, Wayfire, river and the rest
+
+For COSMIC and labwc the answer is again cliphist plus wl-clipboard, with no caveats —
+both implement both protocols.
 
 Wayfire, river and phoc implement only the deprecated `wlr-data-control`. In practice
 this costs you nothing today, because `wl-clipboard` tries `ext_data_control_manager_v1`
@@ -287,7 +323,8 @@ reasonably might, install one of them instead.
     { name: "GNOME, and you mask secrets", cells: ["Clipmer", "Per-entry masking; capture does not ride on a shell extension"], highlight: true },
     { name: "KDE Plasma", cells: ["Nothing — use Klipper", "Ships with plasma-workspace, Meta+V, raise the 20-item default"] },
     { name: "Hyprland", cells: ["cliphist + wl-clipboard", "Both protocols; the first tool the Hyprland wiki lists"] },
-    { name: "Sway, niri, COSMIC, labwc", cells: ["cliphist + wl-clipboard", "Both protocols, no caveats"] },
+    { name: "niri", cells: ["cliphist + wl-clipboard", "Both protocols; bind the picker off Mod+V, which niri uses for floating"] },
+    { name: "Sway, COSMIC, labwc", cells: ["cliphist + wl-clipboard", "Both protocols, no caveats"] },
     { name: "Wayfire, river, phoc", cells: ["cliphist + wl-clipboard", "wlr-data-control only; wl-clipboard falls back to it"] },
     { name: "Weston, Cinnamon (Muffin)", cells: ["Nothing works on Wayland", "Neither protocol implemented"] },
   ]}

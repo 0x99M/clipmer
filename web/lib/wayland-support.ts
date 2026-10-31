@@ -82,7 +82,7 @@ export const COMPOSITORS: Compositor[] = [
       { name: "CopyQ", how: "XWayland, with caveats", href: "https://github.com/hluk/CopyQ" },
     ],
     caveat:
-      "cliphist, clipman and clipse all fail on GNOME. wl-paste --watch exits with \"Watch mode requires a compositor that supports the data-control protocol\" — that message means the protocol is absent, not that the tool is misconfigured.",
+      "cliphist, clipman and clipse all fail on GNOME. wl-paste --watch exits with \"Watch mode requires a compositor that supports the wlroots data-control protocol\" on wl-clipboard 2.2.1, which Ubuntu 24.04 and 26.04 ship, or \"…supports the data-control protocol\" on 2.3.0 and later. Either way the protocol is absent; the tool is not misconfigured.",
   },
   {
     id: "muffin",
@@ -124,7 +124,7 @@ export const COMPOSITORS: Compositor[] = [
       { name: "Clipmer", how: "Electron under XWayland", href: "/install" },
     ],
     caveat:
-      "wl-clipboard only learned ext-data-control-v1 in 2.3.0, released 22 March 2026. Because KWin implements no other data-control protocol, anything older than that cannot watch the clipboard on KDE at all — cliphist and every pipeline built on it included. Check with wl-copy --version before assuming the tool is at fault.",
+      "wl-clipboard only learned ext-data-control-v1 in 2.3.0, released 22 March 2026. Because KWin implements no other data-control protocol, anything older than that cannot watch the clipboard on KDE at all — cliphist and every pipeline built on it included. Kubuntu 24.04 and 26.04 ship 2.2.1, where wl-paste --watch fails with \"Watch mode requires a compositor that supports the wlroots data-control protocol\"; Ubuntu 26.10 ships 2.3.0. Check with wl-copy --version before assuming the tool is at fault.",
   },
   {
     id: "hyprland",
@@ -405,7 +405,7 @@ export const CHECKS: { command: string; explains: string }[] = [
   {
     command: 'wl-paste --watch echo "copied at $(date +%T)"',
     explains:
-      "The definitive test. If this prints on every copy, cliphist and everything like it will work. If it exits complaining that watch mode requires data-control, your compositor has neither protocol.",
+      "The definitive test. If this prints on every copy, cliphist and everything like it will work. If it exits complaining that watch mode requires data-control, your compositor has neither protocol — or, if the message says \"wlroots data-control\", you may have wl-clipboard older than 2.3.0 on a compositor that only offers ext-data-control-v1, such as KDE.",
   },
 ];
 

@@ -6,6 +6,11 @@ Ubuntu still ships no clipboard history. Copy something, copy something else, an
 first thing is gone — there is no built-in way to get it back, and there has never been
 one in any Ubuntu release, 26.04 LTS included.
 
+If you pressed **Super + V** expecting the clipboard panel Windows opens with **Win + V**,
+that shortcut opens GNOME's notification list instead. The quickest way to get a real one is
+[Option 1](#option-1-clipboard-history-extension), the Clipboard History extension, which
+then opens with **Super + Shift + V**.
+
 This guide covers the four options that work on both current LTS releases, Ubuntu 24.04
 and 26.04. It was first written against a real Ubuntu 24.04.4 LTS install, then
 re-checked for Ubuntu 26.04.1 LTS on 15 September 2026: every apt command against the
@@ -171,7 +176,7 @@ GNOME also has a `disable-extension-version-validation` setting that skips the c
 Leave it off: it applies to every extension you have installed, not only the one you want
 back.
 
-## Setting a keyboard shortcut
+## Setting a clipboard history shortcut
 
 GNOME reserves **Super + V** for notifications, so most tools default to something else.
 To bind your own, open **Settings → Keyboard → View and Customize Shortcuts → Custom

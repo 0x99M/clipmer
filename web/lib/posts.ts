@@ -84,7 +84,7 @@ export const POSTS: Post[] = [
     title: "CopyQ alternatives on Linux, compared honestly",
     seoTitle: "CopyQ Alternatives on Linux, Compared",
     metaDescription:
-      "A technical comparison of GPaste, Pano, Clipboard History, Klipper, Diodon, Parcellite, Ringboard and Clipmer — and when CopyQ is still better.",
+      "Leaving CopyQ over Wayland? Check your version first. Then GPaste, Klipper, Clipboard History, Ringboard and Clipmer compared, and when CopyQ still wins.",
     description:
       "CopyQ is not broken — it is the most capable clipboard manager on Linux and 16.0.0 shipped on 30 May 2026. People leave it over the dated Qt interface, the scripting they never use, or Wayland behaviour that is usually their distro shipping a three-year-old build. Here is what each alternative actually is, how it reads your clipboard, what it is licensed under, and when CopyQ is still the right answer.",
     date: "2026-08-08",
@@ -108,15 +108,15 @@ export const POSTS: Post[] = [
   {
     slug: "best-clipboard-manager-wayland",
     title: "The best clipboard manager for Wayland depends on your compositor",
-    seoTitle: "Best Clipboard Manager for Wayland",
+    seoTitle: "Best Wayland Clipboard Manager for Each Compositor",
     metaDescription:
-      "What works depends on your compositor: per-compositor picks for GNOME, KDE, Hyprland and Sway, checked against the live protocol registry.",
+      "Which clipboard manager works on Wayland depends on your compositor. Picks for GNOME, KDE, Hyprland, Sway and niri, and why cliphist fails on GNOME.",
     description:
-      "On Wayland, which clipboard manager works is decided by your compositor, because the data-control protocols are not universally implemented. This is the per-compositor answer for GNOME, KDE Plasma, Hyprland, Sway and the rest, checked against the protocol registry, the compositor source trees and the distro package indexes in August 2026. It also covers the version traps that break the usual advice: wl-clipboard on KDE, Pano's upstream status, and how far behind Ubuntu's GPaste actually is.",
+      "On Wayland, which clipboard manager works is decided by your compositor, because the data-control protocols are not universally implemented. This is the per-compositor answer for GNOME, KDE Plasma, Hyprland, Sway, niri and the rest, checked against the protocol registry, the compositor source trees and the distro package indexes in August 2026. It also covers the version traps that break the usual advice: wl-clipboard on KDE, Pano's upstream status, and how far behind Ubuntu's GPaste actually is.",
     date: "2026-08-08",
-    updated: "2026-09-15",
+    updated: "2026-10-31",
     tags: ["Wayland", "Clipboard", "Linux"],
-    readingMinutes: 8,
+    readingMinutes: 9,
     toc: [
       { id: "why-the-answer-depends-on-your-compositor", title: "Why the answer depends on your compositor" },
       { id: "check-what-your-session-supports-first", title: "Check what your session supports first" },
@@ -124,7 +124,8 @@ export const POSTS: Post[] = [
       { id: "kde-plasma-klipper-is-already-running", title: "KDE Plasma: Klipper is already running" },
       { id: "hyprland-cliphist-and-wl-clipboard", title: "Hyprland: cliphist and wl-clipboard" },
       { id: "sway-the-same-stack", title: "Sway: the same stack" },
-      { id: "niri-cosmic-wayfire-river-and-the-rest", title: "niri, COSMIC, Wayfire, river and the rest" },
+      { id: "niri-cliphist-but-not-on-mod-v", title: "niri: cliphist, but not on Mod+V" },
+      { id: "cosmic-wayfire-river-and-the-rest", title: "COSMIC, Wayfire, river and the rest" },
       { id: "where-clipmer-fits-and-where-it-does-not", title: "Where Clipmer fits, and where it does not" },
       { id: "the-short-version", title: "The short version" },
       { id: "what-none-of-these-solve", title: "What none of these solve" },
@@ -160,7 +161,7 @@ export const POSTS: Post[] = [
   {
     slug: "clipboard-managers-on-wayland",
     title: "Clipboard managers on Wayland: why it's hard and what actually works",
-    seoTitle: "Wayland Clipboard History: Why It's Hard",
+    seoTitle: "Wayland Clipboard: Why Clipboard Managers Break",
     metaDescription:
       "Wayland forbids the one thing a clipboard manager needs to do. The security model, the two data-control protocols, and which compositors support them.",
     description:
@@ -191,7 +192,7 @@ export const POSTS: Post[] = [
     title: "Clipboard history on Ubuntu: the complete guide",
     seoTitle: "Clipboard History on Ubuntu 24.04 and 26.04",
     metaDescription:
-      "Ubuntu ships no clipboard history. Four options that work on 24.04 and 26.04 — Clipboard History, GPaste, CopyQ and Clipmer — with checked install commands.",
+      "Ubuntu has no built-in clipboard history, and Super+V opens notifications instead. Four tested ways to add one on 24.04 and 26.04, with the shortcuts.",
     description:
       "Ubuntu ships no clipboard history. Four options that work on both Ubuntu 24.04 and 26.04 LTS — Clipboard History, GPaste, CopyQ, and Clipmer — with install commands checked on each release, what happened to Pano, and what to do when an extension stops loading after the upgrade.",
     date: "2026-08-01",
@@ -213,7 +214,7 @@ export const POSTS: Post[] = [
         id: "upgraded-from-24-04-check-your-extensions-still-load",
         title: "Upgraded from 24.04? Check your extensions still load",
       },
-      { id: "setting-a-keyboard-shortcut", title: "Setting a keyboard shortcut" },
+      { id: "setting-a-clipboard-history-shortcut", title: "Setting a clipboard history shortcut" },
       {
         id: "one-thing-worth-knowing-before-you-install-any-of-these",
         title: "One thing worth knowing before you install any of these",
