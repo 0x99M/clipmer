@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Download, EyeOff, Folder, StickyNote } from "lucide-react";
+import { EyeOff, Folder, StickyNote } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   FeatureTile,
   type TileDepth,
   type TileLayer,
 } from "@/components/feature-tile";
-import { buttonVariants } from "@/components/ui/button";
 import { CopyInstallGroup } from "@/components/install/copy-install-group";
 import { HeroStats } from "@/components/sections/hero-stats";
 import { cn } from "@/lib/utils";
@@ -423,30 +422,10 @@ export function Hero() {
             </ul>
 
             {/* Widest gap in the column sits directly above Download. */}
-            <div
-              data-hero="cta"
-              className="mt-7 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center"
-            >
-              <a
-                href="#download"
-                className={cn(
-                  buttonVariants({ size: "lg" }),
-                  "group/btn relative h-12 w-full gap-2 overflow-hidden rounded-lg px-7 text-base font-semibold sm:w-auto",
-                  "bg-orange text-white shadow-lg shadow-orange/25 transition-shadow hover:bg-orange-hover hover:shadow-orange/40"
-                )}
-              >
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-out group-hover/btn:translate-x-full motion-reduce:transition-none"
-                />
-                <Download className="relative size-5" />
-                <span className="relative">Download for Linux</span>
-              </a>
-              {/* Takes the slot the GitHub link had — the nav already carries
-                  GitHub, and a paste-and-go command is worth more here. One
-                  button plus the group fits the row where two buttons plus the
-                  group did not. */}
-              <CopyInstallGroup layout="inline" />
+            {/* The copy-paste command is the primary action; the package
+                download is a text link under it, pointing at #download. */}
+            <div data-hero="cta" className="mt-7 flex justify-center sm:mt-8">
+              <CopyInstallGroup layout="terminal" />
             </div>
 
             {/* Fine print: reassurance first, upsell second. */}
