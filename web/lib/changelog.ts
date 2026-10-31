@@ -25,6 +25,21 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.5.0",
+    date: "2026-10-31",
+    highlight: "See through the window, and a crash fix for KDE Plasma",
+    changes: [
+      {
+        type: "added",
+        text: "A Window opacity slider in Settings \u2192 Appearance makes the window background translucent, the way a terminal does, so you can read what is behind Clipmer while you work. Entries, menus and the search field stay fully opaque, so nothing becomes harder to read. It defaults to 100%, which looks exactly as it always has, and it stops at 30% so the window can never be made impossible to find.",
+      },
+      {
+        type: "fixed",
+        text: "On KDE Plasma, changing the toggle shortcut could raise \"A JavaScript error occurred in the main process\" with a write EPIPE. Clipmer was running GNOME's keybinding path on desktops that have no GNOME keybinding schema; the resulting error surfaced after the code that guards it had already finished, so the guard never caught it. Clipmer now skips that path on Plasma entirely, and the error can no longer escape even where it does run. Thanks to ViolinKaine for the report and the stack trace.",
+      },
+    ],
+  },
+  {
     version: "3.4.2",
     date: "2026-10-30",
     highlight: "Folder tabs stay with the history list",

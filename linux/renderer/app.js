@@ -96,6 +96,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyFontSize(savedFontSize);
   fontSlider.value = savedFontSize;
   document.getElementById('font-size-value').textContent = savedFontSize + 'px';
+  const opacitySlider = document.getElementById('opacity-slider');
+  const savedOpacity = await window.clipboardManager.getWindowOpacity();
+  applyWindowOpacity(savedOpacity);
+  opacitySlider.value = Math.round(savedOpacity * 100);
+  document.getElementById('opacity-value').textContent =
+    Math.round(savedOpacity * 100) + '%';
 
   window.clipboardManager.getAppVersion().then((v) => {
     const el = document.getElementById('app-version-label');
@@ -247,6 +253,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     applyFontSize(size);
     document.getElementById('font-size-value').textContent = size + 'px';
     window.clipboardManager.setFontSize(size);
+  });
+
+  // Window opacity slider. Applied locally on every input event so dragging
+  // shows the result immediately; the main process only stores the value.
+  opacitySlider.addEventListener('input', () => {
+    const percent = parseInt(opacitySlider.value);
+    applyWindowOpacity(percent / 100);
+    document.getElementById('opacity-value').textContent = percent + '%';
+    window.clipboardManager.setWindowOpacity(percent / 100);
   });
 
   // Autostart toggle
@@ -515,6 +530,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     autoFocusFirst = false;
     autoFocusFirstToggle.checked = false;
     window.clipboardManager.setFontSize(13);
+    opacitySlider.value = 100;
+    applyWindowOpacity(1);
+    document.getElementById('opacity-value').textContent = '100%';
+    window.clipboardManager.setWindowOpacity(1);
   });
 
   document.addEventListener('keydown', handleKeyDown);
@@ -685,6 +704,12 @@ function applyAccent(hex) {
   document.documentElement.style.setProperty('--accent', hex);
   document.documentElement.style.setProperty('--accent-hover', `rgb(${hoverR}, ${hoverG}, ${hoverB})`);
   document.documentElement.style.setProperty('--accent-muted', `rgba(${r}, ${g}, ${b}, 0.20)`);
+}
+
+// The one knob behind window translucency: every surface that paints the
+// window reads --bg-alpha, so setting it here is the whole of the live update.
+function applyWindowOpacity(opacity) {
+  document.documentElement.style.setProperty('--bg-alpha', String(opacity));
 }
 
 function applyFontSize(size) {

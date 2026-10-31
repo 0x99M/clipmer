@@ -6,7 +6,12 @@
 linux/
 ├── main.js              # Electron main process (all backend logic)
 ├── preload.js           # contextBridge IPC bridge
+├── profile.js           # dev/prod identity: userData dir, hotkey, keybinding names
 ├── package.json         # CJS, electron-store@8.2.0
+├── build/
+│   ├── postinst.sh      # deb/rpm: SUID chrome-sandbox, stop old instance
+│   ├── afterRemove.sh   # deb/rpm: remove keybinding, extension, autostart
+│   └── dev-build.js     # electron-builder config for the clipmer-dev build
 ├── assets/
 │   └── icon.png         # Tray icon (32x32 purple placeholder)
 ├── renderer/
@@ -168,6 +173,7 @@ A PID file is written to `~/.config/clipmer/clipmer.pid` on startup and cleaned 
 - **Expand/collapse** — expands to 800x900; collapsing returns to the remembered size rather than a stock 380x500, so a deliberate resize survives the round trip. `persistBounds()` skips the size write while expanded, since the zoom is not a chosen size.
 - Both the size and the position are gated on the one `rememberPosition` setting, labelled "Remember window size and position".
 - **Centered positioning** — always centers on `screen.getPrimaryDisplay().workAreaSize`. Does NOT use `tray.getBounds()` (returns zeros on GNOME)
+- **Translucent** (`transparent: true`) so the `windowOpacity` setting can show the desktop through the window. Always on rather than conditional, because `transparent` can only be set at construction: making it depend on the stored opacity would mean destroying and rebuilding the window the moment the slider leaves 100%. It costs nothing when opaque — the rendered window is byte-identical either way — and the translucency itself is pure CSS (`--bg-alpha`), so the slider needs no window churn.
 
 ## Tray
 
@@ -200,6 +206,7 @@ The UI follows the **Ubuntu Yaru Dark** design system:
 | Text secondary | `#A9A9A9` | Labels, entry count |
 | Text muted | `#6C6C6C` | Timestamps, hints |
 | Border | `rgba(255,255,255,0.10)` | Window edge, dividers |
+| Window alpha | `--bg-alpha` (default `1`) | Multiplies `surface base` and `surface headerbar` only. Raised surfaces, inputs and popovers stay opaque on purpose: a see-through dropdown over see-through content is unreadable. |
 
 Font: Ubuntu / Cantarell. Weights: 400 (body) and 500 (labels).
 

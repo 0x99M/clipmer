@@ -43,6 +43,8 @@ contextBridge.exposeInMainWorld('clipboardManager', {
     ipcRenderer.removeAllListeners('filter-reset');
     ipcRenderer.on('filter-reset', () => callback());
   },
+  getWindowOpacity: () => ipcRenderer.invoke('get-window-opacity'),
+  setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
   getFontSize: () => ipcRenderer.invoke('get-font-size'),
   setFontSize: (size) => ipcRenderer.invoke('set-font-size', size),
   getMinimalView: () => ipcRenderer.invoke('get-minimal-view'),

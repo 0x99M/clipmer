@@ -4,9 +4,18 @@
   --accent-hover: #C34113;
   --accent-muted: rgba(233, 84, 32, 0.20);
 
+  /* Window translucency. 1 is fully opaque and is the default, so an install
+     that never touches the setting renders exactly as it always has.
+     Only the two tokens that paint the window itself take the alpha:
+     --surface-base (the body, and so the whole entry list, since rows have no
+     background of their own) and --surface-headerbar. Raised surfaces, inputs
+     and popovers stay solid on purpose — a see-through dropdown over
+     see-through content is unreadable, and no terminal does that either. */
+  --bg-alpha: 1;
+
   /* Surfaces */
-  --surface-base: #2d2d2d;
-  --surface-headerbar: #1f1f1f;
+  --surface-base: rgb(45 45 45 / var(--bg-alpha));
+  --surface-headerbar: rgb(31 31 31 / var(--bg-alpha));
   --surface-raised: #383838;
   --surface-input: #404040;
   --surface-popover: #323232;
@@ -36,8 +45,8 @@ body.theme-light {
   --accent-muted: rgba(233, 84, 32, 0.12);
 
   /* Surfaces */
-  --surface-base: #FFFFFF;
-  --surface-headerbar: #F5F5F5;
+  --surface-base: rgb(255 255 255 / var(--bg-alpha));
+  --surface-headerbar: rgb(245 245 245 / var(--bg-alpha));
   --surface-raised: #EBEBEB;
   --surface-input: #F0F0F0;
   --surface-popover: #FAFAFA;
@@ -1366,18 +1375,23 @@ body.folders-open #fab {
   color: var(--accent);
 }
 
-.font-size-control {
+/* Shared by every slider row in Settings. These were keyed to
+   #font-size-slider back when font size was the only slider, so the second one
+   silently rendered with the browser's default blue instead of the accent, and
+   at a different width. Selecting on the wrapper instead means the next slider
+   added here inherits the styling rather than re-reporting the same bug. */
+.slider-control {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-#font-size-slider {
+.slider-control input[type="range"] {
   width: 80px;
   accent-color: var(--accent);
 }
 
-#font-size-value {
+.slider-control .slider-value {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
   min-width: 30px;

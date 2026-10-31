@@ -17,6 +17,20 @@ const crypto = require('crypto');
 const Store = require('electron-store');
 const license = require('./license');
 const backup = require('./backup');
+const profile = require('./profile');
+
+// Adopted here, at module scope, because it has to happen before ANYTHING
+// resolves a path. electron-store fixes its directory when the store is
+// constructed (a few lines below), and PID_FILE, the toggle script and
+// Electron's own single-instance lock all hang off the same userData path.
+// Renaming the app after any of those had been resolved would split the
+// build's state across two directories, which is how a dev build ends up
+// writing to the release build's history.
+app.setName(profile.appName);
+// Set explicitly rather than left to follow setName: userData is derived from
+// productName when package.json has one, and the dev package does, so relying
+// on the derivation would quietly put the dev build back in a shared place.
+app.setPath('userData', path.join(app.getPath('appData'), profile.appName));
 
 // AppImages mount on a nosuid filesystem, so chrome-sandbox cannot be SUID
 // root and the renderer crashes with SIGTRAP. Disable the sandbox only there;
@@ -57,7 +71,7 @@ const store = new Store({
     groups: [],
     theme: 'dark',
     accentColor: '#E95420',
-    shortcut: 'Ctrl+Shift+D',
+    shortcut: profile.defaultShortcut,
     autoPaste: false,
     autoScrollTop: true,
     autoClearSearch: true,
@@ -68,6 +82,9 @@ const store = new Store({
     minimalView: false,
     rememberPosition: true,
     firstLaunch: true,
+    // 1 means fully opaque, which is what every existing install gets. See
+    // clampOpacity for why there is a floor.
+    windowOpacity: 1,
   },
 });
 
@@ -92,8 +109,8 @@ const PID_FILE = path.join(app.getPath('userData'), 'clipmer.pid');
 // full history stays cheap to serialize.
 const MAX_ENTRY_CHARS = 262144;
 const MAX_PREVIEW_CHARS = 200;
-const DEFAULT_SHORTCUT = 'Ctrl+Shift+D';
-const FALLBACK_SHORTCUT = 'Ctrl+Shift+B';
+const DEFAULT_SHORTCUT = profile.defaultShortcut;
+const FALLBACK_SHORTCUT = profile.fallbackShortcut;
 
 // What actually bound, which is not always what is stored — the fallback may
 // have been used, or nothing may have bound at all on Wayland. The settings
@@ -131,6 +148,14 @@ function createWindow() {
     width: startSize.width,
     height: startSize.height,
     frame: false,
+    // Always on, never toggled. `transparent` can only be set at construction,
+    // so making it conditional on the stored opacity would mean destroying and
+    // rebuilding the window the moment the user drags the slider off 100% —
+    // throwing them out of the Settings pane they are dragging in. Leaving it
+    // on costs nothing: with the background fully opaque the rendered window is
+    // byte-identical either way (verified by capturing both), and the actual
+    // translucency is done in CSS via --bg-alpha.
+    transparent: true,
     resizable: true,
     minWidth: 380,
     minHeight: 500,
@@ -317,7 +342,7 @@ function createTray() {
   }
 
   tray = new Tray(icon);
-  tray.setToolTip('Clipmer');
+  tray.setToolTip(profile.displayName);
 
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Show/Hide', click: () => toggleWindow() },
@@ -1073,7 +1098,7 @@ function isValidAccelerator(value) {
 function registerGlobalShortcut() {
   // Electron globalShortcut works on X11 but silently fails on Wayland.
   // On Wayland, the SIGUSR1/GNOME-shortcut approach handles it instead.
-  const shortcut = store.get('shortcut') || 'Ctrl+Shift+D';
+  const shortcut = store.get('shortcut') || DEFAULT_SHORTCUT;
   const candidates = shortcut === FALLBACK_SHORTCUT
     ? [shortcut]
     : [shortcut, FALLBACK_SHORTCUT];
@@ -1109,7 +1134,7 @@ function toGnomeBinding(shortcut) {
 
 const MEDIA_KEYS_SCHEMA = 'org.gnome.settings-daemon.plugins.media-keys';
 const CUSTOM_KEYBINDING_SCHEMA = `${MEDIA_KEYS_SCHEMA}.custom-keybinding`;
-const KEYBINDING_NAME = 'clipmer-toggle';
+const KEYBINDING_NAME = profile.keybindingName;
 const KEYBINDING_PATH = `/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/${KEYBINDING_NAME}/`;
 const LEGACY_KEYBINDING_PATH =
   '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/clipboard-manager-toggle/';
@@ -1118,9 +1143,22 @@ const LEGACY_KEYBINDING_PATH =
 // nothing in a value can be interpreted as syntax. The previous code built
 // shell strings and interpolated both the user's accelerator and raw dconf
 // output into them.
+//
+// `stdio` is explicit on purpose, and it is the whole fix for a crash dialog on
+// Plasma. Left unset, execFileSync pipes the child's stderr through to our own
+// process.stderr; gsettings writes "No such schema ..." there on a desktop
+// without GNOME's schemas, and under an AppImage our stderr is a pipe with no
+// reader, so that write raises EPIPE *asynchronously* — after the caller's
+// try/catch has already returned. It therefore reached Electron's uncaught
+// exception handler and showed users "A JavaScript error occurred in the main
+// process" whenever they changed a shortcut.
 function gsettings(args) {
   const { execFileSync } = require('child_process');
-  return execFileSync('gsettings', args, { encoding: 'utf8', timeout: 5000 }).trim();
+  return execFileSync('gsettings', args, {
+    encoding: 'utf8',
+    timeout: 5000,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
 }
 
 // GVariant 'as' is `@as []` when empty, otherwise `['a', 'b']`. Parsing it
@@ -1163,6 +1201,7 @@ function writeCustomKeybindingPaths(paths) {
 
 // Remove the GNOME shortcut left behind by the pre-rename version.
 function cleanupLegacyShortcut() {
+  if (desktopEnv() === 'kde') return;
   try {
     const paths = readCustomKeybindingPaths();
     if (!paths.includes(LEGACY_KEYBINDING_PATH)) return;
@@ -1208,6 +1247,7 @@ function toggleCommand() {
 // Register a GNOME custom keyboard shortcut. It signals the running instance;
 // the SIGUSR1 handler toggles the window.
 function registerGnomeShortcut() {
+  if (desktopEnv() === 'kde') return;
   const command = toggleCommand();
 
   try {
@@ -1231,6 +1271,7 @@ function registerGnomeShortcut() {
 // Drop our binding so it does not squat the key combination after the app is
 // gone. Re-registered on next launch.
 function unregisterGnomeShortcut() {
+  if (desktopEnv() === 'kde') return;
   try {
     const paths = readCustomKeybindingPaths();
     if (!paths.includes(KEYBINDING_PATH)) return;
@@ -1243,7 +1284,7 @@ function unregisterGnomeShortcut() {
 // Plasma has no equivalent of GNOME's custom-keybinding schema. It binds global
 // shortcuts to a .desktop file, so the file has to exist before the binding can
 // name it, and the binding itself lives in a group named after that file.
-const KDE_DESKTOP_FILE = 'clipmer-toggle.desktop';
+const KDE_DESKTOP_FILE = profile.kdeDesktopFile;
 
 // Plasma names two modifiers differently from Electron: Super is Meta, and the
 // Cmd aliases do not exist. The key itself needs no translation.
@@ -1370,15 +1411,17 @@ process.on('SIGUSR1', () => {
 
 function isAutostartEnabled() {
   const os = require('os');
-  const desktopFile = path.join(os.homedir(), '.config', 'autostart', 'clipmer.desktop');
+  const desktopFile = path.join(
+    os.homedir(), '.config', 'autostart', `${profile.autostartName}.desktop`
+  );
   return fs.existsSync(desktopFile);
 }
 
 function setAutostart(enabled) {
   const os = require('os');
   const autostartDir = path.join(os.homedir(), '.config', 'autostart');
-  const desktopFile = path.join(autostartDir, 'clipmer.desktop');
-  const launcherScript = path.join(autostartDir, 'clipmer-launch.sh');
+  const desktopFile = path.join(autostartDir, `${profile.autostartName}.desktop`);
+  const launcherScript = path.join(autostartDir, `${profile.autostartName}-launch.sh`);
 
   if (enabled) {
     if (!fs.existsSync(autostartDir)) {
@@ -1408,7 +1451,7 @@ function setAutostart(enabled) {
     const desktopEntry = [
       '[Desktop Entry]',
       'Type=Application',
-      'Name=Clipmer',
+      `Name=${profile.displayName}`,
       // Quoted because the Desktop Entry spec word-splits Exec, so a home
       // directory containing a space broke login startup entirely.
       `Exec="${launcherScript}"`,
@@ -1416,7 +1459,7 @@ function setAutostart(enabled) {
       // through the archive — which is why the tray icon works — but
       // gnome-session does not, so stat() returned ENOTDIR and the entry fell
       // back to a generic icon. electron-builder installs hicolor icons for us.
-      'Icon=clipmer',
+      `Icon=${profile.iconName}`,
       'Comment=Secrets-aware clipboard manager',
       'Categories=Utility;',
       'Terminal=false',
@@ -1536,6 +1579,28 @@ ipcMain.handle('get-auto-focus-first', () => store.get('autoFocusFirst') === tru
 ipcMain.handle('set-auto-focus-first', (_event, v) => store.set('autoFocusFirst', v));
 ipcMain.handle('get-active-filter', () => store.get('activeFilter') || 'all');
 ipcMain.handle('set-active-filter', (_event, v) => store.set('activeFilter', v || 'all'));
+// The floor is deliberate and is not about taste. The window is frameless and
+// its background is the only thing drawing it, so at alpha 0 there would be
+// nothing on screen to grab, no titlebar to find it by, and the Settings pane
+// used to undo it would itself be invisible. 0.3 is low enough to read whatever
+// is behind the window and high enough that the window is still findable.
+const MIN_WINDOW_OPACITY = 0.3;
+
+function clampOpacity(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(1, Math.max(MIN_WINDOW_OPACITY, n));
+}
+
+ipcMain.handle('get-window-opacity', () => clampOpacity(store.get('windowOpacity')));
+// Returns the clamped value so the renderer shows what was actually stored
+// rather than what it asked for.
+ipcMain.handle('set-window-opacity', (_event, value) => {
+  const opacity = clampOpacity(value);
+  store.set('windowOpacity', opacity);
+  return opacity;
+});
+
 ipcMain.handle('get-font-size', () => store.get('fontSize') || 13);
 ipcMain.handle('set-font-size', (_event, size) => store.set('fontSize', size));
 ipcMain.handle('get-minimal-view', () => store.get('minimalView') || false);
