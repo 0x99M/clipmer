@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const Store = require('electron-store');
 const license = require('./license');
 const backup = require('./backup');
+const textImport = require('./textimport');
 const profile = require('./profile');
 
 // Adopted here, at module scope, because it has to happen before ANYTHING
@@ -948,6 +949,147 @@ ipcMain.handle('import-backup-apply', async (_event, args) => {
   } catch (err) {
     if (!(err instanceof backup.BackupError)) console.error('Backup import failed:', err);
     return { success: false, error: backupErrorMessage(err) };
+  }
+});
+
+// ─── Plain-text import ──────────────────────────────────────────────────────────
+
+// Free, unlike the encrypted backup: it is how people arrive from another
+// clipboard manager, and a history that is capped like any other gives nothing
+// away. Pro additionally files the import into a folder (see
+// textimport.toPayload for why that matters). Merge only — there is no
+// replace, because a text file has no notes or folders to replace anything
+// with.
+
+const TEXT_IMPORT_FOLDER = 'Imported';
+
+function textImportErrorMessage(err) {
+  switch (err && err.code) {
+    case 'not_text': return 'That file is not plain text';
+    case 'empty': return 'That file has no entries in it';
+    case 'too_large': return 'That file is too large to import';
+    case 'is_backup':
+      return 'That is an encrypted Clipmer backup — import it from Settings → License → Backup';
+    default: return 'Could not read that file';
+  }
+}
+
+// The file the user last picked. Apply reads this rather than a path from the
+// renderer: a text import has no password standing between it and the file, so
+// accepting any path would let the renderer pull an arbitrary file — an SSH
+// key, say — into the history and onto the screen.
+let pendingTextImportPath = null;
+
+async function readTextImport(filePath) {
+  const stat = await fs.promises.stat(filePath);
+  if (stat.size > textImport.MAX_FILE_BYTES) throw new textImport.TextImportError('too_large');
+  return textImport.parse(await fs.promises.readFile(filePath));
+}
+
+ipcMain.handle('get-copyq-export-command', () => textImport.COPYQ_EXPORT_COMMAND);
+
+// Writes main's own constant, never text from the renderer, so this cannot be
+// used to put arbitrary content on the clipboard. lastClipboardText is left
+// alone on purpose: the command lands in the history like any copy, which is
+// where the user will look for it when they reach the terminal.
+ipcMain.handle('copy-copyq-export-command', () => {
+  clipboard.writeText(textImport.COPYQ_EXPORT_COMMAND);
+  return { success: true };
+});
+
+ipcMain.handle('import-text-pick', async () => {
+  pendingTextImportPath = null;
+  try {
+    const result = await withDialogSuppressed(() =>
+      dialog.showOpenDialog(mainWindow, {
+        title: 'Import history from a text file',
+        properties: ['openFile'],
+        filters: [
+          { name: 'Text files', extensions: ['txt'] },
+          { name: 'All files', extensions: ['*'] },
+        ],
+      })
+    );
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return { success: false, canceled: true };
+    }
+    const filePath = result.filePaths[0];
+    const { format, entries } = await readTextImport(filePath);
+    pendingTextImportPath = filePath;
+    return {
+      success: true,
+      path: filePath,
+      name: path.basename(filePath),
+      format,
+      entries: entries.length,
+    };
+  } catch (err) {
+    if (!(err instanceof textImport.TextImportError)) console.error('Text import pick failed:', err);
+    return { success: false, error: textImportErrorMessage(err) };
+  }
+});
+
+ipcMain.handle('import-text-apply', async () => {
+  const filePath = pendingTextImportPath;
+  pendingTextImportPath = null;
+  if (!filePath) return { success: false, error: 'No file selected' };
+
+  try {
+    // Re-read for the same reason import-backup-apply does: the file may have
+    // changed since it was picked.
+    const { entries } = await readTextImport(filePath);
+
+    const pro = license.isPro();
+    const oldest = clipboardHistory.reduce((min, e) => Math.min(min, e.timestamp), Date.now());
+    const before = new Set(clipboardHistory.map((e) => e.id));
+
+    const merged = backup.applyImport({
+      current: { history: clipboardHistory, groups },
+      incoming: textImport.toPayload(entries, oldest - 1, {
+        folder: pro ? TEXT_IMPORT_FOLDER : null,
+      }),
+      mode: 'merge',
+      limit: MAX_HISTORY,
+    });
+
+    // Counted from the result rather than taken from applyImport's stats, which
+    // count an entry as added before the cap has had its say. An import sits
+    // below everything already here, so whatever the cap evicts is imported.
+    let added = 0;
+    let pastFreeLimit = 0;
+    merged.history.forEach((e, i) => {
+      if (before.has(e.id)) return;
+      added++;
+      // The free tier shows the newest FREE_HISTORY_LIMIT of a history stored to
+      // MAX_HISTORY, so an imported entry can be kept and still not be on
+      // screen. Said in the result rather than left for the user to go looking.
+      if (!pro && i >= FREE_HISTORY_LIMIT) pastFreeLimit++;
+    });
+    const notFitted = merged.stats.added - added + merged.stats.skipped;
+
+    clipboardHistory = merged.history;
+    groups = merged.groups;
+
+    // lastClipboardText is deliberately not touched — see clearHistory().
+    persistHistory({ immediate: true });
+    store.set('groups', groups);
+
+    emitGroupsUpdated();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('history-updated', getVisibleHistory());
+    }
+
+    return {
+      success: true,
+      added,
+      duplicates: merged.stats.duplicates,
+      notFitted,
+      pastFreeLimit,
+      folder: pro ? TEXT_IMPORT_FOLDER : null,
+    };
+  } catch (err) {
+    if (!(err instanceof textImport.TextImportError)) console.error('Text import failed:', err);
+    return { success: false, error: textImportErrorMessage(err) };
   }
 });
 

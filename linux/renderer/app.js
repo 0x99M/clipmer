@@ -1455,18 +1455,23 @@ function handleKeyDown(e) {
       }
       break;
 
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      // Steps through the folder tabs, but only when that cannot cost the
+      // search field its caret: with text in it, Left and Right are cursor keys.
+      // Ctrl/Alt/Shift+arrow are word jumps and selection, so they never switch.
+      if (groupsData.length === 0) break;
+      if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) break;
+      if (document.activeElement === searchEl && searchEl.value !== '') break;
+      e.preventDefault();
+      cycleFilter(e.key === 'ArrowRight' ? 1 : -1);
+      break;
+
     case 'Tab':
       e.preventDefault();
       if (e.shiftKey) {
         // Shift+Tab: cycle through filter options (All + each folder)
-        const order = ['all', ...groupsData.map((g) => g.id)];
-        const idx = order.indexOf(activeFilter);
-        activeFilter = order[(idx + 1) % order.length];
-        window.clipboardManager.setActiveFilter(activeFilter);
-        updateFilterLabel();
-        selectedIndex = -1;
-        visibleCount = PAGE_SIZE;
-        applyFilter();
+        cycleFilter(1);
       } else {
         // Tab: toggle search mode. Notes are a Pro feature, and searching them
         // was gated nowhere — not here and not in main — while writing them is
@@ -1484,6 +1489,20 @@ function handleKeyDown(e) {
       window.clipboardManager.hideWindow();
       break;
   }
+}
+
+// Moves the filter `step` places along All + each folder, wrapping at both
+// ends — the same order the tab strip draws them in.
+function cycleFilter(step) {
+  const order = ['all', ...groupsData.map((g) => g.id)];
+  const idx = order.indexOf(activeFilter);
+  // A filter naming a folder that no longer exists goes back to All.
+  activeFilter = idx === -1 ? 'all' : order[(idx + step + order.length) % order.length];
+  window.clipboardManager.setActiveFilter(activeFilter);
+  updateFilterLabel();
+  selectedIndex = -1;
+  visibleCount = PAGE_SIZE;
+  applyFilter();
 }
 
 function scrollSelectedIntoView() {
@@ -1589,8 +1608,8 @@ function renderFolderTabs() {
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
     btn.setAttribute('aria-controls', 'history-list');
-    // Arrow keys are the list's, not the strip's, so tabs are reached with Tab
-    // like any other button. Shift+Tab still cycles the filter app-wide.
+    // Left/Right and Shift+Tab switch tabs from anywhere in the list view (see
+    // handleKeyDown), so the strip needs no arrow-key handling of its own.
     btn.title = tab.name;
 
     const name = document.createElement('span');
@@ -2251,6 +2270,88 @@ document.getElementById('backup-backdrop').addEventListener('click', () => {
   if (!backupBusy) closeBackupOverlay();
 });
 document.getElementById('backup-overlay-confirm').addEventListener('click', submitBackupOverlay);
+
+// ─── Plain-text import ──────────────────────────────────────────────────────────
+
+let textImportBusy = false;
+
+function showTextImportMessage(text, kind) {
+  const el = document.getElementById('text-import-message');
+  el.textContent = text || '';
+  el.className = kind ? `license-message ${kind}` : 'license-message';
+  el.style.display = text ? 'block' : 'none';
+}
+
+function summarizeTextImport(result) {
+  const parts = [
+    result.folder
+      ? `Added ${countLabel(result.added, 'entry', 'entries')} to the ${result.folder} folder`
+      : `Added ${countLabel(result.added, 'entry', 'entries')}`,
+  ];
+  if (result.duplicates) parts.push(`${result.duplicates} already here`);
+  // Both are said outright, because either one means the history now holds
+  // less than the file did, and a count that merely comes up short reads as a
+  // bug.
+  if (result.notFitted) {
+    parts.push(`${countLabel(result.notFitted, 'older one', 'older ones')} did not fit in the history`);
+  }
+  if (result.pastFreeLimit) {
+    const n = result.pastFreeLimit;
+    parts.push(`${n} ${n === 1 ? 'is' : 'are'} kept past the 100 the free version shows`);
+  }
+  return parts.join(' · ');
+}
+
+window.clipboardManager.getCopyqExportCommand().then((command) => {
+  document.getElementById('copyq-command').textContent = command;
+});
+
+document.getElementById('copy-copyq-command-btn').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  await window.clipboardManager.copyCopyqExportCommand();
+  btn.textContent = 'Copied';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+});
+
+document.getElementById('import-text-btn').addEventListener('click', async () => {
+  if (textImportBusy) return;
+  textImportBusy = true;
+  showTextImportMessage('');
+  try {
+    const picked = await window.clipboardManager.pickTextImportFile();
+    if (!picked.success) {
+      if (!picked.canceled) showTextImportMessage(picked.error || 'Could not read that file', 'error');
+      return;
+    }
+
+    // Says how the file was read, so a multi-line history that was exported
+    // one line per row is caught here rather than after it has been split up.
+    const layout = picked.format === 'nul'
+      ? 'Entries are separated by NUL characters.'
+      : 'Each line is one entry.';
+    const ok = await withModal(() =>
+      confirm(
+        `Import ${countLabel(picked.entries, 'entry', 'entries')} from ${picked.name}?\n\n`
+        + `${layout} They go below your current history, and anything already `
+        + 'in Clipmer is skipped.'
+      )
+    );
+    if (!ok) return;
+
+    const result = await window.clipboardManager.applyTextImport();
+    if (!result.success) {
+      showTextImportMessage(result.error || 'Import failed', 'error');
+      return;
+    }
+    showTextImportMessage(summarizeTextImport(result), 'success');
+    // Settings is open, and its stats block was rendered when it opened.
+    await renderStats();
+  } catch {
+    showTextImportMessage('Something went wrong', 'error');
+  } finally {
+    textImportBusy = false;
+  }
+});
 
 // Dismiss entry actions menu on outside click
 document.addEventListener('click', (e) => {

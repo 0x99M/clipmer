@@ -25,6 +25,21 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.6.0",
+    date: "2026-11-02",
+    highlight: "Bring your history from CopyQ, and switch folders from the keyboard",
+    changes: [
+      {
+        type: "added",
+        text: "Import from a text file, in Settings \u2192 General. Coming from CopyQ, copy the one-line command shown there, run it in a terminal, and pick the file it writes: every text entry comes across, multi-line ones intact. Any tool that can write its history one entry per line works too. Imported entries go below your current history, so nothing you already have is pushed out, and anything Clipmer already holds is skipped. With Pro they are also filed into an Imported folder, which keeps all of them even when your history is full.",
+      },
+      {
+        type: "added",
+        text: "The Left and Right arrow keys switch between folder tabs while the history list has focus, wrapping at either end. They leave the search field alone while you are typing in it. Thanks to ViolinKaine for asking for both.",
+      },
+    ],
+  },
+  {
     version: "3.5.0",
     date: "2026-10-31",
     highlight: "See through the window, and a crash fix for KDE Plasma",

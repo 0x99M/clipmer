@@ -57,6 +57,10 @@ contextBridge.exposeInMainWorld('clipboardManager', {
   pickBackupFile: () => ipcRenderer.invoke('import-backup-pick'),
   applyBackup: ({ path, password, mode }) =>
     ipcRenderer.invoke('import-backup-apply', { path, password, mode }),
+  getCopyqExportCommand: () => ipcRenderer.invoke('get-copyq-export-command'),
+  copyCopyqExportCommand: () => ipcRenderer.invoke('copy-copyq-export-command'),
+  pickTextImportFile: () => ipcRenderer.invoke('import-text-pick'),
+  applyTextImport: () => ipcRenderer.invoke('import-text-apply'),
   getLicenseInfo: () => ipcRenderer.invoke('license:info'),
   activateLicense: (key) => ipcRenderer.invoke('license:activate', key),
   deactivateLicense: () => ipcRenderer.invoke('license:deactivate'),

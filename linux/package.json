@@ -1,6 +1,6 @@
 {
   "name": "clipmer",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "description": "Secrets-aware clipboard manager for Linux",
   "author": {
     "name": "Mustafa",
@@ -24,19 +24,30 @@
   "build": {
     "appId": "com.clipmer.app",
     "productName": "Clipmer",
-    "files": ["**/*", "!assets/make-icons.py"],
+    "files": [
+      "**/*",
+      "!assets/make-icons.py"
+    ],
     "linux": {
-      "target": ["AppImage", "deb", "rpm"],
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
       "icon": "assets/icons/",
       "category": "Utility"
     },
     "deb": {
-      "depends": ["at-spi2-core"],
+      "depends": [
+        "at-spi2-core"
+      ],
       "afterInstall": "build/postinst.sh",
       "afterRemove": "build/afterRemove.sh"
     },
     "rpm": {
-      "depends": ["at-spi2-core"],
+      "depends": [
+        "at-spi2-core"
+      ],
       "afterInstall": "build/postinst.sh",
       "afterRemove": "build/afterRemove.sh"
     }

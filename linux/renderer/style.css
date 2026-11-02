@@ -1115,7 +1115,10 @@ body.folders-open #fab {
 .settings-pane {
   display: none;
   overflow-y: auto;
-  padding: 16px;
+  /* The bottom clears the floating back button (40px, 12px off the edge), so
+     the end of a pane can be scrolled out from under it rather than read
+     around it. */
+  padding: 16px 16px 64px;
   flex: 1;
 }
 
@@ -1479,6 +1482,30 @@ body.folders-open #fab {
   color: #f87171;
 }
 
+/* The CopyQ export command. Selectable and wrapped rather than scrolled, so
+   all of it can be read in a 380px window before it is run. */
+.import-command-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+
+.import-command {
+  flex: 1;
+  min-width: 0;
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: var(--surface-input);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 6px 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
 #license-status {
   font-weight: 600;
 }
@@ -1640,8 +1667,9 @@ body.folders-open #fab {
 /* ─── Backup ────────────────────────────────────────────────────────────────── */
 
 /* The description row carries a hint beneath its label, a shape only the danger
-   zone had styled until now. */
-#backup-section .settings-label {
+   zone had styled until now. The text import row has the same shape. */
+#backup-section .settings-label,
+#text-import-section .settings-label {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1649,12 +1677,14 @@ body.folders-open #fab {
   min-width: 0;
 }
 
-#backup-section .settings-label-text {
+#backup-section .settings-label-text,
+#text-import-section .settings-label-text {
   color: var(--text-primary);
   font-weight: 500;
 }
 
-#backup-label-row {
+#backup-label-row,
+#text-import-label-row {
   align-items: flex-start;
 }
 

@@ -175,6 +175,25 @@
           </label>
         </div>
       </div>
+      <div class="settings-section" id="text-import-section">
+        <h3 class="settings-title">Import</h3>
+        <div class="settings-row" id="text-import-label-row">
+          <span class="settings-label">
+            <span class="settings-label-text">Import from a text file</span>
+            <span class="settings-hint">Bring your history over from CopyQ or another clipboard manager. Entries go below what is already here, and anything you already have is skipped.</span>
+          </span>
+        </div>
+        <div class="settings-row license-btn-row">
+          <button id="import-text-btn" class="license-btn">Import&hellip;</button>
+        </div>
+        <div id="text-import-message" class="license-message" style="display:none" role="status"></div>
+        <div class="settings-hint">From CopyQ, run this in a terminal first, then import the file it writes:</div>
+        <div class="import-command-row">
+          <code id="copyq-command" class="import-command"></code>
+          <button id="copy-copyq-command-btn" class="license-btn">Copy</button>
+        </div>
+        <div class="settings-hint">Any other text file works too: one entry per line, or entries separated by NUL characters when they span several lines. The first entry is taken as the most recent.</div>
+      </div>
       </div>
       <div class="settings-pane" data-pane="license">
       <div class="settings-section" id="license-section">
@@ -245,6 +264,7 @@
         <div class="settings-row"><span class="settings-label">Select entry</span><kbd class="settings-key">Enter</kbd></div>
         <div class="settings-row"><span class="settings-label">Close window</span><kbd class="settings-key">Esc</kbd></div>
         <div class="settings-row"><span class="settings-label">Search mode</span><kbd class="settings-key">Tab</kbd></div>
+        <div class="settings-row"><span class="settings-label">Switch folder tab</span><kbd class="settings-key">&larr; &rarr;</kbd></div>
         <div class="settings-row"><span class="settings-label">Cycle filter</span><kbd class="settings-key">Shift+Tab</kbd></div>
         <div class="settings-row"><span class="settings-label">View full content</span><kbd class="settings-key">Shift+Enter</kbd></div>
         <div class="settings-row"><span class="settings-label">Expand window</span><kbd class="settings-key">Ctrl+E</kbd></div>
