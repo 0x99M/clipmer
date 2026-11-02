@@ -28,6 +28,205 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "get-back-overwritten-clipboard-linux",
+    title: "Copied over something on Linux? Here's what you can still get back",
+    seoTitle: "Recover Overwritten Clipboard Text on Linux",
+    metaDescription:
+      "Copied over something on Linux? Check the primary selection, the source app and your shell history first. Then make sure it never happens again.",
+    description:
+      "Linux keeps one clipboard item, so a new copy replaces the old one for good. But the primary selection, the app you copied from, your shell history and KDE's built-in history can each still hold what you lost. Here is where to look, in the order that matters, and how to make it the last time.",
+    date: "2026-11-02",
+    tags: ["Clipboard", "Linux", "GNOME"],
+    readingMinutes: 5,
+    toc: [
+      { id: "the-short-answer", title: "The short answer" },
+      { id: "check-the-primary-selection-first", title: "Check the primary selection first" },
+      { id: "go-back-to-where-you-copied-it-from", title: "Go back to where you copied it from" },
+      { id: "on-kde-plasma-you-already-have-a-history", title: "On KDE Plasma, you already have a history" },
+      { id: "on-gnome-and-everything-else-nothing-kept-it", title: "On GNOME and everything else, nothing kept it" },
+      { id: "make-it-the-last-time", title: "Make it the last time" },
+      { id: "why-linux-does-not-keep-it-for-you", title: "Why Linux does not keep it for you" },
+    ],
+  },
+  {
+    slug: "clipboard-empty-after-closing-app-linux",
+    title: "Why your clipboard empties when you close an app on Linux",
+    seoTitle: "Clipboard Empty After Closing an App on Linux",
+    metaDescription:
+      "On Linux the clipboard dies with the app you copied from, unless something saves it. Which desktops do (GNOME, Plasma) and how to fix Sway and Hyprland.",
+    description:
+      "On Linux, copying doesn't move your text anywhere: the app you copied from serves it on paste, so closing that app can empty the clipboard. GNOME's compositor and KDE's Klipper quietly save it; Sway, Hyprland and the other wlroots compositors don't. How to tell which you have, the fix for each, and how to keep more than the last copy.",
+    date: "2026-11-02",
+    tags: ["Clipboard", "Wayland", "Linux"],
+    readingMinutes: 5,
+    toc: [
+      { id: "the-clipboard-is-a-promise-not-a-copy", title: "The clipboard is a promise, not a copy" },
+      { id: "which-desktops-catch-it-for-you", title: "Which desktops catch it for you" },
+      { id: "how-to-tell-what-yours-does", title: "How to tell what yours does" },
+      { id: "the-fix-for-each-desktop", title: "The fix for each desktop" },
+      { id: "keeping-more-than-the-last-copy", title: "Keeping more than the last copy" },
+      { id: "why-this-hits-wayland-users-harder", title: "Why this hits Wayland users harder" },
+    ],
+  },
+  {
+    slug: "win-v-clipboard-history-linux",
+    title: "Win+V on Linux: Windows-style clipboard history on Ubuntu",
+    seoTitle: "Win+V Clipboard History on Ubuntu Linux",
+    metaDescription:
+      "Super+V on Ubuntu opens notifications, not a clipboard. Free the key with one command, put a clipboard history behind it, and see how it compares with Win+V.",
+    description:
+      "Pressing Super+V on Ubuntu opens GNOME's notification list, and Ubuntu has no clipboard history at all. One gsettings command frees the key without losing the notification shortcut, and a clipboard manager goes behind it. Plus an honest comparison with Windows' Win+V, including the things Linux doesn't match.",
+    date: "2026-11-02",
+    tags: ["Ubuntu", "GNOME", "Clipboard"],
+    readingMinutes: 4,
+    toc: [
+      { id: "what-win-v-actually-does-on-windows", title: "What Win+V actually does on Windows" },
+      { id: "what-super-v-does-on-ubuntu-instead", title: "What Super + V does on Ubuntu instead" },
+      { id: "step-1-free-super-v", title: "Step 1: free Super + V" },
+      { id: "step-2-put-a-clipboard-history-behind-it", title: "Step 2: put a clipboard history behind it" },
+      { id: "how-it-compares-with-win-v", title: "How it compares with Win+V" },
+      { id: "on-kde-plasma-meta-v-is-already-a-clipboard", title: "On KDE Plasma, Meta + V is already a clipboard" },
+      { id: "other-ways-to-get-there", title: "Other ways to get there" },
+    ],
+  },
+  {
+    slug: "clipboard-manager-auto-paste-wayland",
+    title: "Why your clipboard manager won't paste on Wayland",
+    seoTitle: "Clipboard Manager Auto-Paste on Wayland",
+    metaDescription:
+      "On Wayland, picking a clipboard entry does not paste it. Why apps cannot press Ctrl+V for you, what ydotool and wtype cost, and how auto-paste works on GNOME.",
+    description:
+      "On Wayland, choosing an entry in a clipboard manager puts it on the clipboard but doesn't paste it, because no ordinary app may type into another app's window. The ways around that — ydotool, wtype, the Remote Desktop portal, and a compositor-side helper — and what each costs, with how Clipmer's GNOME paste helper works and where it doesn't.",
+    date: "2026-11-02",
+    tags: ["Wayland", "GNOME", "Clipboard"],
+    readingMinutes: 5,
+    toc: [
+      { id: "what-auto-paste-really-is", title: "What \"auto-paste\" really is" },
+      { id: "why-wayland-stops-it", title: "Why Wayland stops it" },
+      { id: "the-ways-around-it", title: "The ways around it" },
+      { id: "how-clipmer-pastes-on-gnome", title: "How Clipmer pastes on GNOME" },
+      { id: "turning-it-on", title: "Turning it on" },
+      { id: "where-it-wont-work", title: "Where it won't work" },
+      { id: "living-without-it", title: "Living without it" },
+    ],
+  },
+  {
+    slug: "clipboard-shortcut-not-working-wayland",
+    title: "Clipboard manager shortcut not working on Wayland? The fix for each desktop",
+    seoTitle: "Clipboard Shortcut Not Working on Wayland",
+    metaDescription:
+      "A shortcut set inside a clipboard manager never fires on Wayland. Why, the GlobalShortcuts portal, and how to bind it on GNOME, KDE Plasma, Sway and Hyprland.",
+    description:
+      "Wayland doesn't let an application hear keys pressed in other windows, so a shortcut set inside a clipboard manager often does nothing. Why that happens, where the GlobalShortcuts portal helps, the desktop-level binding that works everywhere — for GNOME, KDE Plasma, Sway and Hyprland — and how Clipmer registers its own shortcut on GNOME and Plasma.",
+    date: "2026-11-02",
+    tags: ["Wayland", "KDE", "GNOME"],
+    readingMinutes: 4,
+    toc: [
+      { id: "why-the-shortcut-never-arrives", title: "Why the shortcut never arrives" },
+      { id: "two-ways-it-can-work", title: "Two ways it can work" },
+      { id: "bind-it-in-your-desktop-settings", title: "Bind it in your desktop settings" },
+      { id: "how-clipmer-does-it-without-asking", title: "How Clipmer does it without asking" },
+      { id: "if-it-still-does-nothing", title: "If it still does nothing" },
+    ],
+  },
+  {
+    slug: "kde-plasma-clipboard-history-not-working",
+    title: "KDE Plasma clipboard history not working? Check these first",
+    seoTitle: "KDE Plasma Clipboard History Not Working: Fixes",
+    metaDescription:
+      "Klipper showing one entry, losing history on reboot, or breaking paste after Meta+V? The usual causes, from QT_QPA_PLATFORM to one setting.",
+    description:
+      "Plasma ships a working clipboard history, so when Klipper misbehaves the fix is usually a setting or an environment variable. Why it can hold only one entry (QT_QPA_PLATFORM=wayland-egl), how to keep history across reboots, a reported Meta+V paste problem, and the three situations where a different clipboard manager makes more sense.",
+    date: "2026-11-02",
+    tags: ["KDE", "Wayland", "Clipboard"],
+    readingMinutes: 4,
+    toc: [
+      { id: "open-the-right-settings", title: "Open the right settings" },
+      { id: "only-one-entry-ever-shows-up", title: "Only one entry ever shows up" },
+      { id: "history-is-gone-after-a-reboot", title: "History is gone after a reboot" },
+      { id: "paste-stops-working-after-cancelling-meta-v", title: "Paste stops working after cancelling Meta + V" },
+      { id: "one-thing-klipper-does-that-most-dont", title: "One thing Klipper does that most don't" },
+      { id: "when-an-alternative-makes-sense", title: "When an alternative makes sense" },
+    ],
+  },
+  {
+    slug: "hide-clipboard-secrets-screen-sharing",
+    title: "Screen sharing with a clipboard manager: how not to show your secrets",
+    seoTitle: "Hide Clipboard History Secrets When Screen Sharing",
+    metaDescription:
+      "Opening clipboard history on a call shows everything you copied today. Habits that help with any tool, how hiding entries works, and what it cannot protect.",
+    description:
+      "Open your clipboard history during a screen share and everyone sees every password, token and address you copied today. Habits that help with any tool, how hiding individual entries works in Clipmer — masked in the list, out of search, behind Reveal in the viewer — and, just as plainly, what hiding does not protect.",
+    date: "2026-11-02",
+    tags: ["Security", "Clipboard", "Linux"],
+    readingMinutes: 4,
+    toc: [
+      { id: "why-a-clipboard-history-is-the-worst-thing-to-have-on-screen", title: "Why a clipboard history is the worst thing to have on screen" },
+      { id: "habits-that-help-with-any-tool", title: "Habits that help with any tool" },
+      { id: "hiding-individual-entries", title: "Hiding individual entries" },
+      { id: "the-window-gets-out-of-the-way", title: "The window gets out of the way" },
+      { id: "what-clearing-keeps", title: "What clearing keeps" },
+      { id: "what-hiding-does-not-do", title: "What hiding does not do" },
+      { id: "if-you-dont-want-a-history-at-all", title: "If you don't want a history at all" },
+    ],
+  },
+  {
+    slug: "clipboard-manager-freezes-large-copy",
+    title: "Why a huge copy can freeze your clipboard manager",
+    seoTitle: "Clipboard Manager Freezes After a Large Copy",
+    metaDescription:
+      "Copied a big log or SVG and your clipboard manager hung? Why one large entry slows every later copy, how to get out of it, and why a size cap is the fix.",
+    description:
+      "One large copy — a log, a minified bundle, an 18 MB SVG — can make a clipboard manager crawl long after you made it, because many store the whole history in one file and rewrite it on every copy. The bug reports, how to get out of it now, and how a per-entry size cap prevents it.",
+    date: "2026-11-02",
+    tags: ["Clipboard", "Linux", "Performance"],
+    readingMinutes: 4,
+    toc: [
+      { id: "why-a-big-copy-hurts-long-after-you-made-it", title: "Why a big copy hurts long after you made it" },
+      { id: "getting-out-of-it-now", title: "Getting out of it now" },
+      { id: "how-clipmer-keeps-it-from-happening", title: "How Clipmer keeps it from happening" },
+      { id: "why-a-size-cap-is-the-right-fix", title: "Why a size cap is the right fix" },
+      { id: "if-it-isnt-the-clipboard-manager", title: "If it isn't the clipboard manager" },
+    ],
+  },
+  {
+    slug: "clipboard-history-after-reboot-linux",
+    title: "Keep your clipboard history after a reboot on Linux",
+    seoTitle: "Keep Clipboard History After Reboot on Linux",
+    metaDescription:
+      "Clipboard history empty after a reboot? It is often a privacy setting. What to check in Klipper, GPaste and the GNOME extension, and moving it to a new PC.",
+    description:
+      "An empty clipboard history after a reboot is often a privacy setting doing what it was designed to do — Windows does the same on purpose. Which setting to check in Klipper, GPaste and the GNOME Clipboard History extension, the autostart problem that looks like data loss, and how to move a history to a new machine.",
+    date: "2026-11-02",
+    tags: ["Clipboard", "Linux", "KDE"],
+    readingMinutes: 4,
+    toc: [
+      { id: "forgetting-is-often-the-default", title: "Forgetting is often the default" },
+      { id: "make-your-clipboard-manager-keep-it", title: "Make your clipboard manager keep it" },
+      { id: "or-it-isnt-running-yet", title: "Or it isn't running yet" },
+      { id: "how-clipmer-keeps-your-history", title: "How Clipmer keeps your history" },
+      { id: "moving-to-a-new-machine", title: "Moving to a new machine" },
+    ],
+  },
+  {
+    slug: "reuse-text-snippets-linux",
+    title: "Stop retyping the same commands and replies on Linux",
+    seoTitle: "Reuse Text Snippets on Linux Without Retyping",
+    metaDescription:
+      "Shell history, aliases, text expanders or a clipboard history? Where each stops for reusing commands and replies on Linux, and how to keep snippets for good.",
+    description:
+      "Shell history, aliases, editor snippets, text expanders like espanso and a clipboard history each solve part of retyping the same commands, addresses and replies. Where each one stops, and how to use a clipboard history as a snippet library that keeps the things you reuse.",
+    date: "2026-11-02",
+    tags: ["Productivity", "Linux", "Clipboard"],
+    readingMinutes: 4,
+    toc: [
+      { id: "the-tools-you-already-have-and-where-each-one-stops", title: "The tools you already have, and where each one stops" },
+      { id: "using-clipboard-history-as-a-snippet-library", title: "Using clipboard history as a snippet library" },
+      { id: "keeping-snippets-for-good", title: "Keeping snippets for good" },
+      { id: "what-a-clipboard-history-wont-do", title: "What a clipboard history won't do" },
+    ],
+  },
+  {
     slug: "ubuntu-setup-for-developers",
     title: "Ubuntu setup for developers: the short list",
     seoTitle: "Ubuntu Setup for Developers",
@@ -232,6 +431,26 @@ export const POST_CONTENT: Record<
   string,
   () => Promise<{ default: ComponentType }>
 > = {
+  "get-back-overwritten-clipboard-linux": () =>
+    import("@/content/blog/get-back-overwritten-clipboard-linux.mdx"),
+  "clipboard-empty-after-closing-app-linux": () =>
+    import("@/content/blog/clipboard-empty-after-closing-app-linux.mdx"),
+  "win-v-clipboard-history-linux": () =>
+    import("@/content/blog/win-v-clipboard-history-linux.mdx"),
+  "clipboard-manager-auto-paste-wayland": () =>
+    import("@/content/blog/clipboard-manager-auto-paste-wayland.mdx"),
+  "clipboard-shortcut-not-working-wayland": () =>
+    import("@/content/blog/clipboard-shortcut-not-working-wayland.mdx"),
+  "kde-plasma-clipboard-history-not-working": () =>
+    import("@/content/blog/kde-plasma-clipboard-history-not-working.mdx"),
+  "hide-clipboard-secrets-screen-sharing": () =>
+    import("@/content/blog/hide-clipboard-secrets-screen-sharing.mdx"),
+  "clipboard-manager-freezes-large-copy": () =>
+    import("@/content/blog/clipboard-manager-freezes-large-copy.mdx"),
+  "clipboard-history-after-reboot-linux": () =>
+    import("@/content/blog/clipboard-history-after-reboot-linux.mdx"),
+  "reuse-text-snippets-linux": () =>
+    import("@/content/blog/reuse-text-snippets-linux.mdx"),
   "ubuntu-setup-for-developers": () =>
     import("@/content/blog/ubuntu-setup-for-developers.mdx"),
   "linux-tools-worth-installing": () =>

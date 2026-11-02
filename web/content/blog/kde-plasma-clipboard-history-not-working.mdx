@@ -1,0 +1,122 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+KDE Plasma is the one major Linux desktop that ships a clipboard history switched on. It
+is the **Clipboard** icon in the system tray, **Meta + V** opens it at the mouse pointer,
+and underneath it is Klipper, which has been part of KDE for over two decades.
+
+So when it misbehaves — only ever one entry, history gone after a reboot, a paste that
+suddenly produces nothing — the fix is nearly always a setting or an environment variable,
+not a replacement. This page goes through the causes in order of how often they come up,
+and only then gets to when a different clipboard manager makes sense. We make one of
+those, and we would still check these first.
+
+## Open the right settings
+
+Right-click the **Clipboard** icon in the system tray and choose **Configure Clipboard…**.
+If there is no icon, the widget has been removed: right-click the tray's arrow, choose
+**Configure System Tray…**, and set **Clipboard** under **Entries** back to shown. Without
+the widget, Plasma keeps no history at all — and nothing keeps your clipboard alive when
+you close the app you copied from either.
+
+The settings that matter, as Plasma 6's
+[Klipper handbook](https://docs.kde.org/trunk_kf6/en/plasma-workspace/klipper/preferences.html)
+names them:
+
+<SupportTable
+  headers={["Setting", "What it does"]}
+  rows={[
+    { name: "Save history across desktop sessions", cells: ["Keeps the history when you log out or shut down"] },
+    { name: "History size", cells: ["How many entries it keeps, from 1 to 2048"] },
+    { name: "Keep the selection and clipboard the same", cells: ["Merges middle-click selection and Ctrl+C into one"] },
+    { name: "Text selected with the pointer or keyboard", cells: ["Records highlighted text, not just copies"] },
+    { name: "Image data copied explicitly", cells: ["Records images copied from an image editor"] },
+  ]}
+/>
+
+## Only one entry ever shows up
+
+This is the one that sends people looking for alternatives, and it has a specific cause.
+In [KDE bug 500927](https://bugs.kde.org/show_bug.cgi?id=500927), the history held exactly
+one item regardless of its configured size — and only when the `QT_QPA_PLATFORM`
+environment variable was set to `wayland-egl`. With `wayland`, or with it unset, the
+history worked normally.
+
+Some distributions had set `wayland-egl` globally because Qt's documentation describes it
+as the preferred backend. KDE closed the bug as not a bug and added a warning against it to
+its packaging recommendations. Check yours:
+
+```bash
+echo $QT_QPA_PLATFORM
+```
+
+If it prints `wayland-egl`, find where it's set — usually `/etc/environment`, a file in
+`~/.config/environment.d/`, or a script in `~/.config/plasma-workspace/env/` — and remove
+it, or change it to `wayland`. Log out and back in.
+
+## History is gone after a reboot
+
+Make sure **Save history across desktop sessions** is on. With it off, Klipper keeps the
+history in memory for the session only, which some people choose deliberately: a
+persistent history is also a persistent record of every password you have copied.
+
+If it is on and the history still disappears, look at whether something is clearing it.
+Session-cleanup scripts and "clear history on logout" options in privacy tools are the
+usual suspects.
+
+## Paste stops working after cancelling Meta + V
+
+A [report on KDE's forum](https://discuss.kde.org/t/plasma-6-3-4-meta-v-causes-current-copied-data-to-be-lost/32535)
+from Plasma 6.3.4 describes this: open the popup with Meta + V, dismiss it by clicking
+outside, and after a few rounds Ctrl+V pastes nothing in Qt or GTK apps until you choose a
+different entry. Nobody in that thread identified a cause, and no bug report is linked.
+If it happens to you, choosing any other entry — or copying something new — restores
+pasting, and an up-to-date Plasma is the first thing to try.
+
+## One thing Klipper does that most don't
+
+Password managers mark the passwords they copy with a hint, `x-kde-passwordManagerHint`,
+and Klipper [leaves those entries out of its history](https://phabricator.kde.org/R120:637cd0bf62e419b8038cb9b1565089fbd341ee7a).
+KeePassXC sets the hint, so a password copied from it never lands in Klipper's list. That
+is a genuinely good default, and one many clipboard managers — ours included — don't have
+yet.
+
+## When an alternative makes sense
+
+Fixing Klipper is the right answer for most people. There are three situations where
+something else fits better:
+
+- **You share your screen.** Klipper shows every entry in plain text whenever you open it.
+  If you open your clipboard on a call, everything you copied today is on screen.
+- **You want to keep and annotate things.** A command you reuse, with a note saying which
+  server it's for.
+- **You use GNOME on another machine** and want one tool and one set of habits on both.
+
+Clipmer is ours, so weigh this accordingly. It lets you **Hide** any entry from its ⋯ menu,
+after which it renders as dots in the list, is left out of search, and opens masked in the
+full-content viewer until you press Reveal. Folders and notes are part of Pro ($9 once);
+hiding is free.
+
+<InstallCommand />
+
+What to know before running it on Plasma:
+
+- **Pick a shortcut other than Meta + V.** Klipper already has it. Clipmer's default is
+  **Ctrl + Shift + D**, and you can change it in **Settings → Shortcuts → Toggle window**.
+- **A new shortcut works after your next login.** Since 3.4.0, Clipmer writes its shortcut
+  into Plasma's own configuration, which Plasma reads at login.
+- **Run 3.5.0 or later.** Earlier versions could show "A JavaScript error occurred in the
+  main process" when you changed the shortcut on Plasma.
+- **No auto-paste.** Clipmer's paste-on-select uses a GNOME Shell helper, so on Plasma you
+  choose an entry and press Ctrl+V yourself.
+- **It doesn't yet skip password-manager entries.** Klipper does. If you run both, Clipmer
+  records what Klipper deliberately leaves out, so hide those entries or clear them.
+
+<Callout type="note" title="Running both">
+  Klipper and Clipmer can run at the same time, each keeping its own history of the same
+  copies, so trying Clipmer doesn't mean switching Klipper off.
+</Callout>
+
+We build and test Clipmer on Ubuntu with GNOME, and it runs on Plasma. If Plasma is your
+only desktop and you don't share your screen, a working Klipper is probably all you need.

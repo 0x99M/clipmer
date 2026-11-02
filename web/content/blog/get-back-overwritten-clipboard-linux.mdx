@@ -1,0 +1,123 @@
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+You copied something, then copied something else, and the first thing is gone. On most
+Linux desktops that is exactly what happened: the clipboard holds one item, and the moment
+a new copy lands the old one stops existing anywhere the clipboard can reach. There is no
+undo for it and no hidden history to dig through.
+
+There are a few places the text might still be, though, and one of them surprises most
+people. Check them in this order, because the first two only last until you select or
+close something else.
+
+## The short answer
+
+- **Highlighted it with the mouse?** Middle-click into any text field. The primary
+  selection is separate from Ctrl+C, and it may still hold it.
+- **Is the app you copied from still open?** Go back to it. The text is usually still
+  sitting where you copied it from, or one Ctrl+Z away.
+- **Was it a command?** Your shell history has it.
+- **On KDE Plasma?** Press **Meta + V**. Plasma keeps a clipboard history by default.
+- **On GNOME, Sway, Hyprland or anything else:** nothing kept it. The rest of this page is
+  about making sure that is the last time.
+
+## Check the primary selection first
+
+Linux has two clipboards, and most people only ever think about one of them. **Ctrl+C**
+writes the *clipboard*. Merely highlighting text writes the *primary selection*, which is
+what a middle-click pastes. They are independent: copying over one does not touch the
+other.
+
+That gives you a real chance in one common case. If the thing you lost was highlighted
+and copied, and what replaced it came from a **Copy button** — a code block on a web page,
+a "copy link" menu item, a password manager — then the replacement never touched the
+primary selection. The text you lost is still there. Click into an empty text field and
+press the middle mouse button. On a touchpad, a three-finger tap usually does the same.
+
+It stops working the moment you highlight anything else, because every highlight
+overwrites the primary selection. So check it before you do anything else, including
+selecting text on this page.
+
+<Callout type="note" title="It works on Wayland too">
+  The primary selection is not an X11 leftover. GNOME, KDE Plasma and the wlroots
+  compositors all support it on Wayland, and middle-click paste is on by default in GNOME.
+</Callout>
+
+## Go back to where you copied it from
+
+Obvious, but it is the one people skip in a panic. If the source is still open, the text
+almost always still exists there. If you had *cut* rather than copied, the editor's undo
+puts it back: Ctrl+Z in the place you cut from restores the text, and the clipboard
+doesn't matter.
+
+A few other places keep their own copy without being asked:
+
+- **Commands:** your shell history. `history | grep ssh`, or **Ctrl+R** and a few letters
+  of the command, searches it.
+- **URLs:** your browser history.
+- **Terminal output:** the terminal's scrollback, until you close the tab.
+
+## On KDE Plasma, you already have a history
+
+Plasma is the one major Linux desktop that ships a clipboard history switched on. It is the
+**Clipboard** icon in the system tray, and **Meta + V** opens it at the mouse pointer.
+Choose the entry you lost and it goes back on the clipboard.
+
+If it is empty, or only ever shows one item, something is misconfigured. Our
+[guide to the KDE clipboard](/blog/kde-plasma-clipboard-history-not-working) covers the
+usual causes.
+
+## On GNOME and everything else, nothing kept it
+
+GNOME has no clipboard history, and neither do Sway, Hyprland, niri or the other
+wlroots compositors. Pressing **Super + V** on Ubuntu opens the notification list, not a
+clipboard. Once a copy is overwritten on these desktops, no part of the system holds the
+old one, and no recovery tool can get back data that was never stored.
+
+That is the honest answer, and it is also the reason clipboard managers exist. A clipboard
+manager doesn't recover anything; it records each copy as you make it, so the next time
+there is something to go back to.
+
+## Make it the last time
+
+Clipmer is ours, so weigh this section accordingly. It is a clipboard manager for Linux
+that keeps what you copy and gives it back with one shortcut:
+
+<InstallCommand />
+
+Then:
+
+1. Press **Ctrl + Shift + D** anywhere. The history opens over whatever you were doing.
+2. Start typing. Any letter jumps straight to the search box, so a few characters of what
+   you lost is usually enough.
+3. Press **Enter**. The entry goes back on the clipboard and the window gets out of the
+   way.
+
+The free version shows your last 100 copies, and that is a permanent free tier, not a
+trial. Copying the same text twice doesn't create a second entry: the existing one moves
+back to the top, so the list stays a list of different things. History is saved to disk,
+so it is still there after a reboot.
+
+There are `.rpm` and AppImage builds as well. The [install guide](/install) has those, and
+the checksums to verify the download against.
+
+<Callout type="warn" title="A history keeps everything">
+  A clipboard history is a record of everything you copy, and that includes passwords,
+  API keys and tokens. Clipmer lets you hide individual entries so they render as dots,
+  which matters the first time you open the history during a screen share.
+  [Screen sharing with a clipboard manager](/blog/hide-clipboard-secrets-screen-sharing)
+  covers what that protects and what it does not.
+</Callout>
+
+## Why Linux does not keep it for you
+
+On both X11 and Wayland, copying doesn't put your text anywhere central. The application
+you copied from announces that it *has* something, and only hands it over when another
+application asks to paste. That keeps a 40 MB copy from being duplicated on every
+Ctrl+C. It also means there is no system-wide store to look in afterwards. When a new copy
+arrives, the old owner simply stops being asked.
+
+The same design is why copied text can vanish when you close the app it came from, which
+is a different problem with a different fix. [Why your clipboard empties when you close an
+app](/blog/clipboard-empty-after-closing-app-linux) covers which desktops guard against
+that, and which leave it to you.

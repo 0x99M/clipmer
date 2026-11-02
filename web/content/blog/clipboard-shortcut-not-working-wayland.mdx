@@ -1,0 +1,148 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+You set a shortcut in your clipboard manager's preferences, press it, and nothing
+happens. No error, no window. The same shortcut worked under X11, and the app's settings
+still say it is set.
+
+On Wayland this is the normal outcome, not a fault in your setup. CopyQ's own mailing list
+[put it bluntly](https://groups.google.com/g/copyq/c/KhbmUoInymk) in 2025: global
+shortcuts configured inside CopyQ "won't work on Gnome anymore". The fix is the same for
+almost every clipboard manager, and it takes a minute once you know where it lives.
+
+## Why the shortcut never arrives
+
+On X11, any application can ask the X server for a key — "tell me whenever Ctrl+Shift+D is
+pressed, wherever the focus is" — and the server obliges. That is how every global
+shortcut used to work, and it is also how any application could watch every key you
+press.
+
+Wayland doesn't let an application see keystrokes aimed at another window. That's the
+right call for your passwords and the wrong one for your clipboard manager: its shortcut
+is, by definition, a key pressed while some other window is focused. So the press goes to
+that window, and the clipboard manager never hears about it.
+
+Frameworks can't get round it either. Electron, which Clipmer is built on, has a
+`globalShortcut` API that works on X11 and fails quietly on Wayland — no error the app could
+show you, just a key that never arrives.
+
+## Two ways it can work
+
+**1. The desktop owns the shortcut.** The desktop always sees every key, so you bind a key
+in its settings and tell it which command to run. This works on every Wayland desktop, and
+it is what nearly every fix you will find online amounts to.
+
+**2. The Global Shortcuts portal.** `org.freedesktop.portal.GlobalShortcuts` lets an
+application ask the desktop for a shortcut, and the desktop shows you the request.
+KDE Plasma supports it, and GNOME's portal backend added it in version 48 — so Ubuntu
+24.04 (GNOME 46) doesn't have it and 26.04 does. The application has to support it too:
+CopyQ has since 12.0.0. To check your own system:
+
+```bash
+grep -l GlobalShortcuts /usr/share/xdg-desktop-portal/portals/*.portal
+```
+
+A filename in the output means your desktop's portal offers it.
+
+## Bind it in your desktop settings
+
+This works whatever your clipboard manager is. You need two things: the key, and the
+command that opens your clipboard manager.
+
+<SupportTable
+  headers={["Clipboard manager", "Command to bind"]}
+  rows={[
+    { name: "CopyQ", cells: ["copyq toggle"] },
+    { name: "GPaste", cells: ["gpaste-client ui"] },
+    { name: "Clipmer", cells: ["Nothing to do on GNOME or Plasma — see below"], highlight: true },
+  ]}
+/>
+
+**GNOME:** Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts → **+**.
+Give it a name, paste the command, and press the key.
+
+**KDE Plasma:** System Settings → Keyboard → Shortcuts → **Add New → Command or Script**.
+
+**Sway:** in `~/.config/sway/config`:
+
+```bash
+bindsym $mod+Shift+v exec copyq toggle
+```
+
+**Hyprland:** in `~/.config/hypr/hyprland.conf`:
+
+```bash
+bind = SUPER SHIFT, V, exec, copyq toggle
+```
+
+<Callout type="warn" title="Super + V on GNOME is taken">
+  GNOME uses Super + V for the notification list, and a custom shortcut on the same key
+  loses to it. [Win+V on Linux](/blog/win-v-clipboard-history-linux) has the one-line
+  command that frees it.
+</Callout>
+
+## How Clipmer does it without asking
+
+Clipmer is ours, so weigh this section accordingly. Because Electron's own shortcut API is
+deaf on Wayland, Clipmer does the step above for you, on the two desktops it supports:
+
+<InstallCommand />
+
+**On GNOME,** it adds a custom shortcut named **Clipmer Toggle** to GNOME's own list —
+the same list you would edit in Settings — and keeps it in step with whatever you choose in
+**Clipmer → Settings → Shortcuts → Toggle window**. The command reads Clipmer's process ID
+at the moment you press the key and sends it a signal, and it checks the process really is
+Clipmer first, so a stale ID after a crash can't signal something else. The shortcut is
+removed when Clipmer quits and added again when it starts, so it never squats on the key
+while Clipmer isn't running.
+
+**On KDE Plasma,** since 3.4.0, it writes a Plasma command shortcut through `kwriteconfig6`
+rather than editing your shortcut file by hand, because that file holds every global
+shortcut on the system. Plasma only reads it at login, so **a new shortcut starts working
+after your next login**, and Settings tells you so. 3.5.0 fixed a crash ("A JavaScript
+error occurred in the main process") that changing the shortcut could trigger on Plasma.
+
+The default is **Ctrl + Shift + D**. If that can't be bound, Clipmer falls back to
+**Ctrl + Shift + B**, and Settings shows which one is actually live rather than the one you
+asked for.
+
+### Check what GNOME has
+
+```bash
+P=/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/clipmer-toggle/
+gsettings get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$P binding
+```
+
+That prints the key GNOME will act on, for example `'<Ctrl><Shift>d'`. If it prints
+nothing useful, start Clipmer once — it writes the shortcut on launch.
+
+### On Sway, Hyprland and other compositors
+
+Clipmer doesn't write shortcuts for these, and we don't test on them. If you run it there
+anyway, the command its GNOME shortcut runs works from any keybinding. Save it as a script:
+
+```bash
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/clipmer-toggle <<'SH'
+#!/bin/sh
+p=$(cat ~/.config/clipmer/clipmer.pid 2>/dev/null)
+[ -n "$p" ] && grep -qs clipmer /proc/$p/cmdline && kill -USR1 "$p"
+SH
+chmod +x ~/.local/bin/clipmer-toggle
+```
+
+and bind `~/.local/bin/clipmer-toggle` the way the Sway and Hyprland examples above bind
+`copyq toggle`. Keep the `/proc` check: the signal it sends ends any process that isn't
+expecting it, so it should only ever reach Clipmer.
+
+## If it still does nothing
+
+- **Is the app running?** A desktop shortcut that runs `copyq toggle` or signals Clipmer
+  does nothing if the app isn't there to receive it. Check the tray.
+- **Does something else own the key?** Search for the combination in your desktop's
+  shortcut settings. GNOME doesn't warn about clashes created outside its Settings app.
+- **On Plasma, did you log in again?** Plasma reads new command shortcuts at login.
+- **Is it the shortcut, or the paste?** If the window opens but choosing an entry doesn't
+  paste anything, that is a separate Wayland restriction:
+  [why your clipboard manager won't paste on Wayland](/blog/clipboard-manager-auto-paste-wayland).

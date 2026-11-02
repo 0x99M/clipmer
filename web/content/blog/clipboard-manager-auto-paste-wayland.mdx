@@ -1,0 +1,138 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+You open your clipboard history, choose an entry, and nothing appears in the window you
+were typing in. The entry is on the clipboard — press Ctrl+V and there it is — but the
+paste you expected never happened. On X11 the same clipboard manager pasted it for you.
+
+This is the most common Wayland complaint about clipboard managers, and it is not a bug in
+any of them. [A question on Launchpad](https://answers.launchpad.net/ubuntu/+question/660723)
+described it in 2017, and the
+[README of a much newer clipboard manager](https://github.com/davidboulay/Clippy) still carries
+the same disclaimer: no auto-paste, press Ctrl+V yourself. CopyQ's FAQ is just as direct:
+pasting from CopyQ "works only on Windows, macOS and X11 on Linux."
+
+Here is why, the ways around it, and what each one costs you.
+
+## What "auto-paste" really is
+
+There is no paste API. When a clipboard manager "pastes", it does two things: it puts your
+entry on the clipboard, and then it **pretends to be your keyboard** and presses Ctrl+V into
+whichever window has focus. The application receiving it can't tell the difference between
+that and you.
+
+On X11 the second step is trivial. The XTest extension lets any client generate key events
+for any other window, which is how `xdotool type` works, and how every X11 clipboard
+manager pasted for you.
+
+## Why Wayland stops it
+
+Wayland removed that capability on purpose. A Wayland client can only send input to its
+own surfaces; it can't type into another application's window. Considering what the
+alternative allows — any program you run could type commands into your terminal — that is
+the correct default.
+
+The consequence is that a clipboard manager running as an ordinary application can set
+the clipboard but cannot press Ctrl+V for you. Something with more authority has to do it.
+
+## The ways around it
+
+<SupportTable
+  headers={["Approach", "Where it works", "What it costs"]}
+  rows={[
+    { name: "ydotool", cells: ["Any desktop", "A daemon with access to /dev/uinput — a real virtual keyboard below the compositor, available to anything that can reach its socket"] },
+    { name: "wtype", cells: ["wlroots compositors", "Needs virtual-keyboard-unstable-v1, which GNOME doesn't implement"] },
+    { name: "Remote Desktop portal", cells: ["GNOME, Plasma", "A permission prompt, and an interface built for remote control"] },
+    { name: "A compositor-side helper", cells: ["The desktop it was written for", "Code running inside your desktop shell, so it has to be small and careful"] },
+  ]}
+/>
+
+**ydotool** goes underneath Wayland entirely. It creates a virtual input device through the
+kernel's uinput interface, so the compositor sees an ordinary keyboard and passes its keys
+along like any other. That's why it works everywhere. It is also why it's the heaviest
+option: the daemon needs access to `/dev/uinput`, which usually means a udev rule or a
+group change, and while it runs, anything that can talk to it can type anywhere.
+
+**wtype** asks the compositor politely, through the `virtual-keyboard-unstable-v1`
+protocol. Sway, Hyprland and the other wlroots compositors support that. Mutter, GNOME's
+compositor, does not — there is a
+[standing request](https://gitlab.gnome.org/GNOME/mutter/-/issues/1974) for it — so wtype
+fails on GNOME.
+
+**The Remote Desktop portal** is the sanctioned route on GNOME and Plasma: an app asks, you
+approve a dialog, and the app can send input. It works, but it's built for remote-control
+software, and it hands over far more than one Ctrl+V needs.
+
+**A compositor-side helper** is code that runs inside the desktop itself, which already
+decides where every keystroke goes. On GNOME, that means a Shell extension. This is the
+route Clipmer takes.
+
+## How Clipmer pastes on GNOME
+
+Clipmer is ours, so weigh this section accordingly. Its auto-paste is a GNOME Shell
+extension called **Clipmer Paste Helper**, about 160 lines long, and it does one thing:
+
+1. When you choose an entry, Clipmer writes it to the clipboard and hides its window, which
+   returns focus to the window you were in.
+2. Clipmer calls the helper over the session D-Bus — `com.clipmer.PasteHelper.Paste`.
+3. The helper presses and releases **Ctrl + V** through a virtual keyboard that GNOME Shell
+   itself owns.
+
+The whole round trip takes about a fifth of a second.
+
+Because that D-Bus method can type into your focused window, the helper doesn't trust the
+caller's word for who it is. Since 3.2.0 it asks the bus for the caller's process ID, walks
+up the process tree, and accepts the request only if an ancestor's executable — read from
+`/proc/<pid>/exe`, not from its command line, which any process can fake — is the
+installed Clipmer binary. Everything else gets `AccessDenied`. We found the earlier version
+of that check authenticated nothing, and wrote up
+[how](/blog/auditing-our-own-clipboard-manager).
+
+## Turning it on
+
+Auto-paste is **off by default**, because it installs a keystroke service on your session
+bus and that should be your decision.
+
+1. Install Clipmer:
+
+<InstallCommand />
+
+2. Open it with **Ctrl + Shift + D**, go to **Settings → General**, and switch on
+   **Auto-paste on select**.
+3. **Log out and back in once.** On Wayland, GNOME Shell only discovers new extensions at
+   login. After that, choosing an entry pastes it.
+
+If it's switched on but can't work, Settings says so and says why — the helper isn't
+running yet, GNOME rejected it as out of date, or you aren't on GNOME. Switching it off
+disables the helper and deletes it, rather than leaving it installed, and uninstalling
+Clipmer removes it too.
+
+<Callout type="note" title="GNOME versions">
+  GNOME only loads an extension whose metadata lists the running Shell version. The helper
+  lists GNOME 46 through 51, which covers Ubuntu 24.04 LTS and 26.04 LTS. On 26.04 you need
+  Clipmer 3.2.1 or later.
+</Callout>
+
+## Where it won't work
+
+The honest list:
+
+- **Terminals.** GNOME Terminal, Ptyxis and most others paste with **Ctrl + Shift + V**.
+  Plain Ctrl+V sends a control character to the shell instead. Auto-paste presses Ctrl+V,
+  so in a terminal choose the entry and paste with Ctrl+Shift+V yourself.
+- **KDE Plasma and the wlroots compositors.** The helper is a GNOME Shell extension, so it
+  only exists on GNOME. Clipmer still records and restores your history elsewhere; you
+  press Ctrl+V.
+- **Applications that remap Ctrl+V.** Whatever they bind it to is what happens.
+
+## Living without it
+
+Even with no auto-paste, the gap is one keystroke: choose an entry with **Enter**, and the
+window closes and hands focus back to the app you came from, with your entry already on the
+clipboard. Ctrl+V finishes it.
+
+If your shortcut to *open* the history is what isn't working on Wayland, that is a
+different problem with a different fix —
+[clipboard manager shortcut not working on Wayland](/blog/clipboard-shortcut-not-working-wayland)
+covers it.

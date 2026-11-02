@@ -1,0 +1,109 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+You installed a clipboard manager precisely so you could get things back, then rebooted,
+and the history is empty. Everything you copied yesterday is gone.
+
+Sometimes that's a bug. More often it's a setting doing exactly what it was designed to
+do, because forgetting on restart is a privacy feature in a lot of clipboard tools — the
+one in Windows included. This page covers why some histories reset, how to make the common
+Linux ones keep theirs, and what it costs you when they do.
+
+## Forgetting is often the default
+
+A clipboard history collects passwords, tokens and personal details whether you meant it
+to or not. Keeping it only in memory means a reboot wipes all of that, which is a
+reasonable trade for some people — and the reason several tools make it the default, or
+offer it prominently:
+
+- **Windows** clears its clipboard history
+  [every time you restart](https://support.microsoft.com/en-us/windows/clipboard-in-windows-c436501e-985d-1c8d-97ea-fe46ddf338c6),
+  keeping only pinned items.
+- **The GNOME Clipboard History extension** has an *Only save favorites to disk* option that,
+  in [its README's words](https://github.com/SUPERCILEX/gnome-clipboard-history/blob/master/README.md),
+  wipes your non-favorited items on shutdown.
+- **KDE's Klipper** has a switch for exactly this, covered below.
+
+So before assuming something broke, check whether it was told to forget.
+
+## Make your clipboard manager keep it
+
+<SupportTable
+  headers={["Tool", "Setting to check"]}
+  rows={[
+    { name: "Klipper (KDE Plasma)", cells: ["Configure Clipboard → Save history across desktop sessions"] },
+    { name: "Clipboard History (GNOME extension)", cells: ["Turn off \"Only save favorites to disk\""] },
+    { name: "GPaste", cells: ["gsettings get org.gnome.GPaste save-history should print true"] },
+    { name: "Clipmer", cells: ["Nothing to set — history is always saved"], highlight: true },
+  ]}
+/>
+
+**Klipper:** right-click the Clipboard icon in the system tray, choose **Configure
+Clipboard…**, and turn on **Save history across desktop sessions**. With it off, the history
+lasts for one session.
+
+**Clipboard History extension:** open its preferences in the Extension Manager app and turn
+off **Only save favorites to disk** if you want everything kept, not just favourites.
+
+**GPaste:** history is saved to disk unless `save-history` has been turned off. If the
+setting is `true` and the history still comes back empty, GPaste's issue tracker has a
+[report](https://github.com/Keruspe/GPaste/issues/354) of it reading from a different
+directory than it wrote to — look in `~/.local/share/` for both a `GPaste` and a `gpaste`
+directory.
+
+## Or it isn't running yet
+
+The other common cause isn't storage at all. A clipboard manager only records copies while
+it's running. If it doesn't start at login, the history isn't lost after a reboot — it just
+isn't there until you open the app, and nothing you copied before that was recorded.
+
+Check that yours starts automatically. On GNOME, autostart entries live in
+`~/.config/autostart/`; on Plasma, under **System Settings → Autostart**.
+
+## How Clipmer keeps your history
+
+Clipmer is ours, so weigh this section accordingly. It has no in-memory-only mode: every
+entry is written to disk, so a reboot, a crash or a logout doesn't cost you the history.
+
+<InstallCommand />
+
+- **Where it lives:** `~/.config/clipmer/clipmer-data.json`, alongside your settings.
+- **When it's written:** a fraction of a second after each copy, and once more when you
+  quit, so at most the last moment before a hard power-off can be lost.
+- **Hiding is saved immediately.** When you hide an entry, that's written straight away
+  rather than batched with the next copy — an entry you just masked mustn't come back
+  unmasked after a crash.
+- **Starting at login is off until you turn it on**, in **Settings → General → Start on
+  login**. Do that once, or Clipmer only starts recording when you first open it after each
+  boot. It works for the AppImage too since 3.2.0, which earlier showed the setting as on
+  while doing nothing.
+
+The free version shows your last 100 entries; Pro keeps 200, and entries filed in folders
+are kept beyond that limit.
+
+## Moving to a new machine
+
+A history that survives reboots should survive a reinstall too. There are two ways with
+Clipmer.
+
+**Copy the file.** Quit Clipmer from the tray menu on both machines, copy
+`~/.config/clipmer/clipmer-data.json` across, and start it again. This is free and works.
+Know what you are carrying, though: the file is plain JSON, it holds every entry in plain
+text — hidden ones included — and it also holds your settings and your licence key if you
+have one.
+
+**Use an encrypted backup (Pro).** **Settings → License → Backup** writes your history,
+notes and folders into a single file encrypted with a password you choose (the key is
+derived with scrypt; the contents are AES-256-GCM). On the new machine you import it and
+choose whether to **merge** it into the existing history or **replace** it; a merge
+recognises entries you already have, so importing twice changes nothing. The licence key
+is deliberately left out of the backup, so a copy on a USB stick or in cloud storage can't
+activate Pro for anybody else.
+
+<Callout type="warn" title="Persistence cuts both ways">
+  A history that survives a reboot also keeps the password you copied three weeks ago.
+  Hide sensitive entries so they don't show on screen, delete the ones you don't need, and
+  clear the history now and then — [screen sharing with a clipboard manager](/blog/hide-clipboard-secrets-screen-sharing)
+  covers what each of those does and doesn't protect.
+</Callout>

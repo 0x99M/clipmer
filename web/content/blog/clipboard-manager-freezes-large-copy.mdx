@@ -1,0 +1,99 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+You copy a log file, a minified bundle, a database dump or the contents of an SVG, and a
+few seconds later your clipboard manager is unresponsive. Sometimes the whole desktop
+stutters with it. Restarting it helps until the next copy, because the giant entry is
+still in its history, and now every copy has to drag it along.
+
+This isn't one bad app. It's a pattern with a single cause, and it shows up in the bug
+trackers of tools built in completely different ways:
+
+<SupportTable
+  headers={["Report", "What was copied", "What happened"]}
+  rows={[
+    { name: "clipse #369", cells: ["An 18 MB SVG string", "The listener slowed to a crawl; new copies stopped being recorded"] },
+    { name: "KDE 399096", cells: ["Huge text content", "Klipper made the Plasma desktop freeze"] },
+    { name: "KDE 237308", cells: ["A large text buffer", "The desktop froze from excessive swapping"] },
+  ]}
+/>
+
+The [clipse report](https://github.com/savedra1/clipse/issues/369) is the clearest
+diagnosis: the entire 18 MB payload went into `clipboard_history.json`, and clipse parsed,
+appended to and rewrote that whole file on every new copy. The Klipper reports —
+[399096](https://bugs.kde.org/show_bug.cgi?id=399096) and
+[237308](https://bugs.kde.org/show_bug.cgi?id=237308) — are older and differ in detail, but
+the shape is the same.
+
+## Why a big copy hurts long after you made it
+
+A clipboard manager does three things with every entry, and each one scales with the size
+of the biggest thing in the history, not the thing you just copied:
+
+1. **It stores it.** Most managers keep the history as one file. If that file is rewritten
+   on every copy, a 20 MB entry makes *every subsequent copy* a 20 MB write.
+2. **It loads it.** Opening the history means reading entries into memory and, often,
+   building a preview of each one.
+3. **It renders it.** A list that lays out the full text of every entry has to lay out the
+   20 MB one too.
+
+The copy that caused it happened once. The cost is paid on every copy until that entry
+leaves the history — which, for an entry you never use again, can be weeks.
+
+## Getting out of it now
+
+- **Delete the entry.** Most clipboard managers let you remove one entry. If the window
+  won't open, clearing the history from the tray or the command line works too.
+- **For clipse,** the reporter removed the entry from `~/.config/clipse/clipboard_history.json`
+  with `jq` and restarted the listener.
+- **For Klipper,** right-click the Clipboard icon in the tray and clear the history.
+
+## How Clipmer keeps it from happening
+
+Clipmer is ours, so weigh this section accordingly. Its history is also a single JSON
+file, which is exactly the design that bit clipse — so it guards the size of what goes in,
+rather than hoping nobody copies anything big.
+
+<InstallCommand />
+
+- **Each entry is capped at 262,144 characters** — roughly 256 KB of text. That is far
+  beyond any real snippet, command or address, and small enough that rewriting the whole
+  history stays cheap. Anything longer is stored up to the cap, and the full-content viewer
+  labels it **truncated**, rather than presenting part of something as if it were the
+  whole thing.
+- **The list shows 25 entries at a time**, with a row to load more, so opening the history
+  doesn't lay out the whole thing. Previews are the first 200 characters.
+- **Text only.** Image history was removed in 3.0.4; it was the largest source of memory
+  pressure in the app.
+
+<Callout type="note" title="The trade-off">
+  If you copy a 2 MB log and pick it from the history later, you get its first 256 KB.
+  The live clipboard isn't touched by the cap: until you copy something else, Ctrl+V still
+  pastes the whole thing. For comparison, Windows' built-in clipboard history caps items at
+  4 MB.
+</Callout>
+
+## Why a size cap is the right fix
+
+The clipse thread arrived at the same answer: its suggested fix is a cap of around 2 MB,
+with oversized entries truncated or ignored. A clipboard history exists to give you back
+the things you copy *again* — commands, URLs, addresses, replies. Nobody re-pastes a 20 MB
+SVG from their history; if you need it twice, it belongs in a file.
+
+So a cap gives up almost nothing and protects everything else. The thing to check in any
+clipboard manager is whether it has one at all, and whether it tells you when it applied
+it. Silent truncation is its own problem: a key or certificate cut short without a word is
+worse than one that wasn't saved.
+
+## If it isn't the clipboard manager
+
+Two things can look like this without being it:
+
+- **The app you copied from.** Some applications freeze while *producing* a large copy,
+  because they render it in several formats at once. If the stall happens at Ctrl+C rather
+  than afterwards, it's the source app.
+- **Large images on GNOME.** Mutter keeps its own copy of the latest clipboard item so it
+  survives closing the source app, up to 200 MB for an image. A
+  [Mutter issue](https://gitlab.gnome.org/GNOME/mutter/-/issues/2818) describes a short
+  freeze when copying a large image — that's the compositor, not your clipboard manager.

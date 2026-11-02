@@ -1,0 +1,141 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+You copy something, close the application you copied it from, go to paste — and nothing
+happens. The clipboard is empty, or it pastes whatever you copied before. It looks like a
+bug, and it has been reported as one for years: in
+[KDE's tracker](https://bugs.kde.org/show_bug.cgi?id=386232), on the
+[Sublime Text forum](https://forum.sublimetext.com/t/clipboard-cleared-on-exit/77472), and
+on [Ubuntu Budgie 26.04](https://discourse.ubuntubudgie.org/t/copy-the-text-and-close-the-software-it-will-not-paste-correctly-in-other-applications-ubuntu-budgie26-04/8777).
+
+It is not a bug. It is how the Linux clipboard has always worked, on X11 and on Wayland.
+Whether you notice depends entirely on which desktop you run, because some of them quietly
+fix it for you and some of them don't.
+
+## The clipboard is a promise, not a copy
+
+When you press Ctrl+C, your text doesn't go anywhere. The application announces that it
+*owns* the clipboard and lists the formats it can supply — plain text, HTML, an image. The
+data stays inside that application. Only when something asks to paste does the owner
+actually produce it and hand it over.
+
+That design is deliberate. A spreadsheet that copies a large range doesn't have to render
+it as text, HTML and a bitmap up front just in case; it renders the one format the paste
+asks for. The cost is obvious once you see it: **when the owner exits, there is nobody left
+to answer the paste.** The promise dies with the process.
+
+The [wl-clipboard manual](https://man.archlinux.org/man/wl-clipboard.1.en) says it plainly:
+unless a clipboard manager designed to prevent it is running, the clipboard is cleared when
+its owner goes away. X11 has the same rule, and solved it the same way — the freedesktop
+clipboard manager specification lets an exiting application hand its data to a manager
+first, if one is running to accept it.
+
+## Which desktops catch it for you
+
+<SupportTable
+  headers={["Desktop", "Survives closing the app?", "What does it"]}
+  rows={[
+    { name: "GNOME", cells: ["Yes, for the latest copy", "Mutter keeps a copy of text up to 4 MB and images up to 200 MB"] },
+    { name: "KDE Plasma", cells: ["Yes, while the Clipboard widget is running", "Klipper, Plasma's clipboard history"] },
+    { name: "Sway, Hyprland, niri, labwc", cells: ["No", "Nothing, unless you add a tool"] },
+    { name: "X11 sessions", cells: ["Depends", "Whatever claims the clipboard-manager role, if anything"] },
+  ]}
+/>
+
+**GNOME.** Mutter, GNOME's compositor, has had a built-in clipboard manager since GNOME
+3.34. Its [source](https://gitlab.gnome.org/GNOME/mutter/-/blob/main/src/core/meta-clipboard-manager.c)
+is short and specific: whenever another application takes the clipboard, Mutter copies the
+best format on offer into memory — plain text up to 4 MB, or an image up to 200 MB — and
+when the owner goes away it puts that copy back on the clipboard itself. So on GNOME, the
+copy you just made survives closing the app. Only the latest one, though: Mutter keeps a
+single item, not a history.
+
+**KDE Plasma.** Klipper, the clipboard history behind the Clipboard icon in the system tray,
+does the job here. If you removed that widget — or a distribution ships without it — you
+lose the protection along with the history.
+
+**wlroots compositors.** Sway, Hyprland, niri and labwc keep nothing, by design. The
+compositor relays clipboard offers between applications and stores none of them.
+
+## How to tell what yours does
+
+A thirty-second test:
+
+1. Open a text editor, type a word, copy it.
+2. Close the editor completely. Not just the window — make sure the process is gone.
+3. Paste into a terminal or a browser address bar.
+
+If the word arrives, your desktop is keeping the clipboard alive. If you get nothing or
+something older, it isn't.
+
+## The fix for each desktop
+
+**GNOME:** nothing to do for the latest copy. What GNOME won't give you is the copy before
+it — see below.
+
+**KDE Plasma:** make sure the Clipboard widget is in your system tray (right-click the tray,
+**Configure System Tray → Entries → Clipboard**). Klipper is what keeps the clipboard alive,
+so it has to be running.
+
+**Sway, Hyprland, niri and other wlroots compositors:** run a clipboard persistence tool.
+[wl-clip-persist](https://github.com/Linus789/wl-clip-persist) does exactly this job and
+nothing else. Start it from your compositor's config — in Hyprland:
+
+```bash
+exec-once = wl-clip-persist --clipboard regular
+```
+
+and in Sway:
+
+```bash
+exec wl-clip-persist --clipboard regular
+```
+
+Use `regular`, not `primary` or `both`: its README warns that persisting the primary
+selection can make text impossible to select in some applications.
+
+If you also want a history, [cliphist](https://github.com/sentriz/cliphist) over
+wl-clipboard is the usual choice on these compositors, and our
+[per-compositor guide](/blog/best-clipboard-manager-wayland) has the setup for each.
+
+## Keeping more than the last copy
+
+Every fix above solves the same narrow problem: the *latest* copy outliving its
+application. None of them gets back the copy before that, and that is usually the one you
+actually wanted — you copied a hostname, closed the terminal, copied a password, and now
+need the hostname.
+
+That needs a history, and this is where Clipmer comes in. It's ours, so weigh this
+accordingly. Clipmer records each text copy within half a second of it happening, and
+keeps it on disk. The application you copied from can be long gone; the entry is still in
+the list.
+
+<InstallCommand />
+
+Press **Ctrl + Shift + D**, type a few letters of what you need, and press **Enter** to
+put it back on the clipboard. The free version shows your last 100 copies, permanently.
+
+Two honest limits:
+
+- **Clipmer records text only.** If you copy an image and close the app, GNOME's built-in
+  manager is what saves you, not Clipmer.
+- **We build and test on Ubuntu with GNOME.** Clipmer also runs on KDE Plasma. It is an
+  Electron application running through XWayland. On Sway or Hyprland, wl-clip-persist plus cliphist
+  is the better-fitting tool, and we would rather point you at it than sell you something
+  we don't test there.
+
+<Callout type="note" title="What about copying and closing straight away?">
+  Clipmer reads the clipboard every 500 ms, so a copy made and closed inside half a second
+  can slip past it. On GNOME that gap is covered: Mutter puts its own copy back on the
+  clipboard when the application exits, and Clipmer records that copy on its next read.
+</Callout>
+
+## Why this hits Wayland users harder
+
+None of this is new; X11 had exactly the same ownership rule. What changed is that on X11
+almost every desktop ran something that claimed the clipboard-manager role, so people
+rarely saw it. Moving to a Wayland compositor that doesn't keep anything — which is most
+of them apart from GNOME and Plasma — removes that safety net without telling you.
+[Clipboard managers on Wayland](/blog/clipboard-managers-on-wayland) explains why Wayland
+makes the job of a clipboard manager harder in the first place.
