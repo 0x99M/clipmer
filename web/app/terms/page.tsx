@@ -1,10 +1,19 @@
 import { Metadata } from "next";
-import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
+const title = "Terms of Service — Clipmer";
+const description =
+  "The terms for using Clipmer: the free app, the $9 one-time Pro license, the source-available code, 14-day refunds, and what we do not allow.";
+
 export const metadata: Metadata = {
-  title: "Terms of Service — Clipmer",
+  title,
+  description,
   alternates: { canonical: canonical("/terms"), types: ALTERNATE_TYPES },
+  // Without these the page inherits the homepage's og:title/description and
+  // emits no og:url. Spread OG_BASE back in or og:image goes with it.
+  openGraph: { ...OG_BASE, url: canonical("/terms"), title, description },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 export default function TermsPage() {

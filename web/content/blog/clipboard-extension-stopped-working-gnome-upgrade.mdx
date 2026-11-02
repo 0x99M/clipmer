@@ -1,0 +1,221 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { InstallCommand } from "@/components/blog/install-command";
+
+If your clipboard history disappeared from the top bar after a GNOME upgrade, the extension
+almost certainly did not break. GNOME refused to load it, because the build you have does not
+list the GNOME Shell version you are now running. The extension is still installed, still
+switched on, and its history file is still on disk.
+
+The short version: run `gnome-extensions info` with the extension's UUID. `State: OUT OF DATE`
+confirms the diagnosis, and the fix is to update the extension from the Extensions app or
+Extension Manager, which installs the build made for your Shell if one exists. If the
+extension is Clipboard Indicator and you are on GNOME 51 — Ubuntu 26.10, Fedora 45, Arch —
+there is no such build as of 2 November 2026, and the rest of this page is about what to do
+instead. It is the long form of the
+[upgrade section](/blog/clipboard-history-ubuntu#upgraded-from-24-04-check-your-extensions-still-load)
+in our Ubuntu guide.
+
+## What you are seeing
+
+The symptoms are the same whichever extension you use. The icon is gone from the top bar.
+The shortcut that used to open the history does nothing. Copying still works, because the
+clipboard itself belongs to the compositor, not the extension — only the recording stopped.
+
+Open the **Extensions** app and the extension's switch is off, with this message under it:
+"The installed version of this extension (71) is incompatible with the current version of
+GNOME (51). The extension has been disabled." — with your own two version numbers. Extension
+Manager is terser: a clock icon appears next to the row, and hovering it reads "This
+extension is incompatible with your current version of GNOME".
+
+## Right now: Clipboard Indicator has no GNOME 51 build
+
+GNOME 51 was [released on 16 September 2026](https://discourse.gnome.org/t/gnome-51-released/38820).
+Ubuntu 26.10 shipped with it in October, Fedora 45 ships with it on 3 November — our
+[Fedora guide](/blog/clipboard-history-fedora) covers that side — and Arch has had 51.1
+since mid-October.
+
+[Clipboard Indicator](https://extensions.gnome.org/extension/779/clipboard-indicator/) is the
+most-installed clipboard extension on extensions.gnome.org, at just over 2.5 million
+downloads, and its newest build there — version 71 — covers GNOME Shell 46 through 50. There
+is no entry for 51. The repository is no further along: its `metadata.json` lists the same
+46 through 50, and the last commit on its default branch was on 1 April 2026.
+
+The issue tracker has the story.
+[#642](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator/issues/642) and
+[#643](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator/issues/643) were
+both opened on 24 September, a week after the release; #643 quotes the error you get when the
+current code does run on 51, `TypeError: (intermediate value).get_default_backend is not a
+function`. [#646](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator/issues/646)
+followed on 12 October. Three pull requests fix it — #641 from 17 September, #658 from 21
+October, and #660 from 25 October — and none has been merged.
+
+This is the second time in a row. On 12 April, in the GNOME 50 cycle,
+[#605](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator/issues/605) was
+asking for a GNOME 50 build; on 10 May
+[#615](https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator/issues/615) reported
+it still "marked as unsupported" on Fedora 44. The 50 build did arrive, which is why version 71
+lists it. The 51 build may too. If you would rather not wait, two extensions already list 51:
+[Clipboard History](/blog/clipboard-history-ubuntu#option-1-clipboard-history-extension) and
+Copyous. The table further down has the details.
+
+## Why this happens every six months
+
+GNOME releases in March and September, and every release changes something inside GNOME
+Shell. Extensions are not sandboxed plugins: they are JavaScript loaded into the Shell's own
+process, calling its internal APIs, and when one of those APIs moves, the extension has to
+move with it. GNOME publishes an
+[upgrade guide](https://gjs.guide/extensions/upgrading/gnome-shell-51.html) for extension
+authors with each release. The one for 51 lists, among other things, that
+`Clutter.get_default_backend()` has been removed — the exact function in the error from #643.
+
+The gate that stops a stale extension loading is the `shell-version` array in its
+`metadata.json`. If the running major version is not in the list, GNOME Shell marks the
+extension OUT OF DATE and does not run a line of it. That is deliberate. An extension that
+crashes takes the Shell down with it, and on Wayland the Shell is the display server, so a
+Shell crash ends your session.
+
+So every six months, each extension needs a maintainer to check the upgrade guide, fix what
+moved, add the new number to `shell-version`, and upload a new build to extensions.gnome.org,
+where it is reviewed before it appears. Each of those steps can lag. For an extension with a
+busy maintainer, the gap is days. For one whose maintainer has moved on, there is no gap —
+the extension simply stops at the last version it lists, which is where Pano is now.
+
+## Check in 30 seconds
+
+List the extensions GNOME is not running, then ask about the one you miss:
+
+```bash
+gnome-extensions list --disabled
+gnome-extensions info clipboard-indicator@tudmotu.com
+```
+
+The other UUIDs you are likely to need are `clipboard-history@alexsaveau.dev`,
+`copyous@boerdereinar.dev` and `pano@elhan.io`; a plain `gnome-extensions list` prints every
+installed one. The line that matters is `State:`.
+
+- `State: OUT OF DATE` — the version gate. The build you have does not list your Shell. Go to
+  Fix 1.
+- `State: ERROR` — the extension loaded and threw. Something it calls has changed. Updating
+  is still the answer, but the override in Fix 2 will not help, because the code itself is
+  what is broken.
+- `State: ACTIVE` — it is running, and your problem is something else; our page on
+  [clipboard history after a reboot](/blog/clipboard-history-after-reboot-linux#or-it-isnt-running-yet)
+  covers the next things to check.
+
+For an `ERROR`, the Shell's log says what threw:
+
+```bash
+journalctl --user -b 0 /usr/bin/gnome-shell | grep -i clipboard
+```
+
+## Fix 1: update the extension, then look at GitHub
+
+The **Extensions** app shows a banner when an update is waiting; Extension Manager lists
+yours under **User-Installed Extensions**. Both fetch from extensions.gnome.org, and if the
+site has a build that lists your Shell, that is the fix: a minute, and nothing lost. GPaste from apt updates with the rest of the system instead, and Ubuntu 26.10's
+package lists Shell 51 — Debian added that in August 2026.
+
+If the site has nothing for your Shell, look at the project's repository. The upload to
+extensions.gnome.org is a separate step from the code change, so the bump sometimes lands
+on GitHub first — #605 was about exactly that step. Today the opposite is true: the repository's `metadata.json` still
+ends at 50, and the 51 work exists only in the three unmerged pull requests.
+
+You can install a pull request's branch by hand. Be clear about what that means: code the
+maintainer has not reviewed, running inside your compositor. If you go that way, read the
+diff first. We would rather switch extensions and come back when a release exists.
+
+## Fix 2: the version-validation override, and when it is a bad idea
+
+GNOME has a setting that skips the gate:
+
+```bash
+gsettings set org.gnome.shell disable-extension-version-validation true
+```
+
+Its own description is exact: "GNOME Shell will only load extensions that claim to support
+the current running version. Enabling this option will disable this check and try to load
+all extensions regardless of the versions they claim to support." Log out and back in for
+it to take effect; `gsettings reset org.gnome.shell disable-extension-version-validation`
+puts it back.
+
+It is worth trying for one kind of extension: one whose only problem is the missing number.
+Plenty of upgrades change nothing a given extension cares about, and one that merely was not
+re-listed will load and work. It is a bad idea for two reasons. First, it
+applies to every extension you have installed, including the ones that stopped being
+maintained years ago, and any of them can now crash your session. Second, it does nothing
+for an extension that calls an API the new Shell removed — it loads, throws, and lands in
+`State: ERROR`. Clipboard Indicator on 51 is that second kind, which is what #643 shows.
+
+## Your history file is probably still there
+
+The history did not go with the panel. Every extension here keeps its history in an ordinary file that the Shell never
+touches, and a disabled extension leaves the file where it is:
+
+- **Clipboard Indicator** writes `~/.cache/clipboard-indicator@tudmotu.com/registry.txt`. It
+  is JSON, so it opens in any editor if you need to find one entry while the extension is
+  down.
+- **Clipboard History** writes `~/.cache/clipboard-history@alexsaveau.dev/database.log`.
+- **GPaste** keeps its histories under `~/.local/share/gpaste/`, as `.xml` files. GPaste is a
+  daemon with an extension for the panel, so a stale extension costs you the panel, not the
+  recording.
+
+The formats differ and no extension reads another's file, so switching extensions means
+starting a fresh history. Keep the old file until you are sure nothing in it matters. Once
+the extension updates and loads, it reads the file it left behind, and the panel fills back
+in.
+
+## Status today, per extension
+
+<SupportTable
+  headers={["Extension", "Newest build on extensions.gnome.org", "Loads on GNOME 51", "Notes"]}
+  rows={[
+    { name: "Clipboard History", cells: ["Version 52, Shell 48–51", "Yes", "A version 51 build still covers Shell 46–47"] },
+    { name: "Copyous", cells: ["Version 2.1.2, Shell 48–51", "Yes", "Released 18 October 2026"] },
+    { name: "GPaste", cells: ["Upstream 51.2; Ubuntu 26.10 packages 50.8", "Yes", "Debian added a patch marking it compatible with Shell 51 in August 2026; Ubuntu 26.04 stays on 45.3"] },
+    { name: "Clipboard Indicator", cells: ["Version 71, Shell 46–50", "No", "Issues #642, #643, #646 open; PRs #641, #658, #660 unmerged"] },
+    { name: "Pano", cells: ["Version 22, Shell 45 only; older builds cover 42–44", "No", "README marked unmaintained on 22 January 2026; author points to Copyous"] },
+    { name: "Clipmer paste helper", cells: ["Ships inside the app, Shell 46–51", "Yes", "Capture is not an extension; see below"], highlight: true },
+  ]}
+  caption="Checked on 2 November 2026 against each extension's listing on extensions.gnome.org and its repository."
+/>
+
+Pano is the cautionary case. Its listing stops at Shell 45, its README has said "no longer
+maintained" since January, and its author points people to Copyous — more in
+[CopyQ alternatives](/blog/copyq-alternatives#pano). Copyous had its own GNOME 50 bug in
+April — clicking the panel icon opened a stub menu instead of the history, issue #114 —
+and it was closed in four days, which is roughly what an actively maintained extension looks
+like in this cycle.
+
+## Avoiding the cycle: capture that does not run inside the Shell
+
+The structural fix is to not depend on the Shell for the part you care about. GPaste gets
+this half right: its daemon records in a separate process, so an upgrade can only take away
+the panel. Clipmer is ours, so weigh what follows accordingly. It is built the same way for
+capture. Clipmer is an ordinary application that polls the
+clipboard every half second; under a Wayland session it runs through XWayland. A GNOME
+release has no way to stop it recording, and the window, search and shortcut are all its
+own.
+
+<InstallCommand />
+
+The honest exception is auto-paste. Clipmer's paste-on-select works through a small GNOME
+Shell extension of its own, `clipmer-paste@clipmer.local`, which it installs into
+`~/.local/share/gnome-shell/extensions/` and which is gated by `shell-version` exactly like
+everything above. It has listed Shell 46 through 51 since 3.2.1. And we have been bitten by the
+cycle ourselves: the helper declared support only up to GNOME 49, so Ubuntu 26.04's GNOME 50
+refused to load it, and choosing an entry copied without pasting until
+[3.2.1](/changelog) on 16 September — the same day GNOME 51 came out. The same release
+stopped using the API GNOME 51 removes. When the helper cannot load, Clipmer now shows the
+state GNOME reports in its settings rather than a toggle that reads on; choosing an entry
+still copies it, and you press Ctrl+V yourself. How the helper works is in
+[auto-paste on Wayland](/blog/clipboard-manager-auto-paste-wayland#how-clipmer-pastes-on-gnome).
+
+What to know before relying on it: the free version keeps 100 entries, and Pro — 200
+entries, folders and notes — is $9 once. Auto-paste is GNOME-only. We build and test on
+Ubuntu with GNOME; the `.deb`, `.rpm` and AppImage are on the [install page](/install), but
+we have not tested it on Fedora or Arch. And an extension can do things a polling
+application cannot on Wayland —
+[the trade-off nobody advertises](/blog/clipboard-managers-on-wayland#the-trade-off-nobody-advertises)
+goes through them — so if Clipboard History suits you, it is a good choice that happens to
+need a maintainer twice a year. The point of this page is that when it stops, you can know
+why in thirty seconds, and that your history is still on disk.

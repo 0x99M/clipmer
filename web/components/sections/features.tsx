@@ -611,7 +611,7 @@ const features = [
   },
   {
     title: "Paste without switching windows",
-    description: "Open Clipmer, pick an entry, press Enter — it's pasted into whatever app you were just in. Works on Wayland. No xdotool hacks.",
+    description: "Open Clipmer, pick an entry, press Enter — it is pasted into the app you came from. On GNOME, Wayland included, through a small Shell extension; no xdotool.",
     mockup: AutoPasteMockup,
   },
   {
@@ -692,7 +692,11 @@ export function Features() {
                       "hover:border-orange/20 hover:shadow-xl hover:shadow-orange/[0.04]"
                     )}
                   >
-                    <div className="bg-[#161616] p-6 sm:p-8 min-h-[220px]">
+                    {/* Decorative: the h3 and p beside it carry the information. */}
+                    <div
+                      aria-hidden="true"
+                      className="bg-[#161616] p-6 sm:p-8 min-h-[220px]"
+                    >
                       <feature.mockup />
                     </div>
                   </div>

@@ -1,0 +1,232 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { InstallCommand } from "@/components/blog/install-command";
+
+Linux Mint has no clipboard history. Cinnamon keeps the one thing you copied last and
+nothing else: there is no panel to open, no setting to switch on, and **Super + V** does
+nothing like what it does on Windows. That is still true on Linux Mint 22.3 "Zena",
+released on 13 January 2026 with Cinnamon 6.6, and the only trace of the feature upstream
+is an [ideas thread](https://github.com/orgs/linuxmint/discussions/1612) opened in July
+2026 asking for one, alongside a native emoji picker, which nobody from the project has
+answered.
+
+To enable clipboard history on Linux Mint you install a clipboard manager, and the good
+news is that on Mint nearly all of them work. The Cinnamon edition runs on X11 by default,
+where any program may watch the clipboard and bind a global shortcut, so the Wayland rules
+that break clipboard managers on Ubuntu and Fedora do not apply. The quickest route is a
+Cinnamon applet from the Spices catalogue ([Option 1](#option-1-a-cinnamon-clipboard-applet-from-spices));
+the most capable is CopyQ from the Mint repositories ([Option 2](#option-2-copyq-from-the-mint-repositories)).
+
+Everything below was checked on 2 November 2026: package versions against the Ubuntu
+24.04 archive that Mint 22.x installs from, and each applet against its listing on the
+Cinnamon Spices site.
+
+## Cinnamon has no clipboard history, and on X11 that is easy to fix
+
+KDE Plasma ships a clipboard history switched on. GNOME ships none, and neither does
+Cinnamon: it is not a hidden option, it does not exist. The ideas thread above asks for
+"a built-in clipboard history in Cinnamon, similar to Windows Clipboard History"; it has
+one reply, from another user, and no comment from a maintainer.
+
+What makes Mint different from Ubuntu is the display server. Ubuntu 26.04 removed its X11
+session entirely, which is why [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu#option-1-clipboard-history-extension)
+is a story about GNOME Shell extensions. Mint 22.3 still logs you into X11 unless you
+choose otherwise, and on X11 the old model holds: a clipboard manager is an ordinary
+program that polls the selection and registers a key combination, and the desktop lets it.
+Old GTK tools, a Qt tool like CopyQ, an Electron app like ours, a panel applet — all of
+them can see what you copy.
+
+## First, check which session you are in
+
+Before installing anything:
+
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+On a stock Mint 22.3 install this prints `x11`. The login screen also offers a session
+named **Cinnamon (Wayland)**, and if you picked it at some point the output is `wayland`.
+Mint's lead developer described Wayland in 22.3 as experimental in the comments under the
+[June 2026 monthly news](https://blog.linuxmint.com/?p=5046), which is also where the plan
+for the next release was set out: the version due at Christmas 2026 will treat both X11
+and Wayland as fully supported, with Wayland no longer labelled experimental. Which one
+will be the default was not announced. Keeping X11 as the default was described as the
+ideal outcome, not a decision.
+
+If you are on `x11`, every option below works. If you are on `wayland`, read
+[the last section](#if-you-switch-to-the-wayland-session-later) first, because most of
+them stop working there.
+
+## Option 1: a Cinnamon clipboard applet from Spices
+
+An applet lives in the panel, opens with a click, and is managed from
+**System Settings → Applets**, where the **Download** tab searches the Cinnamon Spices
+catalogue. Two clipboard-history applets there are current (the other two with
+"clipboard" in the name clear it or show it as a QR code). They take different approaches,
+and each has a known problem, so this is both of them honestly.
+
+**[GPaste Reloaded](https://cinnamon-spices.linuxmint.com/applets/view/237)** is the
+established one: a Cinnamon front end for the GPaste daemon, last updated on 21 October
+2026. The applet does nothing on its own; the daemon and its GObject bindings have to come
+from apt first, and the fix offered most often in its comments is installing the second
+of these:
+
+```bash
+sudo apt install gpaste-2 gir1.2-gpaste-2
+```
+
+Then add the applet to the panel. Mint 22 installs GPaste 45 from the Ubuntu 24.04
+archive, and a commenter confirmed the applet working on Mint 22.1 with Cinnamon 6.4.8
+once both packages were in. Two caveats from the same comments: two people reported it
+not working on Cinnamon 6.4.0 and 6.4.3, and one notes that it does not handle pictures.
+The daemon is the same GPaste that Ubuntu users run, so the `gpaste-client` command line
+works here too.
+
+**[Spicy Clipboard Manager](https://cinnamon-spices.linuxmint.com/applets/view/453)** is
+the newer one, last updated on 7 July 2026, and it is self-contained: no daemon, a history
+of 5 to 100 entries, image thumbnails, and an optional paste-on-click. It claims to work on
+both X11 and Wayland. Its dependencies are command-line tools:
+
+```bash
+sudo apt install yad xclip
+```
+
+`yad` draws the history window and the editor, `xclip` handles images and the X11
+clipboard, and `xdotool` or `dotool` only for auto-paste on selection, which is on by
+default and can be switched off in the applet's settings. The README says history is saved
+to its own data file (`history.dat`), but the most recent comment on its listing
+asks whether losing the history every time Cinnamon restarts is intended, and the question
+had no answer when we checked. If a history that survives a restart matters to you, test
+that before you rely on it.
+
+## Option 2: CopyQ from the Mint repositories
+
+CopyQ is the most capable clipboard manager on Linux, and on an X11 desktop it has none
+of the Wayland trouble people write about. Tabs, a search box, an editor for stored items,
+pinned entries, and scripting if you want it:
+
+```bash
+sudo apt install copyq
+```
+
+Mint 22.x installs CopyQ 7.1.0, because that is what Ubuntu 24.04 packages. Upstream is
+many releases ahead, and the project's own PPA, `ppa:hluk/copyq`, carries newer builds if
+you want them, but 7.1.0 on X11 does the job: it watches the clipboard, its global
+shortcut set in its own preferences actually fires, and it does not need Cinnamon to know
+it exists. If it is more than you want, the next two options are smaller.
+
+## Option 3: Diodon, Parcellite and ClipIt
+
+These are the clipboard managers Mint users have installed for a decade, and all three are
+still in the repositories Mint 22 uses. They are not equal.
+
+**Diodon** is the one still getting upstream releases. The repository has 1.13.0 from
+August 2022; upstream tagged 1.14.0 on 24 July 2026, its first release in four years, and its README describes the project as in low
+maintenance mode, taking packaging, translation and security fixes only. It is small,
+GPL-2.0, and does one thing: a menu of recent entries, nothing more.
+
+**Parcellite** 1.2.1 and **ClipIt** (a 2021 Git snapshot) are also installable, but on
+Mint 22.2 a user [reported](https://forums.linuxmint.com/viewtopic.php?t=455998) that
+Parcellite's tray icon no longer appears even though the process keeps running; the
+history still opens with **Ctrl + Alt + H**. Neither has had meaningful upstream work in
+years. The [GTK old guard](/blog/copyq-alternatives#the-gtk-old-guard-diodon-parcellite-and-clipit)
+section of our CopyQ comparison goes into what each one does and does not do.
+
+A newer project worth knowing about, though we have not tested it, is
+[ClipnPaste](https://github.com/LinkofHyrule89/ClipnPaste): MIT-licensed, built for Mint
+and Cinnamon on X11, installed from a `.deb`, and opened with **Super + V**, which is the
+closest thing to the Windows layout you will find here.
+
+## Option 4: Clipmer
+
+Ours, so weigh this accordingly. Clipmer keeps a searchable history, lets you hide any
+entry so it renders as dots during a screen share, and in the paid tier files entries into
+folders and attaches notes to them.
+
+<InstallCommand />
+
+What we can say about Mint, and what we cannot:
+
+- **We build and test Clipmer on Ubuntu with GNOME.** We have not tested it on Cinnamon.
+  The `.deb` targets Debian derivatives and depends on nothing desktop-specific, so it
+  should install cleanly on Mint 22.3, but "should" is the honest word.
+- **The shortcut should work on the X11 session.** Clipmer registers **Ctrl + Shift + D**
+  (falling back to **Ctrl + Shift + B**) through Electron's global shortcut API, which
+  works on X11. On the Wayland session that API binds nothing, and our fallbacks for
+  that case are written for GNOME and KDE Plasma, so on Cinnamon on Wayland there is no
+  shortcut at all.
+- **No auto-paste.** Paste-on-select uses a GNOME Shell helper. On Cinnamon you choose an
+  entry and press Ctrl + V yourself.
+- **The free version keeps 100 entries.** Hiding entries is free. Folders, notes and the
+  200-entry limit are Pro, $9 once. There are AppImage and `.rpm` builds too; the
+  [install guide](/install) has them and the checksums.
+
+If you try it on Mint, the thing we most want to know is whether the tray icon and the
+shortcut behave. [Hiding entries](/blog/hide-clipboard-secrets-screen-sharing#hiding-individual-entries)
+explains what the masking does and does not protect, which is the reason to pick Clipmer
+over the free options above if it applies to you.
+
+## Which one to pick
+
+<SupportTable
+  headers={["If you want…", "Install", "Why"]}
+  rows={[
+    { name: "A panel applet, no daemon", cells: ["Spicy Clipboard Manager", "Self-contained; check that history survives a restart"] },
+    { name: "A panel applet with a real daemon", cells: ["GPaste Reloaded", "GPaste underneath, CLI included; no pictures"] },
+    { name: "Tabs, search, scripting", cells: ["CopyQ", "Most capable; 7.1.0 in the repo is fine on X11"] },
+    { name: "The smallest thing that works", cells: ["Diodon", "In the repo, low-maintenance but alive"] },
+    { name: "To hide secrets on a call", cells: ["Clipmer", "Per-entry masking; untested on Cinnamon"], highlight: true },
+  ]}
+/>
+
+For most people on Mint the answer is CopyQ. It is in the repository, it is the one
+everything else gets compared to, and the reasons to avoid it on other desktops are
+Wayland reasons that do not apply on Mint's default session. If you would rather have a
+panel applet than a tray application, Spicy Clipboard Manager is the simpler of the two.
+
+## Set a Super + V-style shortcut in Cinnamon
+
+Cinnamon's shortcut editor is at **System Settings → Keyboard**, on the **Shortcuts** tab.
+Pick **Custom Shortcuts** in the category list, click **Add custom shortcut**, and fill in
+a name and a command:
+
+```bash
+# CopyQ
+copyq toggle
+
+# GPaste (with GPaste Reloaded or on its own)
+gpaste-client ui
+```
+
+Then click the binding slot under the new entry and press the combination you want.
+Super + V is available if nothing else on your system has claimed it, which is the
+closest you will get to the Windows habit; [Win + V on Linux](/blog/win-v-clipboard-history-linux#how-it-compares-with-win-v)
+compares what you get with what Windows does.
+
+Applets do not need this, since they open from the panel. CopyQ also has its own global
+shortcut settings, so use one or the other, not both. Clipmer registers its shortcut
+itself on X11 and changes it from **Settings → Shortcuts**.
+
+## If you switch to the Wayland session later
+
+Cinnamon on Wayland is a different world. Muffin, Cinnamon's window manager, implements
+neither of the Wayland data-control protocols that clipboard managers use on other
+compositors, as the [per-compositor comparison](/blog/best-clipboard-manager-wayland#cosmic-wayfire-river-and-the-rest)
+sets out, so a standalone clipboard manager cannot read the clipboard the way it can on
+X11. A shortcut registered inside an application also stops firing, for the reason in
+[clipboard shortcut not working on Wayland](/blog/clipboard-shortcut-not-working-wayland#why-the-shortcut-never-arrives).
+
+That leaves the two Spices applets, which run inside Cinnamon itself. Spicy Clipboard
+Manager says it supports Wayland; GPaste Reloaded's listing does not say either way. We
+have not tested either on the Wayland session. If you want clipboard history on Mint and
+nothing in your setup needs Wayland, staying on the default X11 session is the simpler
+choice, and the project has said it will keep supporting X11 fully through the next
+release.
+
+## One thing to know before installing any of these
+
+Whichever you choose, you are creating a file that accumulates everything you copy,
+passwords from your password manager included. GPaste keeps its history under
+`~/.local/share/gpaste/`, Clipmer under `~/.config/clipmer/`. It is worth knowing where
+yours is, and
+[clipboard managers saving passwords](/blog/clipboard-manager-saving-passwords-linux)
+covers what to do about it.

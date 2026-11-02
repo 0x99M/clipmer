@@ -8,11 +8,16 @@ import { SupportMatrix } from "@/components/wayland/support-matrix";
 import {
   CHECKS,
   COMPOSITORS,
+  MATRIX_LASTMOD,
   SOURCES,
   VERIFIED_ON,
 } from "@/lib/wayland-support";
 
-const TITLE = "Wayland Clipboard Support by Compositor";
+// "Matrix" and the count keep this from reading as a third "which compositors"
+// page next to the two blog posts in the same results. The count is computed so
+// the title cannot drift from the registry; 18 today. Guard: 63 chars after the
+// " — Clipmer" suffix (scripts/check-metadata.mjs).
+const TITLE = `Wayland Clipboard Support Matrix: ${COMPOSITORS.length} Compositors`;
 const DESCRIPTION =
   "Which Wayland compositors let a clipboard manager work, and what to install on each. Checked against the protocol registry, with the version traps that break the usual advice.";
 /**
@@ -21,7 +26,7 @@ const DESCRIPTION =
  * copy above still carries OG, Twitter and the JSON-LD, which are not truncated.
  */
 const META_DESCRIPTION =
-  "Which Wayland compositors let a clipboard manager work, and what to install on each — including the wl-clipboard version trap on KDE.";
+  "Which Wayland compositors let a clipboard manager work, with the tools to install and the caveats on each — including the wl-clipboard version trap on KDE.";
 
 export const metadata: Metadata = {
   title: `${TITLE} — Clipmer`,
@@ -62,7 +67,10 @@ const schema = {
   name: "Wayland compositor clipboard-manager support matrix",
   description: DESCRIPTION,
   url: canonical("/wayland-clipboard-support"),
-  dateModified: VERIFIED_ON,
+  // The last edit to the page, not the last registry read: the two visible
+  // <time> elements below keep VERIFIED_ON because they say "read from the
+  // registry on", and that date is only true when the cells were re-read.
+  dateModified: MATRIX_LASTMOD,
   creator: { "@id": ORG_ID },
   publisher: { "@id": ORG_ID },
   isAccessibleForFree: true,
@@ -248,14 +256,14 @@ export default function WaylandClipboardSupportPage() {
               the answer, and what XWayland changes — are in{" "}
               <Link
                 href="/blog/clipboard-managers-on-wayland"
-                className="text-orange transition-opacity hover:opacity-80"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] transition-opacity hover:opacity-80 hover:decoration-orange"
               >
                 clipboard managers on Wayland
               </Link>
               . For the per-compositor picks written out in prose, see{" "}
               <Link
                 href="/blog/best-clipboard-manager-wayland"
-                className="text-orange transition-opacity hover:opacity-80"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] transition-opacity hover:opacity-80 hover:decoration-orange"
               >
                 the best clipboard manager for Wayland
               </Link>
@@ -310,7 +318,7 @@ export default function WaylandClipboardSupportPage() {
             href="/install"
             className="mt-4 inline-block text-sm font-medium text-orange transition-opacity hover:opacity-80"
           >
-            Install Clipmer &rarr;
+            Install Clipmer on GNOME &rarr;
           </Link>
         </section>
       </main>

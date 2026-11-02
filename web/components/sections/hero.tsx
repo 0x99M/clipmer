@@ -29,7 +29,7 @@ function MaskTile() {
     <div className="flex h-full flex-col justify-center gap-1.5 px-3">
       <EyeOff aria-hidden className="absolute top-2.5 right-2.5 size-3 text-orange" />
       {/* The folder chip is the same shape the app puts on a real entry. */}
-      <span className="inline-flex w-fit items-center gap-1 rounded border border-orange/25 bg-orange/[0.08] px-1 py-px font-mono text-[7px] font-medium text-orange">
+      <span className="inline-flex w-fit items-center gap-1 rounded border border-orange/25 bg-orange/[0.08] px-1 py-px font-mono text-[7px] font-medium text-[#F47A4D]">
         <Folder aria-hidden className="size-2" strokeWidth={2.5} />
         Stripe
       </span>
@@ -153,7 +153,7 @@ function FoldersTile() {
               )}
             />
             {i === 0 ? (
-              <span className="font-mono text-[8px] leading-none font-medium text-orange">
+              <span className="font-mono text-[8px] leading-none font-medium text-[#F47A4D]">
                 Stripe
               </span>
             ) : null}
@@ -372,10 +372,10 @@ export function Hero() {
             <h1 className="relative z-[1] font-bold text-[clamp(3rem,8vw,7rem)] leading-[0.92] tracking-[-0.035em]">
               <span data-hero="line-1" className="block">
                 Your clipboard
-              </span>
+              </span>{" "}
               <span data-hero="line-2" className="block">
                 is full of secrets.
-              </span>
+              </span>{" "}
               <span data-hero="line-3" className="block text-orange">
                 Treat it like it.
               </span>
@@ -398,6 +398,23 @@ export function Hero() {
             ))}
           </div>
 
+          {/* One plain sentence saying what this is and where it runs. The
+              headline never uses the words "clipboard manager" or "Linux",
+              so a visitor arriving from a Wayland post had nothing above the
+              fold to confirm they were in the right place. Sits outside the
+              headline block on purpose: the tiles' coordinates are
+              percentages of that block, so anything added inside it moves
+              all six. */}
+          <p
+            data-hero="lede"
+            className="mx-auto mt-6 max-w-[60ch] text-lg leading-relaxed text-muted-foreground sm:text-xl"
+          >
+            Clipmer is a clipboard manager for Linux: clipboard history for
+            Ubuntu, Fedora and any distro running GNOME or KDE Plasma, on
+            Wayland or X11. Press Ctrl+Shift+D, pick what you copied, press
+            Enter. Entries you would never want on a shared screen stay masked.
+          </p>
+
           <>
             <ul
               data-hero="caps"
@@ -409,10 +426,10 @@ export function Hero() {
                   {label}
                   <span
                     className={cn(
-                      "rounded px-1 py-px text-[9px] font-semibold tracking-wide uppercase",
+                      "rounded px-1 py-px text-[11px] font-semibold tracking-wide uppercase",
                       tier === "Free"
                         ? "bg-orange/15 text-orange"
-                        : "bg-surface text-muted-foreground"
+                        : "bg-surface text-foreground/60"
                     )}
                   >
                     {tier}

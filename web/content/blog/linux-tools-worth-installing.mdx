@@ -1,5 +1,6 @@
 import { SupportTable } from "@/components/blog/support-table";
 import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
 
 There are a hundred "must-have Linux tools" lists and they are largely the same list.
 htop, VLC, Timeshift, a screenshot tool, some Rust replacements for coreutils. The tools
@@ -184,8 +185,9 @@ That is a real difference between checking and copying the previous list.
 ## Clipboard history, which Ubuntu does not ship
 
 The one category on this list where `apt` has nothing to give you at all. GNOME ships no
-clipboard history, so everything you copy is gone the moment you copy the next thing — and
-on Wayland the situation is stricter than most people realise, because the core protocol
+clipboard history, so everything you copy is gone the moment you copy the next thing —
+[what you can still get back](/blog/get-back-overwritten-clipboard-linux) is a short list —
+and on Wayland the situation is stricter than most people realise, because the core protocol
 deliberately forbids an unfocused application from reading the selection.
 
 What works depends entirely on your compositor. On GNOME it has to be a Shell extension,
@@ -197,16 +199,21 @@ install commands for each option.
 
 **Clipmer** is ours, and the honest positioning is this: it is an Electron application that
 reads the clipboard under XWayland, which is why it works on GNOME where the protocol-based
-tools cannot. It adds folders, searchable notes, and the ability to mask an entry so it
-renders as dots before you share your screen — because the actual risk with clipboard
+tools cannot. It adds folders and searchable notes, which turn a history into a way to
+[reuse text snippets on Linux](/blog/reuse-text-snippets-linux), and the ability to mask an
+entry so it renders as dots before you share your screen — because the actual risk with
+clipboard
 history is that it is a plaintext file containing every API key and connection string you
 have copied this week.
 
 If you are on Hyprland or Sway and all you want is a list of recent copies, install
 `cliphist` and keep your money. If you are on GNOME and want history that survives a
-screen-share, [Clipmer is one command](/install). For the neighbours — GPaste, CopyQ,
-Klipper, Pano — we wrote them up
-[honestly and at length](/blog/copyq-alternatives).
+screen-share, [Clipmer is one command](/install):
+
+<InstallCommand />
+
+For the neighbours — GPaste, CopyQ, Klipper, Pano — we compared them in
+[CopyQ alternatives on Linux, compared honestly](/blog/copyq-alternatives).
 
 ## How to check any of this yourself
 

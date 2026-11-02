@@ -130,7 +130,7 @@ export function SupportMatrix() {
               className={cn(
                 "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                 filter === f.value
-                  ? "border-orange/40 bg-orange/15 text-orange"
+                  ? "border-orange/40 bg-orange/10 text-orange"
                   : "border-border text-muted-foreground hover:bg-surface/50 hover:text-foreground"
               )}
             >
@@ -199,7 +199,7 @@ export function SupportMatrix() {
                       {c.desktop}
                     </span>
                   ) : null}
-                  <span className="font-mono text-xs text-muted-foreground/70">
+                  <span className="font-mono text-xs text-muted-foreground">
                     {c.tracked}
                   </span>
                 </div>

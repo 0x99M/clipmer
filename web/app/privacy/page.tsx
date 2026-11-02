@@ -1,10 +1,19 @@
 import { Metadata } from "next";
-import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
+const title = "Privacy Policy — Clipmer";
+const description =
+  "What Clipmer collects (nothing from the app), what the website and Pro checkout process, and how to reach us.";
+
 export const metadata: Metadata = {
-  title: "Privacy Policy — Clipmer",
+  title,
+  description,
   alternates: { canonical: canonical("/privacy"), types: ALTERNATE_TYPES },
+  // Without these the page inherits the homepage's og:title/description and
+  // emits no og:url. Spread OG_BASE back in or og:image goes with it.
+  openGraph: { ...OG_BASE, url: canonical("/privacy"), title, description },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 export default function PrivacyPage() {

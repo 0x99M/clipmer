@@ -3,19 +3,50 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Download, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { SORTED_POSTS, formatPostDate, type Post } from "@/lib/posts";
+import { SORTED_POSTS, formatPostDate, getPost, type Post } from "@/lib/posts";
 import { AUTHOR } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 /**
- * Posts sharing at least one tag, most-related first, falling back to the
- * newest others so a post is never a dead end. Every post previously had
- * exactly one inbound edge — from /blog — and none linked to each other.
+ * Tags carried by more than half of the posts (Clipboard, Linux at the time
+ * of writing). Counted once: they say nothing about which posts belong
+ * together, so the fallback heuristic below ignores them.
  */
-function relatedTo(post: Post, limit = 2): Post[] {
-  const others = SORTED_POSTS.filter((p) => p.slug !== post.slug);
-  const shared = (p: Post) => p.tags.filter((t) => post.tags.includes(t)).length;
-  return [...others]
+const COMMON_TAGS: ReadonlySet<string> = (() => {
+  const count = new Map<string, number>();
+  for (const p of SORTED_POSTS) {
+    for (const tag of p.tags) count.set(tag, (count.get(tag) ?? 0) + 1);
+  }
+  const half = SORTED_POSTS.length / 2;
+  return new Set([...count].filter(([, n]) => n > half).map(([tag]) => tag));
+})();
+
+/**
+ * The "Keep reading" picks for a post.
+ *
+ * Curated first: `post.related` is an editor-chosen list of slugs, in order.
+ * An unknown slug throws, and because post pages are prerendered that turns
+ * a typo into a failed `next build` rather than a shipped 404 link.
+ *
+ * Without a curated list, fall back to shared tags, but only the distinctive
+ * ones. Nearly every post carries Clipboard and Linux, so counting those tied
+ * almost every pair and let the date tiebreak funnel most links to the two
+ * newest posts while several got none; the picks were also content-blind
+ * (a KDE post pointing at a GNOME-only auto-paste guide). The fallback keeps
+ * a post from being a dead end, but every post should get a curated list.
+ */
+function relatedTo(post: Post, limit = 3): Post[] {
+  if (post.related) {
+    return post.related.map((slug) => {
+      const found = getPost(slug);
+      if (!found) throw new Error(`related slug not found: ${slug}`);
+      return found;
+    });
+  }
+  const distinctive = post.tags.filter((t) => !COMMON_TAGS.has(t));
+  const shared = (p: Post) =>
+    p.tags.filter((t) => distinctive.includes(t)).length;
+  return SORTED_POSTS.filter((p) => p.slug !== post.slug)
     .sort((a, b) => shared(b) - shared(a) || b.date.localeCompare(a.date))
     .slice(0, limit);
 }
@@ -154,7 +185,7 @@ export function ArticleShell({
             <span className="font-mono text-sm tracking-[0.2em] text-orange">
               {"•".repeat(10)}
             </span>
-            <span className="ml-auto shrink-0 rounded border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[0.6875rem] text-muted-foreground">
+            <span className="ml-auto shrink-0 rounded border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[0.6875rem] text-foreground/60">
               Stripe
             </span>
           </div>

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SORTED_POSTS } from "@/lib/posts";
 import { CHANGELOG } from "@/lib/changelog";
-import { VERIFIED_ON } from "@/lib/wayland-support";
+import { MATRIX_LASTMOD } from "@/lib/wayland-support";
 import { SITE } from "@/lib/seo";
 
 /**
@@ -13,19 +13,22 @@ import { SITE } from "@/lib/seo";
  *
  * So: the dates that genuinely move are derived from data the release process
  * already updates, and the rest are stated outright. Bump one when you change
- * that page's content — not when you touch its metadata.
+ * that page's content — not when you touch its metadata. Any commit that
+ * changes reader-visible prose on a stated-date page bumps its date in the
+ * same commit.
  */
 const LATEST_RELEASE = CHANGELOG[0].date;
 const LATEST_POST = SORTED_POSTS[0].updated ?? SORTED_POSTS[0].date;
 
 const STATIC_PAGES = [
-  { path: "", lastModified: "2026-08-08", changeFrequency: "monthly", priority: 1 },
+  { path: "", lastModified: "2026-11-02", changeFrequency: "monthly", priority: 1 },
   { path: "/install", lastModified: LATEST_RELEASE, changeFrequency: "monthly", priority: 0.9 },
-  { path: "/pro", lastModified: "2026-08-08", changeFrequency: "monthly", priority: 0.9 },
+  { path: "/pro", lastModified: "2026-11-02", changeFrequency: "monthly", priority: 0.9 },
   { path: "/blog", lastModified: LATEST_POST, changeFrequency: "weekly", priority: 0.8 },
   // Derived rather than stated: the page's content IS the matrix, so the date
-  // it was last verified against the registry is genuinely its lastmod.
-  { path: "/wayland-clipboard-support", lastModified: VERIFIED_ON, changeFrequency: "monthly", priority: 0.8 },
+  // its content last changed (cells re-verified or prose edited) is genuinely
+  // its lastmod.
+  { path: "/wayland-clipboard-support", lastModified: MATRIX_LASTMOD, changeFrequency: "monthly", priority: 0.8 },
   { path: "/changelog", lastModified: LATEST_RELEASE, changeFrequency: "monthly", priority: 0.6 },
   { path: "/privacy", lastModified: "2026-04-25", changeFrequency: "yearly", priority: 0.3 },
   { path: "/terms", lastModified: "2026-08-01", changeFrequency: "yearly", priority: 0.3 },

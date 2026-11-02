@@ -13,7 +13,7 @@ export function LegalLayout({
       <SiteNav />
       <main className="flex-1 mx-auto w-full max-w-3xl px-6 py-12">
         <h1 className="text-3xl font-bold mb-8">{title}</h1>
-        <div className="prose prose-invert prose-sm max-w-none space-y-6 text-muted-foreground [&_h2]:text-foreground [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-10 [&_h2]:mb-4 [&_strong]:text-foreground [&_a]:text-orange [&_li]:ml-4">
+        <div className="prose prose-invert prose-sm max-w-none space-y-6 text-muted-foreground [&_h2]:text-foreground [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-10 [&_h2]:mb-4 [&_strong]:text-foreground [&_a]:text-orange [&_a]:underline [&_a]:decoration-orange/40 [&_a]:underline-offset-[3px] [&_li]:ml-4">
           {children}
         </div>
       </main>

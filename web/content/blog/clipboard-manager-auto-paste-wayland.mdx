@@ -31,7 +31,9 @@ manager pasted for you.
 Wayland removed that capability on purpose. A Wayland client can only send input to its
 own surfaces; it can't type into another application's window. Considering what the
 alternative allows — any program you run could type commands into your terminal — that is
-the correct default.
+the correct default. It is the same model that stops a background process reading the
+clipboard, which [clipboard managers on Wayland](/blog/clipboard-managers-on-wayland)
+covers.
 
 The consequence is that a clipboard manager running as an ordinary application can set
 the clipboard but cannot press Ctrl+V for you. Something with more authority has to do it.
@@ -111,7 +113,8 @@ Clipmer removes it too.
 <Callout type="note" title="GNOME versions">
   GNOME only loads an extension whose metadata lists the running Shell version. The helper
   lists GNOME 46 through 51, which covers Ubuntu 24.04 LTS and 26.04 LTS. On 26.04 you need
-  Clipmer 3.2.1 or later.
+  Clipmer 3.2.1 or later. Those versions are from the helper's `metadata.json` in Clipmer
+  3.5.0.
 </Callout>
 
 ## Where it won't work

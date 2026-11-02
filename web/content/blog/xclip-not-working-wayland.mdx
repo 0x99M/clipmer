@@ -1,0 +1,242 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+`xclip` is an X11 program. Under a Wayland session it still runs, through XWayland, and
+the compositor copies selections between the X11 side and the Wayland side — but every
+compositor does that copying on its own terms, which is why `xclip` goes from fine on
+GNOME to silently useless on Sway without a single error message.
+
+The fix is the same everywhere: install `wl-clipboard` and use `wl-copy` and `wl-paste`
+instead. `sudo apt install wl-clipboard` on Ubuntu, `dnf` or `pacman` elsewhere, then
+`echo text | wl-copy` to copy and `wl-paste` to read. The rest of this page is the detail:
+exactly how `xclip` fails on each desktop, the flag-for-flag translation, a detector for
+scripts that have to run on both X11 and Wayland, and the Neovim and tmux settings that
+make them use the right tool.
+
+## Why xclip half-works on Wayland
+
+When `xclip -i` runs, it takes ownership of the X11 `CLIPBOARD` selection inside XWayland
+and stays alive to serve it. Nothing on the Wayland side has changed yet. Whether a
+Wayland-native app — your browser, your terminal, most of what you run today — ever sees
+that text depends on whether the compositor copies the X11 selection across, and each one
+has a different rule. We read the current source of all four to check:
+
+<SupportTable
+  headers={["Compositor", "xclip -i from a Wayland terminal", "xclip -o from a Wayland terminal", "Where the rule lives"]}
+  rows={[
+    { name: "GNOME (Mutter)", cells: ["Works: X11 selection is mirrored to Wayland unconditionally", "Works: Wayland selection is mirrored to X11 unconditionally", "src/x11/meta-x11-selection.c"] },
+    { name: "KDE Plasma (KWin)", cells: ["Works: X11 → Wayland is unconditional", "Stale or empty: Wayland → X11 only while an X11 window is active", "src/xwayland/clipboard.cpp"] },
+    { name: "Sway, river, labwc (wlroots)", cells: ["Nothing reaches Wayland unless an XWayland window has focus", "Refused unless an XWayland window has focus", "xwayland/selection/incoming.c and outgoing.c"] },
+    { name: "Hyprland", cells: ["Nothing reaches Wayland unless an X11 client has focus", "Refused unless XWayland has keyboard focus", "src/xwayland/XWM.cpp"] },
+  ]}
+  caption="Checked against each project's main branch on 2 November 2026. A Wayland terminal is any native one — GNOME Console, Konsole, foot, kitty, Alacritty. xterm is an X11 window."
+/>
+
+**Mutter** has no focus check in either direction. Its XFixes handler wraps whatever X11
+window took the selection in a selection source and makes it the current owner, and its
+`notify_selection_owner` callback calls `XSetSelectionOwner` whenever a non-X11 client
+takes the selection. So on Ubuntu or
+Fedora Workstation `xclip` carries on working, and the only reason to switch is scripts
+that have to run elsewhere.
+
+**KWin** mirrors X11 → Wayland without conditions, so `xclip -i` works. The other
+direction is gated by `x11ClientsCanAccessSelection()`, which is true only when the active
+window is an X11 window; the comment in the file says it plainly: "If the selection is
+owned by a Wayland client, X11 clients can access it only when they are focused." From a
+Konsole prompt the active window is Konsole, so KWin never hands the Wayland selection to
+the X11 side. `xclip -o` then returns whatever X11 client last owned the selection —
+often the `xclip -i` you ran ten minutes ago — or fails if there is none. We read this
+rather than ran it; we test on Ubuntu GNOME, and Plasma is not a desktop we ship for.
+
+**wlroots** refuses both directions unless an XWayland surface has focus. When the
+TARGETS reply comes back from the new X11 owner, `xwm_handle_selection_notify` checks
+`xwm->focus_surface == NULL` and logs "denying write access to clipboard: no xwayland
+surface focused". A paste request from an X11 client hits the same test in
+`xwm_handle_selection_request` and gets "denying read access to selection". **Hyprland**,
+which has its own XWayland code, keeps the rule: `handleSelectionNotify` denies "because
+no X client is in focus", and `handleSelectionRequest` ignores the request when "xwayland
+not in focus".
+
+That is the half that fools people. On Sway, `echo hi | xclip -sel c && xclip -o -sel c`
+prints `hi`, because both commands are X11 clients talking to each other inside XWayland.
+The test passes, and Firefox still pastes whatever it had before. Run the same thing from
+xterm with xterm focused and it works, because now an XWayland window has focus. The
+[clipboard managers on Wayland](/blog/clipboard-managers-on-wayland#the-escape-hatches)
+explainer covers why the compositor sits between the two worlds at all.
+
+## Install wl-clipboard on Ubuntu, Fedora and Arch
+
+```bash
+sudo apt install wl-clipboard     # Ubuntu, Debian
+sudo dnf install wl-clipboard     # Fedora
+sudo pacman -S wl-clipboard       # Arch
+```
+
+The version matters more than usual, because `wl-clipboard` 2.3.0 (22 March 2026) is the
+first release that speaks `ext-data-control-v1`, the protocol KWin implements. Ubuntu
+24.04 packages 2.2.1-1build1 and 26.04 packages 2.2.1-2build1; 26.10 packages 2.3.0-1.
+Fedora 43 packages 2.2.1-5 and Fedora 44 a git snapshot of 2.2.1 from November 2025,
+while Fedora 45, due on 3 November 2026, packages 2.3.0-2. Arch has 2.3.0-1. The
+difference only bites `wl-paste --watch` on KDE — plain `wl-copy` and `wl-paste` work on
+every version — and the KDE section of
+[the best clipboard manager for Wayland](/blog/best-clipboard-manager-wayland#kde-plasma-klipper-is-already-running)
+has the details. `apt-cache policy wl-clipboard` shows which one you will get.
+
+## xclip and xsel to wl-copy and wl-paste
+
+The mental model carries over: `wl-copy` forks and stays in the background to serve
+paste requests, exactly as `xclip -i` does, which is also why the clipboard
+[empties when the owning process exits](/blog/clipboard-empty-after-closing-app-linux#the-clipboard-is-a-promise-not-a-copy).
+Two differences to watch. `xclip` defaults to the PRIMARY selection and needs
+`-selection clipboard` for the real clipboard; `wl-copy` is the other way round and needs
+`--primary` for the selection. And `wl-paste` appends a newline unless you pass
+`--no-newline`, where `xclip -o` prints the bytes as they are.
+
+<SupportTable
+  headers={["xclip / xsel", "wl-clipboard", "Note"]}
+  rows={[
+    { name: "xclip -selection clipboard", cells: ["wl-copy", "xclip accepts -sel c; only the first letter counts"] },
+    { name: "xclip -o -selection clipboard", cells: ["wl-paste --no-newline", "Drop --no-newline if you want the trailing newline"] },
+    { name: "xclip (default, PRIMARY)", cells: ["wl-copy --primary", "Middle-click selection"] },
+    { name: "xclip -o", cells: ["wl-paste --primary", ""] },
+    { name: "xsel -b -i / xsel -b -o", cells: ["wl-copy / wl-paste -n", ""] },
+    { name: "xsel -b -c", cells: ["wl-copy --clear", "xsel's --clear overrides its input options too"] },
+    { name: "xclip -r", cells: ["wl-copy --trim-newline", "xclip strips the trailing newline on -i and -o; wl-copy only on what it reads in"] },
+    { name: "xclip -t image/png -o", cells: ["wl-paste --type image/png", "--type also sets what wl-copy offers"] },
+    { name: "xclip -o -t TARGETS", cells: ["wl-paste --list-types", "The MIME types on offer"] },
+    { name: "xclip -l 1", cells: ["wl-copy --paste-once", "The man page warns this breaks pasting into XWayland windows"] },
+  ]}
+  caption="Flags checked against the xclip, xsel and wl-clipboard 2.3.0 man pages. Note the asymmetry: -n means --trim-newline for wl-copy and --no-newline for wl-paste."
+/>
+
+`--clear` is the one most people reach for from a script, and it is worth knowing what
+clearing does and does not achieve on each desktop, which
+[clearing the clipboard on Linux](/blog/clear-clipboard-linux) goes through.
+
+## Scripts that must work on both
+
+The wrong test is `$XDG_SESSION_TYPE`. It tells you what kind of session you logged into,
+not what the shell running your script can reach: inside an SSH session or a tmux server
+started somewhere else, it can say `wayland` with no socket to talk to. The right test is
+the variable each tool itself uses — `WAYLAND_DISPLAY` for `wl-copy`, `DISPLAY` for
+`xclip` — and the order matters, because a Wayland session sets both (XWayland puts
+`DISPLAY=:0` or similar in the environment), so checking `DISPLAY` first picks `xclip` on Wayland
+and walks straight into the table above.
+
+```bash
+copy() {
+  if [ -n "$WAYLAND_DISPLAY" ] && command -v wl-copy >/dev/null; then wl-copy
+  elif [ -n "$DISPLAY" ] && command -v xclip >/dev/null; then xclip -selection clipboard
+  else cat >/dev/null; echo "copy: no clipboard tool" >&2; return 1
+  fi
+}
+```
+
+Pipe into it: `git rev-parse HEAD | copy`. The `else` branch drains stdin so a pipeline
+does not stall. This is the same order Neovim uses for its own detection, which is the
+next section.
+
+## Neovim clipboard on Wayland: unnamedplus, checkhealth and the DISPLAY trap
+
+Neovim has no clipboard code of its own; `"+` and `"*` work through whichever external
+tool it finds. Its documented priority list starts with `pbcopy` on macOS, then
+`wl-copy` and `wl-paste` if `$WAYLAND_DISPLAY` is set, then `xsel` and `xclip` if
+`$DISPLAY` is set. For the Wayland clipboard that means:
+
+```bash
+sudo apt install wl-clipboard
+```
+
+```vim
+set clipboard+=unnamedplus
+```
+
+and Neovim will run `wl-copy --type text/plain` on yank and `wl-paste --no-newline` on
+paste. To see what it picked, run `:checkhealth vim.provider` on 0.11, or
+`:checkhealth provider` on 0.10 and older (plain `:checkhealth` includes it either way),
+and read the **Clipboard (optional)** section: "Clipboard tool found: wl-copy" is the
+answer you want.
+
+The trap is what happens when `wl-clipboard` is *not* installed. `$DISPLAY` is set under
+Wayland, so Neovim falls through to `xsel` or `xclip`, the health check reports a tool
+found, yanks appear to succeed — and on Sway or Hyprland nothing reaches a Wayland window,
+for the reason in the first section. On GNOME you would never notice, because Mutter
+bridges it. If `:checkhealth` names `xclip` on a Wayland session, that is the whole
+diagnosis. A related report,
+[neovim#32599](https://github.com/neovim/neovim/issues/32599), has a Hyprland user on
+0.10.4 whose Neovim kept trying `xclip` with `$DISPLAY` set and found no tool with it
+unset; a 0.11 development build behaved, so check your version before anything else.
+Ubuntu 26.04 packages Neovim 0.11.6.
+
+Since 0.10 Neovim also bundles an OSC 52 provider, which copies through the terminal's
+own escape sequence and so works over SSH. It is only chosen automatically when no other
+tool is found *and* `'clipboard'` is unset — the provider source says why: "It can be slow
+and cause a lot of user prompts." With `unnamedplus` set, force it with
+`vim.g.clipboard = 'osc52'`, and expect tmux to get in the way of the automatic detection,
+as the documentation notes.
+
+## tmux: copy to the Wayland clipboard with copy-command
+
+tmux 3.2 added a `copy-command` server option, and the `copy-pipe` family of copy-mode
+commands pipes to it when given no argument. One line in `~/.tmux.conf`:
+
+```tmux
+set -s copy-command 'wl-copy'
+```
+
+The default mouse binding in current tmux is `MouseDragEnd1Pane` to
+`copy-pipe-and-cancel`, so with `copy-command` set a mouse selection lands on the Wayland
+clipboard with no further bindings. For a vi-style `y`, name the command explicitly or
+rely on the option:
+
+```tmux
+bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'wl-copy'
+```
+
+If the mouse still does not sync, look at your own bindings. Older dotfiles bind
+`MouseDragEnd1Pane` to `copy-selection-and-cancel`, and `copy-command` applies only to the
+`copy-pipe` commands, so that selection goes to a tmux buffer and no further. The other
+route is `set-clipboard`, which asks the terminal to set the clipboard through the xterm
+escape sequence if the terminfo entry advertises `Ms`; that is the path that works over
+SSH, where `wl-copy` on the remote machine has no Wayland socket. `~/.tmux.conf` is read
+when the server starts, so after editing it run `tmux source-file ~/.tmux.conf` or
+restart the server. Ubuntu
+26.04 packages tmux 3.6a, so none of this needs a newer build.
+
+## wl-paste --watch needs data-control
+
+Everything above uses the ordinary copy and paste path, which any Wayland compositor
+provides. `wl-paste --watch`, the mode that runs a command on every clipboard change and
+underpins cliphist and the like, does not: the man page says it "requires a compositor
+that supports the wlroots data-control protocol", and since 2.3.0 the
+`ext-data-control-v1` successor counts too. GNOME implements neither, so on GNOME the
+command exits with one of two error wordings depending on your version, both quoted in
+[check what your session supports first](/blog/best-clipboard-manager-wayland#check-what-your-session-supports-first).
+
+The man page's BUGS section also explains why plain `wl-copy` works on GNOME at all:
+without data-control, "wl-clipboard has to resort to using a hack to access the
+clipboard" and "will briefly pop up a tiny transparent surface" to gain focus. On a
+compositor that declines to focus that popup, the command hangs rather than fails. That
+hack is why `wl-copy` is fine for scripts on any desktop, and why a clipboard *history*
+on GNOME needs a different mechanism.
+
+## What a clipboard history sees from all this
+
+A desktop clipboard history sits on the far end of these bridges, and the table in the
+first section applies to it too. Clipmer, which we make, is an Electron app and runs as
+an XWayland client, Electron's default on Linux; it reads the clipboard through Electron's clipboard API on a 500 ms
+poll. On GNOME, where Mutter mirrors every Wayland selection to X11, that means anything
+`wl-copy` puts on the clipboard shows up in Clipmer's list within half a second — a
+quick "did my script actually copy?" check, with **Ctrl + Shift + D** to open it. On Sway
+or Hyprland it sits behind the same focus gate as `xclip` — we have not tested it there —
+so cliphist is the right tool, and we say so.
+
+<InstallCommand />
+
+Be clear about what it is: a GUI history, not a CLI tool, with no `wl-copy` equivalent.
+The free version keeps 100 entries; Pro is $9 one-time and raises that to 200 with folders
+and notes. We test it on Ubuntu GNOME only, auto-paste needs GNOME, and the `.deb`,
+`.rpm` and AppImage are on the [install page](/install). If what you wanted was a history
+rather than a script tool, [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu#first-check-which-session-you-are-in)
+starts from the same session check as this page.

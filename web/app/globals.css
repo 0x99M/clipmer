@@ -360,7 +360,7 @@
 
   /* Reads top-to-bottom as one move down the page. The three headline lines
      carry a longer lift than the small copy so the type leads the eye; the
-     tiles land at 0.42s, between the last line and the sub-copy. */
+     tiles land at 0.42s, between the last line and the lede. */
   [data-hero="badge"] {
     --hero-at: 0.05s;
   }
@@ -375,6 +375,11 @@
   [data-hero="line-3"] {
     --hero-at: 0.29s;
     --hero-lift: 22px;
+  }
+  /* Follows the tiles in, so the headline block reads as one unit before
+     the explanation arrives under it. */
+  [data-hero="lede"] {
+    --hero-at: 0.44s;
   }
   [data-hero="caps"] {
     --hero-at: 0.52s;

@@ -112,6 +112,86 @@ Changed in response, on 31 October:
 **Next review: mid-December 2026.** Compare per-page CTR against the table above,
 and the niri and error-string queries against zero.
 
+## Second review — 2 November 2026 (full audit)
+
+A twelve-lens audit of the live site (crawl, performance, top pages against
+their SERPs, keyword gaps, competitors, indexing, structured data, internal
+linking, accessibility, content, homepage conversion, GitHub and listings),
+every finding then argued against by independent verifiers. Result: 40 findings
+confirmed, 13 true but not worth a change, 5 refuted, 72 low-severity ones left
+unverified. Fifteen candidate topics were checked for demand and winnability;
+twelve held up, six were written.
+
+What passed, so it need not be re-audited soon: the metadata guard was clean on
+all 27 URLs; sitemap, robots and RSS validate; every page is self-canonical,
+has one h1 and returns 200 with TTFB 0.36–0.86 s; CLS is 0 everywhere.
+
+The confirmed levers, for a site whose bottleneck is CTR and topic coverage
+rather than rank, and what changed in this release:
+
+- **Snippets and structure on the two biggest pages.** The Wayland guide's
+  title now names the compositors and its per-compositor answer table sits at
+  the top; the Ubuntu guide answers "how to open clipboard history on Ubuntu"
+  directly after the recommendation instead of as the ninth of ten sections,
+  and gained a "how to see what is on your clipboard right now" section that
+  absorbs a query cluster that would otherwise have needed its own post.
+- **Freshness.** The CopyQ post is updated to 17.0.0 and gained a CopyQ-on-
+  Wayland section (its biggest query); the explainer gained a wl-copy/wl-paste
+  section because "wayland clipboard" is a tooling query, not a failure story.
+- **Internal linking.** The four indexed hubs now link editorially to the ten
+  posts published on 2 November; "Keep reading" uses a curated `related` list
+  per post (the tag heuristic had sent 20 of 34 links to the two newest posts
+  and none to six, including two hubs, and an unknown slug now fails the
+  build); the home page pins the two ranking posts; `/install` links the posts
+  it paraphrases; the `/blog` intro names the problem-led posts.
+- **Honest dates.** Five URLs had a sitemap `lastmod` that predated their last
+  content change. Google only honours `lastmod` while it is consistently
+  accurate, so stale dates on five pages put the correct dates on the other
+  twenty-two at risk. Rule from here: a commit that changes reader-visible
+  prose on a stated-date page bumps that date in the same commit.
+- **Accuracy.** The site said GNOME-only although 3.4.0 added the Plasma
+  shortcut; "Auto-paste (Wayland)" was missing its GNOME qualifier; `/install`
+  omitted start-on-login (off by default) and how to change the shortcut.
+- **Accessibility that Lighthouse flagged.** Body links were colour-only
+  (eighteen instances), the `/pro` table had 26 cells empty to a screen reader,
+  muted text fell below 4.5:1 in six places. Fixed where it was a one-line
+  change; the white-on-orange buttons (3.64:1) are a design decision left for
+  a design pass.
+- **IndexNow** (under Guard above): Bing/DDG only, never a Google explanation.
+
+Six new posts, chosen for demand × weak SERP × an honest Clipmer angle, all
+dated 2 November: the GNOME-upgrade extension breakage (Clipboard Indicator has
+no GNOME 51 build; the timely one), Fedora clipboard history (Fedora 45 ships
+3 November), clipboard managers that keep passwords (Bitwarden, KeePassXC and
+the `x-kde-passwordManagerHint`), Linux Mint / Cinnamon, xclip on Wayland, and
+clearing the clipboard. Each states plainly where Clipmer is untested (Fedora,
+Mint). A seventh, XWayland copy-paste failures, was written up as a brief and
+cut for time; the brief is sound if a later cycle wants it.
+
+Confirmed but owner-only, in order of likely effect: an AlternativeTo listing
+(their CopyQ page ranks first or second for "copyq alternatives", our tracked
+query); Bing Webmaster Tools verification (import from Search Console); real
+screenshots from the shipped build (no page on the site, the OG image or the
+README shows the app, while every ranking competitor page shows one per tool;
+the 3D marketing renders are not accurate enough to stand in); an AUR
+`clipmer-bin` package, which is also the gate for an ArchWiki entry; the
+Awesome-Linux-Software one-liner; GitHub topics and back-filled release notes
+for v3.1.0–v3.5.0 (v3.0.x already have real notes).
+
+Refuted, so nobody re-raises them: that `/pro`'s Paddle initialisation doubles
+mobile FCP (mobile performance re-measured at 0.99); that the Ubuntu guide's
+title should become verb-led (its head query is a noun phrase and only ~15% of
+its impressions are question-led); that "Pano is unmaintained" is a fresh angle
+(three indexed posts already say so); that DuckDuckGo lists only 10 of 27 (it
+is 12); that every GitHub release has the same one-line body (nine do).
+
+**Next review: mid-December 2026.** Compare per-page CTR for the Wayland and
+Ubuntu guides against the table above, the six new posts against zero, the
+DuckDuckGo count against 12/27, and check whether Clipboard Indicator has
+shipped a GNOME 51 build — if it has, the GNOME-upgrade post's "Right now"
+section and both Fedora tables need the one-paragraph refresh they are written
+to take.
+
 ## No analytics
 
 `app/privacy/page.tsx` states the site "does not use cookies or third-party
@@ -135,6 +215,48 @@ Run it after a deploy:
 npm run check:metadata https://clipmer.app
 ```
 
+It also confirms the IndexNow key file below is actually served.
+
+### IndexNow and Bing
+
+Added 2 November 2026. Bing's index was missing three older posts and all ten
+posts published that day, and DuckDuckGo — Bing-sourced, and over-represented
+in this audience — mirrored it. IndexNow is the fix for that half of the
+problem: a POST that asks Bing, DuckDuckGo and Yandex to crawl the listed URLs
+now instead of whenever they next get round to the sitemap.
+
+What it is not: Google ignores IndexNow entirely. It cannot move the Search
+Console numbers above, and at the December review it must be neither credited
+nor blamed for them. The only place its effect shows is Bing Webmaster Tools
+(owner's account; that is where the submission receipts and Bing's own crawl
+and index reports live).
+
+Mechanics: `public/<key>.txt` is the ownership proof, served at the site root;
+the key is the file name and its only content, and the scripts find it by
+globbing `public/` rather than hard-coding it, so rotating it is "replace the
+file". `scripts/indexnow-ping.mjs` reads the live sitemap and submits every URL
+whose `lastmod` is within the last 7 days (`--since N` to widen), or exactly
+the URLs given on the command line. That is why `sitemap.ts` keeps `lastmod`
+honest: a page whose date never moves never gets pinged. The script always
+exits 0 — a 403 or a 429 is printed, never a failed release.
+
+The sequence after every push that changes content, once Railway reports the
+deploy live:
+
+```bash
+npm run check:metadata https://clipmer.app && npm run indexnow -- --wait
+```
+
+`--wait` polls `/api/health` until the serving commit is the one checked out,
+so the crawl that follows sees the new build. If it times out it submits
+nothing; re-run without `--wait` once the deploy is live.
+
+**DuckDuckGo baseline, 2 November 2026: 12 of 27 sitemap URLs.** Missing:
+`/blog/clipboard-managers-on-wayland`, `/blog/auditing-our-own-clipboard-manager`,
+`/blog/ubuntu-setup-for-developers`, the ten posts dated 2 November, `/privacy`
+and `/contact`. Re-count at the December review; the legal pages staying out
+is fine.
+
 ## Things deliberately not done
 
 - **FAQPage markup on `/pro`.** FAQ rich results were deprecated in May 2026 and
@@ -150,3 +272,14 @@ npm run check:metadata https://clipmer.app
   fixed in `ec2b2e6`.
 - **Targeting `linux clipboard manager`.** Held by It's FOSS, Tecmint and
   OMG!Ubuntu. Out of reach well beyond 12 months on a domain with no links.
+- **Per-post screenshots and a homepage video strip.** No real screenshot of
+  the app exists in the repo; the 3D marketing renders in Downloads draw type
+  badges and times the shipped UI does not have, and shipping them as
+  "screenshots" would be a false picture. Needs captures from the shipped
+  build first (see the owner list under the second review).
+- **A homepage comparison table.** The CopyQ post already carries the table;
+  a second copy on the home page is the duplication pattern this file warns
+  about, for 89 impressions at position 20.
+- **Snap and Flatpak builds.** Both shipped and were reverted in May 2026:
+  confinement breaks auto-paste and the Wayland shortcut. The snap name is
+  reserved to us with no revision, which is the right state.

@@ -18,10 +18,11 @@ pressed, wherever the focus is" — and the server obliges. That is how every gl
 shortcut used to work, and it is also how any application could watch every key you
 press.
 
-Wayland doesn't let an application see keystrokes aimed at another window. That's the
-right call for your passwords and the wrong one for your clipboard manager: its shortcut
-is, by definition, a key pressed while some other window is focused. So the press goes to
-that window, and the clipboard manager never hears about it.
+Wayland doesn't let an application see keystrokes aimed at another window, for
+[the same reason it forbids reading the clipboard](/blog/clipboard-managers-on-wayland).
+That's the right call for your passwords and the wrong one for your clipboard manager: its
+shortcut is, by definition, a key pressed while some other window is focused. So the press
+goes to that window, and the clipboard manager never hears about it.
 
 Frameworks can't get round it either. Electron, which Clipmer is built on, has a
 `globalShortcut` API that works on X11 and fails quietly on Wayland — no error the app could

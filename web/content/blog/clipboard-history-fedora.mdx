@@ -1,0 +1,252 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+
+Fedora ships no clipboard history. Copy one thing, copy another, and the first is gone —
+Fedora Workstation has never kept more than the current clipboard, and pressing
+**Super + V** opens GNOME's notification list, not a clipboard panel.
+
+The quickest fix on Fedora 44 and Fedora 45 is the
+[Clipboard History extension](#option-1-clipboard-history-extension-declares-gnome-48-to-51):
+its current build on the GNOME Extensions site declares GNOME Shell 48 through 51, so it
+loads on both releases, and **Super + Shift + V** opens it. If you would rather install
+from Fedora's own repository, `sudo dnf install gpaste gnome-shell-extension-gpaste` gives
+you GPaste 50.10 on Fedora 44 and GPaste 51.0 on Fedora 45. The rest of this guide is which
+option fits which GNOME version, the one popular extension that does not load on Fedora 45
+yet, and the check to run after every upgrade.
+
+Fedora tracks upstream GNOME closely, which makes this a different story from
+[Ubuntu](/blog/clipboard-history-ubuntu): Fedora 44 shipped on 28 April 2026 with GNOME 50,
+and Fedora 45 is due on 3 November 2026 with GNOME 51. Every package version below was read
+from Fedora's package index, and every extension's supported versions from its listing on
+extensions.gnome.org, on 2 November 2026.
+
+## Check your GNOME version first: Fedora 44 is 50, Fedora 45 is 51
+
+```bash
+cat /etc/fedora-release
+gnome-shell --version
+```
+
+GNOME only loads an extension whose `metadata.json` lists the Shell version that is
+running, so this number decides which of the options below exist for you at all. Fedora
+takes each new GNOME within weeks of its release, so it goes up twice a year:
+
+<SupportTable
+  headers={["Fedora release", "GNOME Shell", "Released"]}
+  rows={[
+    { name: "Fedora 43", cells: ["49 (gnome-shell 49.10)", "28 October 2025 — GNOME became Wayland-only"] },
+    { name: "Fedora 44", cells: ["50 (gnome-shell 50.6)", "28 April 2026"] },
+    { name: "Fedora 45", cells: ["51 (gnome-shell 51.1)", "Due 3 November 2026"] },
+  ]}
+/>
+
+There is also no X11 session to fall back to. Fedora removed the GNOME X11 session packages
+in Fedora 43, and GNOME 50 removed X11 session support upstream, so on 44 and 45 the gear
+icon at the login screen has nothing else to offer and `echo $XDG_SESSION_TYPE` prints
+`wayland`. That rules out the older X11-only tools and is why most of this list is GNOME
+Shell extensions rather than ordinary applications. Which session you are in decides what
+a clipboard manager can even do —
+[the session check in the Ubuntu guide](/blog/clipboard-history-ubuntu#first-check-which-session-you-are-in)
+walks through why, and
+[the best clipboard manager for Wayland](/blog/best-clipboard-manager-wayland#gnome-a-shell-extension-because-there-is-no-protocol)
+explains why GNOME in particular leaves no other way in.
+
+## Which extensions declare GNOME 50 and 51
+
+<SupportTable
+  headers={["Extension", "Current build", "Declares Shell", "Fedora 44 (50)", "Fedora 45 (51)"]}
+  rows={[
+    { name: "Clipboard History", cells: ["v52 on extensions.gnome.org", "48–51", "Loads", "Loads"] },
+    { name: "GPaste (Fedora package)", cells: ["50.10 on F44, 51.0 on F45", "The GNOME it was built for", "Loads", "Loads"] },
+    { name: "Clipboard Indicator", cells: ["v71 on extensions.gnome.org", "46–50", "Loads", "Does not load"] },
+    { name: "Copyous", cells: ["v12 on extensions.gnome.org (2.1.2 upstream)", "48–51", "Loads", "Loads"] },
+    { name: "Pano", cells: ["v22 on extensions.gnome.org", "45 only", "Does not load", "Does not load"] },
+    { name: "Clipmer paste helper", cells: ["3.5.0", "46–51", "Declares it; untested", "Declares it; untested"], highlight: true },
+  ]}
+  caption="Read from each extension's listing on extensions.gnome.org on 2 November 2026, and from metadata.json for the two that are not listed there, GPaste and the paste helper. The paste helper is only Clipmer's auto-paste; capture does not depend on it."
+/>
+
+Pano is not an option on either release: its newest build is for GNOME Shell 45 and its
+author has stopped maintaining it — [CopyQ alternatives](/blog/copyq-alternatives#pano)
+has the history. Copyous, which the Pano author points people to, lists 48 through 51; we
+have not tested it, so it is a pointer rather than a section.
+
+## Option 1: Clipboard History extension (declares GNOME 48 to 51)
+
+The one to try first on either release. It runs inside GNOME Shell, so it works on Wayland
+without any protocol support, and there is no daemon to configure. Build 52 on the GNOME
+Extensions site lists Shell 48, 49, 50 and 51; upstream added GNOME 51 on 26 September
+2026 and fixed a GNOME 51 crash in its delete-all dialog on 11 October.
+
+Fedora does not package it, so install it from
+[extensions.gnome.org](https://extensions.gnome.org/extension/4839/clipboard-history/).
+The site needs a native connector, which Fedora does package:
+
+```bash
+sudo dnf install gnome-browser-connector
+```
+
+Then add the browser add-on the site prompts you for, and click the toggle on the
+extension's page. If you prefer an app, Extension Manager is not in Fedora's repository but
+is on Flathub as `com.mattjakeman.ExtensionManager`. Fedora's own Extensions app, packaged
+as `gnome-extensions-app`, switches extensions on and off; it does not install them.
+
+Press **Super + Shift + V** to open the panel. Searchable, keyboard-driven, and it made the
+GNOME 50 to 51 jump within days, which is more than most extensions can say.
+
+## What the Fedora 45 beta showed: extensions break before their builds catch up
+
+On 18 September 2026, two days after GNOME 51 was released, a Fedora 45 beta user reported
+on Fedora Discussion that Clipboard History had stopped loading with
+`Error: No property vertical on StBoxLayout`, and that Dash to Dock was down too. The
+replies were correct and unhelpful in equal measure: this is not something Fedora can fix,
+report it to each extension's developer, and they are probably already working on it.
+
+The error is a real API removal. GNOME Shell 51 removed the `vertical` property of St
+widgets, deprecated since Shell 48, and removed `Clutter.get_default_backend()`. Any
+extension still using either fails to load on Fedora 45, however healthy it was on Fedora
+44. Clipboard History got GNOME 51 support eight days after that report; Clipboard
+Indicator, below, still has not.
+
+<Callout type="note" title="If you run the beta">
+  You run ahead of your extensions. The fix is almost always a newer build from the
+  extension's author, not anything on your machine, and nothing in GNOME's settings makes a
+  removed API come back.
+</Callout>
+
+## Option 2: GPaste from Fedora's own repository
+
+The most established option, with a real daemon behind it, and the only one here that
+Fedora packages in full:
+
+```bash
+sudo dnf install gpaste gnome-shell-extension-gpaste
+```
+
+Fedora 44 installs GPaste 50.10 and Fedora 45 installs 51.0. Those numbers are not a
+coincidence: each GPaste series is written for one GNOME release and its extension declares
+exactly that Shell version, so Fedora ships 50.x for GNOME 50 and 51.x for GNOME 51.
+Upstream released 51.0 on 15 September 2026 and 51.2 on 26 October, so the Fedora 45
+package is a few weeks behind, not a few years. Ubuntu, by contrast, carries a patched
+GPaste 45 forward; [the Ubuntu guide](/blog/clipboard-history-ubuntu) has that story.
+
+That is also why GPaste is the one option that survives a Fedora upgrade without you doing
+anything: upgrading Fedora brings the GPaste built for the new GNOME along with the new
+GNOME. Log out and back in after installing, because GNOME Shell only picks up an
+extension installed by the package manager when a session starts, then enable it:
+
+```bash
+gnome-extensions enable GPaste@gnome-shell-extensions.gnome.org
+```
+
+The CLI is genuinely useful in scripts. `history` labels each item with an ID by default
+and `get` expects that ID; `--use-index` switches both to plain positions:
+
+```bash
+gpaste-client history --use-index
+gpaste-client get --use-index 3
+```
+
+The graphical interface is a separate package, `gpaste-ui`, if you want it.
+
+## Option 3: Clipboard Indicator on Fedora: fine on 44, not on 45 yet
+
+Clipboard Indicator is the extension most people searching for it already have, and on
+Fedora 44 it is fine: build 71 declares GNOME Shell 46 through 50.
+
+It does not declare 51. The GNOME 51 issues in its repository have been open since
+24 September 2026, and the pull requests that add support — the first opened on 17
+September, the day after GNOME 51 shipped, the newest on 25 October and tested by its
+author on Shell 51.1 under Wayland — are all still unmerged. Until a build that lists 51
+appears on extensions.gnome.org, upgrading to Fedora 45 leaves it installed, switched on,
+and doing nothing:
+
+```bash
+gnome-extensions info clipboard-indicator@tudmotu.com
+```
+
+reports `State: OUT OF DATE`. GNOME's `disable-extension-version-validation` setting will
+not rescue it: the problem is not the version check but the removed APIs that those open
+pull requests exist to replace. Either wait for the build, or switch to Clipboard History,
+which does the same job and already loads.
+
+## Option 4: CopyQ from the Fedora repository
+
+The power-user option: tabs, scripting, an editor for stored items. Fedora 44 and 45 both
+package CopyQ 17.0.0, which is the current upstream release — it came out on 6 October 2026
+with GNOME 50 support and three fixes for global shortcuts on Wayland. That makes CopyQ a
+better proposition on Fedora than on Ubuntu, whose archive is several major versions behind.
+
+```bash
+sudo dnf install copyq
+```
+
+CopyQ is an X11-first application and runs through XWayland on Fedora's Wayland-only GNOME.
+Expect to bind its shortcut yourself: **Settings → Keyboard → View and Customize Shortcuts
+→ Custom Shortcuts**, with `copyq toggle` as the command.
+
+## Option 5: Clipmer, whose capture does not depend on an extension
+
+Ours, so apply the appropriate suspicion. Clipmer is for people whose clipboard holds
+things they would rather not display: it masks individual entries so they render as dots
+during a screen share, and Pro adds notes and folders. There is an `.rpm`:
+
+```bash
+curl -LO https://github.com/0x99M/clipmer/releases/download/v3.5.0/clipmer-3.5.0.x86_64.rpm && sudo dnf install ./clipmer-3.5.0.x86_64.rpm
+```
+
+The [install guide](/install) has the AppImage and the checksums. Press **Ctrl + Shift + D**
+to open it; on Wayland, Clipmer registers that as a GNOME custom shortcut itself.
+
+What makes it relevant to this page is how it reads the clipboard. Clipmer is an Electron
+application running under XWayland, polling the clipboard every 500 ms —
+[how Clipmer does it, specifically](/blog/clipboard-managers-on-wayland#how-clipmer-does-it-specifically)
+covers the trade-off. Nothing in that path is a GNOME Shell extension, so a GNOME version
+bump does not stop capture. The exception is auto-paste: pasting on select needs a small
+Shell helper, which declares GNOME 46 through 51 and is subject to exactly the version gate
+above — [how Clipmer pastes on GNOME](/blog/clipboard-manager-auto-paste-wayland#how-clipmer-pastes-on-gnome)
+has the details. Log out and back in after switching it on.
+
+Now the limits, plainly. We build and test Clipmer on Ubuntu 24.04.4 and 26.04.1 LTS. We
+have not tested it on Fedora 44 or 45. The `.rpm` is built from the same source as the
+`.deb` and GNOME is GNOME, but an untested claim is an untested claim; if you try it on
+Fedora, [tell us](/contact) what happened. The free version keeps 100 entries; Pro is $9,
+once, for folders, notes, encrypted backup and 200 entries. Masking is free. And Clipmer is
+source-available, not open source — everything else on this page is free software, and if
+that matters to you, GPaste is the better choice.
+
+## Which one, by what you need
+
+<SupportTable
+  headers={["If you want…", "Install", "Why"]}
+  rows={[
+    { name: "History that just works on 44 and 45", cells: ["Clipboard History", "One extension, declares 48–51, no daemon"] },
+    { name: "Something from Fedora's own repo", cells: ["GPaste", "dnf keeps it matched to your GNOME across upgrades"] },
+    { name: "Clipboard Indicator, because you know it", cells: ["Clipboard Indicator", "Fedora 44 only, until a GNOME 51 build lands"] },
+    { name: "Scripting and tabs", cells: ["CopyQ", "17.0.0, the current upstream; X11-first"] },
+    { name: "To not show secrets on a call", cells: ["Clipmer", "Per-entry masking; untested on Fedora"], highlight: true },
+  ]}
+/>
+
+## After every Fedora upgrade: the 30-second check
+
+A Fedora upgrade changes the Shell version every time, so make this a habit the first time
+you log in after one:
+
+```bash
+gnome-extensions list
+gnome-extensions info clipboard-history@alexsaveau.dev
+```
+
+`State: ACTIVE` means it loaded. `State: OUT OF DATE` means your build does not list the
+new Shell, and the fix is a newer build from extensions.gnome.org, if one exists — not a
+setting. GPaste from dnf needs nothing, because the upgrade already replaced it. For the
+full recovery procedure, including what to do when there is no newer build,
+[clipboard extension stopped working after a GNOME upgrade](/blog/clipboard-extension-stopped-working-gnome-upgrade)
+covers it.
+
+Whichever you install, you are creating a file on disk that accumulates everything you
+copy, passwords pasted from your password manager included. GPaste keeps its history under
+`~/.local/share/gpaste/`, Clipmer under `~/.config/clipmer/`.
+[Why your clipboard manager is saving your passwords](/blog/clipboard-manager-saving-passwords-linux)
+is the honest look at that; have a look at yours sometime.

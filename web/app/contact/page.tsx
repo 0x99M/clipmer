@@ -1,10 +1,19 @@
 import { Metadata } from "next";
-import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
+const title = "Contact — Clipmer";
+const description =
+  "How to reach Clipmer: support@clipmer.app for help, licenses and purchases, GitHub issues for bugs. We answer every email within a week.";
+
 export const metadata: Metadata = {
-  title: "Contact — Clipmer",
+  title,
+  description,
   alternates: { canonical: canonical("/contact"), types: ALTERNATE_TYPES },
+  // Without these the page inherits the homepage's og:title/description and
+  // emits no og:url. Spread OG_BASE back in or og:image goes with it.
+  openGraph: { ...OG_BASE, url: canonical("/contact"), title, description },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 export default function ContactPage() {

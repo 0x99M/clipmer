@@ -26,7 +26,7 @@ const features = [
   { name: "Inline notes", free: false, pro: true },
   { name: "Smart search", free: "Content only", pro: "Content + notes" },
   { name: "Encrypted backup & restore", free: false, pro: true },
-  { name: "Auto-paste (Wayland)", free: true, pro: true },
+  { name: "Auto-paste (GNOME)", free: true, pro: true },
   { name: "Dark & light themes", free: true, pro: true },
   { name: "Accent color", free: true, pro: true },
   { name: "Adjustable font size", free: true, pro: true },
@@ -45,8 +45,24 @@ const highlights = [
 ];
 
 function CellValue({ value }: { value: boolean | string }) {
-  if (value === true) return <Check className="size-4 text-green-500 mx-auto" />;
-  if (value === false) return <X className="size-4 text-muted-foreground/20 mx-auto" />;
+  // The icons are aria-hidden (lucide default), so without the sr-only text
+  // every boolean cell is empty to a screen reader. The X at /20 was 1.28:1
+  // on the four Pro-only rows the table exists to show; /70 clears the 3:1
+  // non-text threshold on both row backgrounds (/60 still fails).
+  if (value === true)
+    return (
+      <>
+        <Check className="size-4 text-green-500 mx-auto" />
+        <span className="sr-only">Included</span>
+      </>
+    );
+  if (value === false)
+    return (
+      <>
+        <X className="size-4 text-muted-foreground/70 mx-auto" />
+        <span className="sr-only">Not included</span>
+      </>
+    );
   return <span className="text-xs text-muted-foreground">{value}</span>;
 }
 
@@ -204,7 +220,7 @@ export default function ProPage() {
                   </button>
                 )}
 
-                <p className="text-xs text-muted-foreground/60 mt-4">
+                <p className="text-xs text-muted-foreground mt-4">
                   {paddleReady
                     ? "Instant delivery · One-time payment"
                     : "Available soon · One-time payment"}
@@ -235,7 +251,7 @@ export default function ProPage() {
         <Reveal delay={0.1}>
           <div className="flex items-center gap-4 mb-16 max-w-xs mx-auto">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground/50 uppercase tracking-widest">Compare</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-widest">Compare</span>
             <div className="flex-1 h-px bg-border" />
           </div>
         </Reveal>
@@ -283,7 +299,10 @@ export default function ProPage() {
                 <span className="text-foreground">200 entries</span>{" "}
                 doubles the free tier&apos;s history. Masking itself is free
                 and always will be &mdash;{" "}
-                <Link href="/install" className="text-orange hover:underline">
+                <Link
+                  href="/install"
+                  className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+                >
                   install Clipmer
                 </Link>{" "}
                 and use it without paying anything.
@@ -291,15 +310,25 @@ export default function ProPage() {
             </div>
             <div className="rounded-xl border border-border overflow-hidden">
               <table className="w-full text-sm">
+                <caption className="sr-only">Free vs Pro feature comparison</caption>
                 <thead>
                   <tr className="bg-card">
-                    <th className="text-left py-3 px-5 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="text-left py-3 px-5 font-medium text-muted-foreground text-xs uppercase tracking-wider"
+                    >
                       Feature
                     </th>
-                    <th className="text-center py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider w-32">
+                    <th
+                      scope="col"
+                      className="text-center py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider w-32"
+                    >
                       Free
                     </th>
-                    <th className="text-center py-3 px-4 font-medium text-orange text-xs uppercase tracking-wider w-32">
+                    <th
+                      scope="col"
+                      className="text-center py-3 px-4 font-medium text-orange text-xs uppercase tracking-wider w-32"
+                    >
                       Pro
                     </th>
                   </tr>
@@ -329,6 +358,7 @@ export default function ProPage() {
                 </tbody>
               </table>
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">Auto-paste needs GNOME.</p>
           </div>
         </Reveal>
 

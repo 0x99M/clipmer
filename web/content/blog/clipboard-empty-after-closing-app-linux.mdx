@@ -49,7 +49,10 @@ is short and specific: whenever another application takes the clipboard, Mutter 
 best format on offer into memory — plain text up to 4 MB, or an image up to 200 MB — and
 when the owner goes away it puts that copy back on the clipboard itself. So on GNOME, the
 copy you just made survives closing the app. Only the latest one, though: Mutter keeps a
-single item, not a history.
+single item, not a history, and a large image can briefly stall it —
+[why a huge copy can freeze your clipboard manager](/blog/clipboard-manager-freezes-large-copy)
+covers the compositor case too. Limits read from Mutter's `meta-clipboard-manager.c` on
+main, 2 November 2026.
 
 **KDE Plasma.** Klipper, the clipboard history behind the Clipboard icon in the system tray,
 does the job here. If you removed that widget — or a distribution ships without it — you

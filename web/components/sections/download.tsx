@@ -24,9 +24,9 @@ export function DownloadSection() {
         <FadeUp delay={0.1}>
           <p className="mt-4 text-muted-foreground text-lg">
             A clipboard manager for Ubuntu, Fedora and any distro running GNOME
-            on Wayland or X11. The free version has everything most people need;
-            Pro unlocks the rest. Both run entirely offline — your clipboard
-            stays on your machine.
+            or KDE Plasma, on Wayland or X11. Auto-paste is GNOME-only. The free
+            version has everything most people need; Pro unlocks the rest. Both
+            run entirely offline — your clipboard stays on your machine.
           </p>
         </FadeUp>
 
@@ -79,7 +79,10 @@ export function DownloadSection() {
         <FadeUp delay={0.35}>
           <p className="mt-5 text-sm text-muted-foreground">
             Not sure which one?{" "}
-            <a href="/install" className="text-orange hover:underline">
+            <a
+              href="/install"
+              className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+            >
               Follow the install guide &rarr;
             </a>{" "}
             &mdash; one command per distribution.
@@ -88,7 +91,7 @@ export function DownloadSection() {
 
         <FadeUp delay={0.4}>
           <p className="mt-6 text-sm text-muted-foreground">
-            Ubuntu 20.04+ / Fedora 30+ &middot; GNOME &middot; X11 or Wayland
+            Ubuntu 20.04+ / Fedora 30+ &middot; GNOME or KDE Plasma &middot; X11 or Wayland
           </p>
         </FadeUp>
 
@@ -111,7 +114,10 @@ export function DownloadSection() {
         <FadeUp delay={0.5}>
           <p className="mt-4 text-sm text-muted-foreground">
             Want more features?{" "}
-            <a href="/pro" className="text-orange hover:underline">
+            <a
+              href="/pro"
+              className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+            >
               See Clipmer Pro &rarr;
             </a>
           </p>

@@ -1,0 +1,240 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+To clear the clipboard on Linux from the command line, run `xsel --clipboard --clear` in an
+X11 session or `wl-copy --clear` in a Wayland session. Either one empties what **Ctrl + V**
+would paste. Neither touches the history your clipboard manager has been keeping — that is
+a separate list, stored on disk, with its own clear command — and on KDE Plasma, Klipper
+will quietly put the last entry straight back unless you change one default.
+
+Those are the three things people searching for this actually need, so the rest of this
+page takes them in order: the live clipboard, the Klipper catch, then how to clear the
+history in each manager, including ours. There is no button for any of this on GNOME.
+
+## Clearing the clipboard is not clearing the history
+
+There are two layers. The first is the clipboard itself: on both X11 and Wayland it is not
+a buffer but a claim, held by whichever application you last copied from, and "clearing"
+it means telling the display server that nobody holds that claim any more.
+[Clipboard managers on Wayland](/blog/clipboard-managers-on-wayland#the-clipboard-is-not-a-buffer)
+goes into why that design exists.
+
+The second layer is your clipboard manager's history. Every manager keeps its own copy of
+each thing you copied — GPaste under `~/.local/share/gpaste/`, cliphist at
+`$XDG_CACHE_HOME/cliphist/db`, Clipmer in `~/.config/clipmer/clipmer-data.json` — and that
+copy does not care what the display server thinks the clipboard holds. Clear the clipboard
+and the history keeps the entry. Clear the history and Ctrl + V still pastes the last
+thing you copied. If your reason for clearing is a password or a token, you need both.
+
+## Clear the clipboard from the command line
+
+First check which session you are in, because the X11 tools and the Wayland tools talk to
+different things:
+
+```bash
+echo $XDG_SESSION_TYPE
+```
+
+On **X11**, `xsel` has a clear option and `xclip` does not:
+
+```bash
+xsel --clipboard --clear      # short form: xsel -bc
+xclip -selection clipboard -i /dev/null
+```
+
+`xsel`'s `--clear` is documented as "clear the selection. Overrides all input options",
+and with `--clipboard` it acts on the CLIPBOARD selection rather than the primary one;
+internally it tells X that the selection has no owner. The `xclip` line is the usual
+workaround for the missing flag: `-i` reads the clipboard's new contents from a file, so
+feeding it `/dev/null` makes `xclip` own the clipboard with nothing in it. Ubuntu 26.04
+packages xsel 1.2.1 and xclip 0.13.
+
+On **Wayland**, `wl-copy` from wl-clipboard has a clear option of its own, documented as
+"instead of copying anything, clear the clipboard so that nothing is copied":
+
+```bash
+wl-copy --clear
+wl-copy --primary --clear     # the middle-click selection
+```
+
+This works on GNOME as well as on KDE and wlroots compositors. GNOME's Mutter implements
+no data-control protocol, so wl-clipboard falls back to what its own man page calls a
+hack: it briefly pops up a tiny transparent surface to get at the clipboard, which can
+show as a flash. In a Wayland session, `xsel` and `xclip` only reach the copy of the
+clipboard that XWayland holds, which is why
+[xclip stops behaving on Wayland](/blog/xclip-not-working-wayland).
+
+If you want the primary selection cleared too on X11, `xsel --primary --clear` does it.
+
+## On Plasma, Klipper puts it straight back
+
+Run `wl-copy --clear` on a KDE Plasma desktop and, a moment later, the clipboard holds
+what it held before. This is not a Wayland quirk; it happens on X11 as well, and it is
+Klipper doing exactly what it was configured to do. Its settings file,
+`~/.config/klipperrc`, has a `NoEmptyClipboard` key whose label in Klipper's source is
+"Prevent the clipboard from being cleared", described as "do not allow the clipboard to
+be cleared, for example when an application exits". It defaults to **true**. When the
+clipboard becomes empty, Klipper's history model re-sets it to the top history entry —
+the code comment reads "keep old clipboard after someone set it to null" — and leaves the
+history itself untouched. wl-clipboard's man page even has a line for this: `wl-copy
+--clear` "doesn't always interact well with clipboard managers that are overeager to
+preserve clipboard contents".
+
+Plasma 5 showed this as a checkbox. Plasma 6's **Configure Clipboard…** dialog no longer
+lists it, so the way to switch it off is the file itself:
+
+```ini
+# ~/.config/klipperrc
+[General]
+NoEmptyClipboard=false
+```
+
+Then tell Klipper to re-read its configuration — its `reloadConfig` method re-parses the
+file when it is called over D-Bus — or log out and back in:
+
+```bash
+gdbus call --session --dest org.kde.klipper --object-path /klipper \
+  --method org.kde.klipper.klipper.reloadConfig
+```
+
+The same interface has a `clearClipboardContents` method, which empties the clipboard
+through Klipper itself, so it is the Plasma-native way to clear without fighting the
+default. If Klipper is giving you other trouble, the rest of its settings are in
+[KDE Plasma clipboard history not working](/blog/kde-plasma-clipboard-history-not-working#open-the-right-settings).
+
+## Clear the clipboard history, tool by tool
+
+Every command below is taken from the tool's own documentation or source.
+
+<SupportTable
+  headers={["Tool", "Clear the whole history", "Where it is"]}
+  rows={[
+    { name: "Klipper (KDE)", cells: ["gdbus call … clearClipboardHistory (below)", "D-Bus, org.kde.klipper"] },
+    { name: "GPaste", cells: ["gpaste-client empty", "Command line"] },
+    { name: "Clipboard Indicator", cells: ["Clear history, then confirm Clear all?", "Extension menu"] },
+    { name: "Clipboard History", cells: ["The delete icon, then confirm Clear all?", "Extension panel"] },
+    { name: "CopyQ", cells: ["Ctrl + A, then Delete", "Main window"] },
+    { name: "cliphist", cells: ["cliphist wipe", "Command line"] },
+    { name: "Clipmer", cells: ["Clear Unsaved History", "Tray menu"], highlight: true },
+  ]}
+/>
+
+**Klipper** exposes its history on the session bus. The Qt command-line tool for this is
+named `qdbus6` on Debian and Ubuntu and `qdbus-qt6` on Fedora, so `gdbus`, which ships
+with GLib, is the version that works everywhere:
+
+```bash
+gdbus call --session --dest org.kde.klipper --object-path /klipper \
+  --method org.kde.klipper.klipper.clearClipboardHistory
+```
+
+**GPaste**'s client has `empty` to forget everything and `delete <uuid>` for a single
+item; `gpaste-client history` lists the UUIDs.
+
+**Clipboard Indicator** has a **Clear history** item in its menu, which asks "Clear all?"
+before it deletes, and the **Delete** key removes the highlighted item. Its **Private
+mode** switch pauses recording.
+
+**Clipboard History** (the extension we recommend on Ubuntu) uses a delete icon rather
+than a labelled item, with the same "Clear all?" confirmation. Its preferences have a
+shortcut for clearing the history, unbound by default, and **Super + Shift + P** toggles
+Private mode.
+
+**CopyQ** clears from its main window: **Ctrl + A** selects every item and **Delete**
+removes the selection.
+
+**cliphist** has `cliphist wipe` for everything, `cliphist delete-query "secret item"` for
+anything matching a string, and `cliphist wipe -older-than 720h` to expire old entries.
+
+**Clipmer** clears from the tray menu's **Clear Unsaved History**, or from Settings, where
+the License tab's **Danger zone** has a **Clear** button that asks you to confirm. Both
+keep entries you filed in folders, which the last section covers.
+
+## Auto-clear after a few seconds, and what a manager keeps anyway
+
+Password managers already do a timed clear. KeePassXC's **Clear clipboard after** setting
+is on by default at 10 seconds. Bitwarden's desktop app has a **Clear clipboard** option
+in Preferences. 1Password on Linux has **Remove copied information and authentication
+codes after 90 seconds** under Settings → Security.
+
+What none of them can do is reach into a clipboard manager's history. A KDE bug filed in
+2014, [334646](https://bugs.kde.org/show_bug.cgi?id=334646), is exactly this: KeePass
+cleared the clipboard after a few seconds and the reporter expected Klipper to drop the
+entry, but it stayed in the history. The answer that stuck was a hint, not a clear:
+password managers tag what they copy with `x-kde-passwordManagerHint`, and a manager that
+honours it never records the entry.
+[Klipper does](/blog/kde-plasma-clipboard-history-not-working#one-thing-klipper-does-that-most-dont),
+and the Clipboard History extension's `ignore-password-mimes` setting is on by default.
+Clipmer does not read the hint yet, which is why
+[a clipboard manager saving your passwords](/blog/clipboard-manager-saving-passwords-linux)
+is a real problem to plan for rather than one that solves itself.
+
+For a timed clear of your own, an Arch Linux forum thread from April 2026 settled on
+watching the clipboard and scheduling a clear ten seconds after each copy:
+
+```bash
+wl-paste --watch sh -c "sleep 10; wl-copy --clear"
+```
+
+The thread's later version kills the previous timer first, so a second copy does not get
+cleared early by the first one's countdown. Two limits: `wl-paste --watch` needs a
+data-control protocol, so it does not run on GNOME, and on Plasma the clear is undone
+unless `NoEmptyClipboard` is off. If you use Clipboard Indicator, its preferences
+can clear the history on a recurring interval (**Clear clipboard history on interval**) or
+at boot (**Clear clipboard history on system reboot**) without any of this.
+On X11, xclip's development man page describes `-sensitive` and `-wait` options that
+clear the selection after one paste, but the 0.13 release that Ubuntu ships does not have
+them.
+
+## A one-key panic clear on GNOME and Plasma
+
+Bind both layers to one shortcut and you can clear everything before a screen share
+without opening anything. On **GNOME**, go to **Settings → Keyboard → View and Customize
+Shortcuts → Custom Shortcuts** and add a command. With GPaste:
+
+```bash
+sh -c 'wl-copy --clear; gpaste-client empty'
+```
+
+With the Clipboard History extension, bind its clear-history shortcut in the extension's
+own preferences and use `wl-copy --clear` for the clipboard.
+[How to open clipboard history on Ubuntu (the shortcut)](/blog/clipboard-history-ubuntu#how-to-open-clipboard-history-on-ubuntu-the-shortcut)
+shows the custom shortcut dialog if you have not used it before.
+
+On **Plasma**, open **System Settings → Keyboard → Shortcuts**, click **Add New →
+Command or Script…**, and enter:
+
+```bash
+gdbus call --session --dest org.kde.klipper --object-path /klipper --method org.kde.klipper.klipper.clearClipboardHistory
+```
+
+Klipper's `clearClipboardHistory` clears the history and the clipboard buffers Klipper was
+holding, so one command covers both layers.
+
+## What Clear History keeps in Clipmer
+
+Clipmer is ours, so weigh this part accordingly. Its two clear actions — **Clear Unsaved
+History** in the tray and **Clear** in Settings — wipe the history except for entries you
+filed in a folder. Folders exist to keep things, so their members survive on purpose.
+The consequence is the one to know about: a password you once filed in a folder survives
+a clear too. Remove it from the folder, or delete it directly from its ⋯ menu, where
+**Delete** asks you to click again to confirm.
+
+Two other details, both from the code. Clearing does not clear the system clipboard, so
+Ctrl + V still pastes your last copy until you run one of the commands above. And after a
+clear, the text still sitting on the clipboard is not recorded again until you copy
+something else — otherwise a just-hidden secret would reappear, unmasked, on the next
+poll. **Hide**, also in the ⋯ menu, is the alternative to deleting: the entry renders as
+dots in the list, is left out of search, and opens masked in the viewer. It is not
+encryption — the file on disk is plain text — and
+[what clearing keeps](/blog/hide-clipboard-secrets-screen-sharing#what-clearing-keeps)
+spells out the rest of the limits.
+
+<InstallCommand />
+
+Clipmer has no timed auto-clear and does not read the password-manager hint. The free
+version keeps 100 entries and Pro is $9, once. We build and test it on Ubuntu with GNOME;
+auto-paste needs GNOME Shell and is not available on Plasma. AppImage, `.deb` and `.rpm`
+builds are on the [install page](https://clipmer.app/install). If all you want is the
+clipboard emptied, you do not need it: `wl-copy --clear` is enough.

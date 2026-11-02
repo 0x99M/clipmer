@@ -107,6 +107,29 @@ async function routesOnDisk() {
   return found;
 }
 
+// IndexNow (scripts/indexnow-ping.mjs) proves ownership by fetching
+// /<key>.txt from the site root. The file lives in public/, which is the kind
+// of file a cleanup or a hosting change drops silently — and a missing key
+// turns every ping into a 403 that the ping script only warns about. So the
+// guard that gates a release checks it is actually served.
+async function checkIndexNowKey() {
+  const { readdir } = await import("node:fs/promises");
+  const publicDir = new URL("../public/", import.meta.url).pathname;
+  const keyFiles = (await readdir(publicDir)).filter((name) =>
+    /^[0-9a-f]{8,128}\.txt$/.test(name)
+  );
+  if (keyFiles.length !== 1) {
+    return keyFiles.length === 0
+      ? "no public/<key>.txt — generate one with `openssl rand -hex 16`"
+      : `more than one key file in public/: ${keyFiles.join(", ")}`;
+  }
+  const key = keyFiles[0].replace(/\.txt$/, "");
+  const res = await fetch(`${origin}/${keyFiles[0]}`);
+  if (!res.ok) return `${origin}/${keyFiles[0]} returned HTTP ${res.status}`;
+  const body = (await res.text()).trim();
+  return body === key ? null : `${keyFiles[0]} is served but its body is not the key`;
+}
+
 async function main() {
   const res = await fetch(`${origin}/sitemap.xml`);
   if (!res.ok) {
@@ -164,6 +187,15 @@ async function main() {
     for (const route of missing) {
       console.log(`         ${route} is indexable but missing from sitemap.ts`);
     }
+  }
+
+  const keyProblem = await checkIndexNowKey();
+  if (keyProblem) {
+    failures += 1;
+    console.log(`  FAIL IndexNow key`);
+    console.log(`         ${keyProblem}`);
+  } else {
+    console.log(`  ok   IndexNow key file`);
   }
 
   console.log(

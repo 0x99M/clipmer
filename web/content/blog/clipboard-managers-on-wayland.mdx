@@ -1,5 +1,6 @@
 import { SupportTable } from "@/components/blog/support-table";
 import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
 
 You copy a database URL out of a terminal, close the terminal, press paste — and get
 nothing. Or you install a clipboard manager that worked fine for years, log into a
@@ -28,7 +29,9 @@ This has a consequence people hit constantly without knowing why:
   If the owning application exits, there is nobody left to answer the request. The
   selection dies with the process. This is true on X11 too — it is not a Wayland
   regression. It is the single biggest reason clipboard managers exist at all: a manager
-  keeps its own copy so the data survives the app that produced it.
+  keeps its own copy so the data survives the app that produced it. Which desktops do
+  this for you, and the fix on the ones that don't, is in
+  [why your clipboard empties when you close an app on Linux](/blog/clipboard-empty-after-closing-app-linux).
 </Callout>
 
 ## What Wayland actually changed
@@ -51,6 +54,11 @@ entire purpose is to read the clipboard while it is not focused. The core Waylan
 protocol forbids precisely and only the thing a clipboard manager needs to do.
 
 This is not an oversight. It is the feature.
+
+The same rule is why a clipboard manager cannot press Ctrl+V for you, and why its global
+shortcut needs the desktop's help — see
+[why your clipboard manager won't paste on Wayland](/blog/clipboard-manager-auto-paste-wayland)
+and [clipboard manager shortcut not working on Wayland](/blog/clipboard-shortcut-not-working-wayland).
 
 ## The escape hatches
 
@@ -185,6 +193,53 @@ If the first says `wayland`, the second prints nothing, and the third sits silen
 compositor has no data-control support and your only options are a shell extension or an
 XWayland-based tool.
 
+## Using the Wayland clipboard from the terminal: wl-copy and wl-paste
+
+Everything above is also something you can do by hand. `wl-clipboard` is the command-line
+pair for Wayland — `wl-copy` and `wl-paste` — and it is the package cliphist and most
+`--watch` pipelines are built on. It is `wl-clipboard` in apt and pacman; the flags below
+are from the 2.3.0 manual.
+
+```bash
+echo "hello" | wl-copy                 # copy stdin
+wl-copy "some text"                    # copy the arguments
+wl-paste                               # print the clipboard
+wl-paste --list-types                  # which MIME types the owner is offering
+wl-paste --type image/png > shot.png   # ask for one of them
+wl-copy --clear                        # empty the clipboard
+```
+
+Notice what `wl-copy` has to do to make that work. It is now the owner, so it forks into
+the background and stays alive to answer paste requests; `--foreground` keeps it attached
+if you are scripting it. `wl-copy --paste-once` serves a single paste and then exits,
+which clears the clipboard after the first paste and suits passwords — with the caveat,
+documented in the manual, that pasting into XWayland windows is known to break with it,
+because some clients expect to paste more than once. The manual also warns that `--clear`
+and `--paste-once` do not always interact well with clipboard managers that are eager to
+preserve the contents, which is the manager doing exactly the job described above.
+
+On the paste side, `wl-paste --no-newline` drops the newline it would otherwise append to
+text. That one is `wl-paste` only: `wl-copy -n` means `--trim-newline`, the trailing
+newline of the *input*. It is switched on automatically for non-text types and in
+`--watch` mode. Both tools take `--primary` to work on the middle-click selection instead
+of the clipboard.
+
+`wl-paste --watch` is the one that matters for this article. It runs a command on every
+new selection, with the contents on the command's standard input, and it needs a
+data-control protocol from the compositor — exactly the requirement in the previous
+section. The one-shot commands do not: without data-control, wl-clipboard briefly pops up
+a tiny transparent surface so that it holds focus for the duration of the request. The
+two error messages a failing `--watch` prints, and what each means on GNOME and on KDE,
+are in [the best clipboard manager for Wayland](/blog/best-clipboard-manager-wayland#check-what-your-session-supports-first).
+
+`xclip` and `xsel` still work under XWayland, because the compositor mirrors the selection
+between the X11 and Wayland worlds — how completely depends on the compositor — but they
+are X11 clients: there is no Wayland-native watch mode, and in a session without XWayland
+they cannot open a display at all. [xclip stopped working on Wayland](/blog/xclip-not-working-wayland)
+has the per-compositor detail. And if what you want is for the clipboard to survive
+closing the terminal you copied from, that is `wl-clip-persist`, not any of the above —
+see [the Hyprland section of the same guide](/blog/best-clipboard-manager-wayland#hyprland-cliphist-and-wl-clipboard).
+
 ## What this means for the tools you already know
 
 <SupportTable
@@ -208,8 +263,11 @@ for a pick on each desktop, see [the best clipboard manager for Wayland](/blog/b
 
 ## How Clipmer does it, specifically
 
-Clipmer is [a clipboard manager for Linux](/install) you can install in one command. It
-is an Electron application, and Electron runs as an XWayland client by default.
+Clipmer is [a clipboard manager for Linux](/install) you can install in one command.
+
+<InstallCommand />
+
+It is an Electron application, and Electron runs as an XWayland client by default.
 It reads the clipboard through Electron's clipboard API on a 500 ms poll, and the
 compositor's XWayland bridge is what lets it see copies made in Wayland-native
 applications.
@@ -235,6 +293,8 @@ That is the right call — clipboard managers are genuinely useful and users wan
 it is less true on a system with a clipboard manager installed, whichever one you pick.
 Your clipboard history is a plaintext file on disk containing every password, API key,
 and connection string you have copied recently.
+[Screen sharing with a clipboard manager](/blog/hide-clipboard-secrets-screen-sharing)
+covers keeping that list off a call.
 
 Wayland decided who is allowed to *read* your clipboard. It has nothing to say about what
 your clipboard manager does with it afterward — that part is still entirely up to the

@@ -53,7 +53,7 @@ export default function BlogIndex() {
               do, which is why{" "}
               <Link
                 href="/blog/clipboard-managers-on-wayland"
-                className="text-orange hover:underline"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
               >
                 clipboard history on Wayland is genuinely hard
               </Link>{" "}
@@ -61,22 +61,60 @@ export default function BlogIndex() {
               works today,{" "}
               <Link
                 href="/blog/clipboard-history-ubuntu"
-                className="text-orange hover:underline"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
               >
                 five clipboard managers for Ubuntu
               </Link>{" "}
               covers the real install commands for each. We also{" "}
               <Link
                 href="/blog/auditing-our-own-clipboard-manager"
-                className="text-orange hover:underline"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
               >
                 publish our own security audits
               </Link>
               , including the ones that found bugs in Clipmer itself.
             </p>
             <p className="mt-4 leading-relaxed text-muted-foreground">
+              If something specific is broken, start with the fix: a{" "}
+              <Link
+                href="/blog/clipboard-shortcut-not-working-wayland"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+              >
+                shortcut that does nothing on Wayland
+              </Link>
+              ,{" "}
+              <Link
+                href="/blog/kde-plasma-clipboard-history-not-working"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+              >
+                Klipper showing only one entry
+              </Link>
+              ,{" "}
+              <Link
+                href="/blog/clipboard-history-after-reboot-linux"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+              >
+                history that is gone after a reboot
+              </Link>
+              , or a{" "}
+              <Link
+                href="/blog/clipboard-manager-freezes-large-copy"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+              >
+                manager that freezes after a huge copy
+              </Link>
+              . And if you keep{" "}
+              <Link
+                href="/blog/reuse-text-snippets-linux"
+                className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange"
+              >
+                retyping the same commands and replies
+              </Link>
+              , that has a fix too.
+            </p>
+            <p className="mt-4 leading-relaxed text-muted-foreground">
               Clipmer is the clipboard manager we build.{" "}
-              <Link href="/install" className="text-orange hover:underline">
+              <Link href="/install" className="text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange">
                 Install it on Linux
               </Link>{" "}
               in one command.

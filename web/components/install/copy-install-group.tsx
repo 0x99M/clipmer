@@ -91,8 +91,8 @@ export function CopyInstallGroup({
               {o.label}
               <span
                 className={cn(
-                  "text-[10px] font-normal",
-                  o.id === selected ? "text-muted-foreground" : "text-muted-foreground/70"
+                  "text-[11px] font-normal",
+                  o.id === selected ? "text-muted-foreground" : "text-foreground/60"
                 )}
               >
                 {o.hint}
@@ -146,7 +146,7 @@ export function CopyInstallGroup({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 text-[13px] text-muted-foreground/70">
+        <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 text-[13px] text-muted-foreground">
           <span>
             Paste into a terminal &middot; {SUPPORTED_ARCH} &middot; v{VERSION}
           </span>

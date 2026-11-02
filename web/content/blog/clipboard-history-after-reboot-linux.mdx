@@ -18,7 +18,7 @@ reasonable trade for some people — and the reason several tools make it the de
 offer it prominently:
 
 - **Windows** clears its clipboard history
-  [every time you restart](https://support.microsoft.com/en-us/windows/clipboard-in-windows-c436501e-985d-1c8d-97ea-fe46ddf338c6),
+  [every time you restart](https://support.microsoft.com/en-us/windows/apps/using-the-clipboard),
   keeping only pinned items.
 - **The GNOME Clipboard History extension** has an *Only save favorites to disk* option that,
   in [its README's words](https://github.com/SUPERCILEX/gnome-clipboard-history/blob/master/README.md),
@@ -34,7 +34,7 @@ So before assuming something broke, check whether it was told to forget.
   rows={[
     { name: "Klipper (KDE Plasma)", cells: ["Configure Clipboard → Save history across desktop sessions"] },
     { name: "Clipboard History (GNOME extension)", cells: ["Turn off \"Only save favorites to disk\""] },
-    { name: "GPaste", cells: ["gsettings get org.gnome.GPaste save-history should print true"] },
+    { name: "GPaste", cells: ["gsettings get org.gnome.GPaste save-history should print true (GPaste 45 to 50)"] },
     { name: "Clipmer", cells: ["Nothing to set — history is always saved"], highlight: true },
   ]}
 />
@@ -43,14 +43,20 @@ So before assuming something broke, check whether it was told to forget.
 Clipboard…**, and turn on **Save history across desktop sessions**. With it off, the history
 lasts for one session.
 
-**Clipboard History extension:** open its preferences in the Extension Manager app and turn
-off **Only save favorites to disk** if you want everything kept, not just favourites.
+**[Clipboard History extension](/blog/clipboard-history-ubuntu#option-1-clipboard-history-extension):**
+open its preferences in the Extension Manager app and turn off **Only save favorites to
+disk** if you want everything kept, not just favourites.
 
-**GPaste:** history is saved to disk unless `save-history` has been turned off. If the
+**GPaste:** on GPaste 45 — Ubuntu 24.04 ships 45, 26.04 ships 45.3 — history is saved to
+disk unless `save-history` has been turned off, so
+`gsettings get org.gnome.GPaste save-history` should print `true`. GPaste 51 dropped that
+key from its settings schema, so on a distribution that ships 51 or later the command
+reports no such key instead. If the
 setting is `true` and the history still comes back empty, GPaste's issue tracker has a
 [report](https://github.com/Keruspe/GPaste/issues/354) of it reading from a different
 directory than it wrote to — look in `~/.local/share/` for both a `GPaste` and a `gpaste`
-directory.
+directory. Checked against the GPaste settings schema at 45.3, 50.8 and 51.2 on 2 November
+2026.
 
 ## Or it isn't running yet
 
@@ -79,7 +85,7 @@ entry is written to disk, so a reboot, a crash or a logout doesn't cost you the 
   boot. It works for the AppImage too since 3.2.0, which earlier showed the setting as on
   while doing nothing.
 
-The free version shows your last 100 entries; Pro keeps 200, and entries filed in folders
+The free version shows your last 100 entries; [Pro](/pro) keeps 200, and entries filed in folders
 are kept beyond that limit.
 
 ## Moving to a new machine

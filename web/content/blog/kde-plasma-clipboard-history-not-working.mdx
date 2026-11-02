@@ -2,8 +2,9 @@ import { SupportTable } from "@/components/blog/support-table";
 import { Callout } from "@/components/blog/callout";
 import { InstallCommand } from "@/components/blog/install-command";
 
-KDE Plasma is the one major Linux desktop that ships a clipboard history switched on. It
-is the **Clipboard** icon in the system tray, **Meta + V** opens it at the mouse pointer,
+KDE Plasma is the one major Linux desktop that
+[ships a clipboard history switched on](/blog/best-clipboard-manager-wayland#kde-plasma-klipper-is-already-running).
+It is the **Clipboard** icon in the system tray, **Meta + V** opens it at the mouse pointer,
 and underneath it is Klipper, which has been part of KDE for over two decades.
 
 So when it misbehaves — only ever one entry, history gone after a reboot, a paste that
@@ -11,6 +12,17 @@ suddenly produces nothing — the fix is nearly always a setting or an environme
 not a replacement. This page goes through the causes in order of how often they come up,
 and only then gets to when a different clipboard manager makes sense. We make one of
 those, and we would still check these first.
+
+## Check these first
+
+Three checks cover most of the reports. Each has its own section below.
+
+- **The Clipboard widget is in the system tray.** Without it, Plasma keeps no history at
+  all.
+- **`echo $QT_QPA_PLATFORM` does not print `wayland-egl`.** If it does, the history holds
+  exactly one entry however large you set it.
+- **Save history across desktop sessions** is on in **Configure Clipboard…**. With it off,
+  the history is gone at logout.
 
 ## Open the right settings
 
@@ -59,7 +71,10 @@ it, or change it to `wayland`. Log out and back in.
 
 Make sure **Save history across desktop sessions** is on. With it off, Klipper keeps the
 history in memory for the session only, which some people choose deliberately: a
-persistent history is also a persistent record of every password you have copied.
+persistent history is also a persistent record of every password you have copied. The
+same switch exists in most clipboard managers;
+[keeping your clipboard history after a reboot](/blog/clipboard-history-after-reboot-linux)
+covers where to find it in the others.
 
 If it is on and the history still disappears, look at whether something is clearing it.
 Session-cleanup scripts and "clear history on logout" options in privacy tools are the
@@ -80,7 +95,8 @@ Password managers mark the passwords they copy with a hint, `x-kde-passwordManag
 and Klipper [leaves those entries out of its history](https://phabricator.kde.org/R120:637cd0bf62e419b8038cb9b1565089fbd341ee7a).
 KeePassXC sets the hint, so a password copied from it never lands in Klipper's list. That
 is a genuinely good default, and one many clipboard managers — ours included — don't have
-yet.
+yet; [clipboard managers that save passwords](/blog/clipboard-manager-saving-passwords-linux)
+goes through the others.
 
 ## When an alternative makes sense
 

@@ -16,6 +16,22 @@
 
 export const VERIFIED_ON = "2026-08-17";
 
+/**
+ * The last time the words on the page changed. Bump this on any caveat,
+ * verdict, detail or CHECKS edit. VERIFIED_ON is rendered as "read from the
+ * registry on …", so it moves only on a genuine registry re-read — never bump
+ * it to make the page look fresh. 2026-10-31 is commit 6f96f1c, which rewrote
+ * the Mutter and KWin caveats around the wl-clipboard 2.2.1 / 2.3.0 split.
+ */
+export const CONTENT_UPDATED = "2026-11-02";
+
+/**
+ * What the sitemap and the Dataset's dateModified report: whichever of the two
+ * moved last. ISO dates compare correctly as strings.
+ */
+export const MATRIX_LASTMOD =
+  CONTENT_UPDATED > VERIFIED_ON ? CONTENT_UPDATED : VERIFIED_ON;
+
 /** How a clipboard manager can reach the selection on this compositor. */
 export type Route =
   /** A data-control protocol is available: ordinary tools work. */

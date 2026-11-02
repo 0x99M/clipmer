@@ -1,10 +1,19 @@
 import { Metadata } from "next";
-import { ALTERNATE_TYPES, canonical } from "@/lib/seo";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
 import { LegalLayout } from "@/components/legal-layout";
 
+const title = "Refund Policy — Clipmer";
+const description =
+  "Clipmer Pro refunds: 14 days from purchase, requested by email with your order number, and returned by Paddle (our merchant of record) in 5–10 business days.";
+
 export const metadata: Metadata = {
-  title: "Refund Policy — Clipmer",
+  title,
+  description,
   alternates: { canonical: canonical("/refund"), types: ALTERNATE_TYPES },
+  // Without these the page inherits the homepage's og:title/description and
+  // emits no og:url. Spread OG_BASE back in or og:image goes with it.
+  openGraph: { ...OG_BASE, url: canonical("/refund"), title, description },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 export default function RefundPage() {

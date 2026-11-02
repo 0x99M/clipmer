@@ -31,6 +31,16 @@ export const metadata: Metadata = {
     "wayland clipboard manager",
   ],
   authors: [{ name: "Clipmer" }],
+  // Say "index, follow" out loud and opt into large image previews in Google
+  // results. Pages that set their own `robots` replace this whole object
+  // (shallow merge), so /thank-you's noindex still wins, and Next injects
+  // noindex on 404 responses regardless of what is declared here.
+  robots: {
+    index: true,
+    follow: true,
+    "max-image-preview": "large",
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   // Deliberately no `canonical` here. It is inherited by every page that does
   // not set its own, which is how six routes ended up declaring themselves to
   // be the homepage. Canonicals belong on the page. See lib/seo.ts.

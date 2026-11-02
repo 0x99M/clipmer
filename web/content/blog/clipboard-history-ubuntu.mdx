@@ -3,13 +3,17 @@ import { Callout } from "@/components/blog/callout";
 import { InstallCommand } from "@/components/blog/install-command";
 
 Ubuntu still ships no clipboard history. Copy something, copy something else, and the
-first thing is gone — there is no built-in way to get it back, and there has never been
-one in any Ubuntu release, 26.04 LTS included.
+first thing is gone — there is [no built-in way to get it back](/blog/get-back-overwritten-clipboard-linux),
+and there has never been one in any Ubuntu release, 26.04 LTS included.
 
 If you pressed **Super + V** expecting the clipboard panel Windows opens with **Win + V**,
 that shortcut opens GNOME's notification list instead. The quickest way to get a real one is
 [Option 1](#option-1-clipboard-history-extension), the Clipboard History extension, which
 then opens with **Super + Shift + V**.
+
+If you want **Super + V** itself to open the history, the way **Win + V** does on Windows,
+[putting a Windows-style clipboard history on Super + V](/blog/win-v-clipboard-history-linux)
+shows the one-line command that frees the key.
 
 This guide covers the four options that work on both current LTS releases, Ubuntu 24.04
 and 26.04. It was first written against a real Ubuntu 24.04.4 LTS install, then
@@ -47,12 +51,37 @@ security model and the protocols that work around it. On Kubuntu or another desk
 rather than GNOME, [the best clipboard manager for Wayland](/blog/best-clipboard-manager-wayland)
 has the pick for yours.
 
+## How to see what is on your clipboard right now
+
+There is no clipboard app to open, because Ubuntu does not have one. The clipboard is a
+single item, and it is held by the application you copied from rather than by the desktop:
+it stays there until you copy something else, or until that application closes.
+
+To print it in a terminal, use the command for the session you just checked. Neither tool
+is part of the default desktop on 24.04 or 26.04 — the `ubuntu-desktop` metapackage pulls
+in neither `wl-clipboard` nor `xclip` — so install it first:
+
+```bash
+# Wayland
+sudo apt install wl-clipboard
+wl-paste
+
+# X11
+sudo apt install xclip
+xclip -o -selection clipboard
+```
+
+Both print whatever is on the clipboard at that moment and nothing else: there is no
+"previous item" to ask for. Copy again and it is replaced, which is why the rest of this
+guide is about installing a history rather than finding one.
+
 ## Option 1: Clipboard History extension
 
 The simplest thing that works on GNOME, and the one to try first. It is a GNOME Shell
 extension, so it runs inside the compositor and works on Wayland without any protocol
-support. Its current build lists GNOME Shell 46 through 50, so the same extension covers
-24.04 and 26.04.
+support. As of 2 November 2026 its listing offers version 52 for GNOME Shell 48 through 51
+and version 51 for Shell 46 and 47, so the same extension covers 24.04 and 26.04; it has
+passed 650,000 downloads.
 
 Install [Clipboard History](https://extensions.gnome.org/extension/4839/clipboard-history/)
 from the GNOME Extensions site, or use the Extension Manager app:
@@ -62,7 +91,10 @@ sudo apt install gnome-shell-extension-manager
 ```
 
 Open Extension Manager, search "Clipboard History", install. Press **Super + Shift + V**
-to open the panel. Searchable, keyboard-driven, no daemon to configure.
+to open the panel. Searchable, keyboard-driven, no daemon to configure. It keeps the
+history across reboots unless *Only save favorites to disk* is on; if yours comes back
+empty after a restart, [keeping your clipboard history after a reboot](/blog/clipboard-history-after-reboot-linux)
+lists the setting for each tool.
 
 ## Option 2: GPaste
 
@@ -111,16 +143,19 @@ compares the options.
 ## Option 4: Clipmer
 
 Ours, so treat this section with the appropriate suspicion. Clipmer is built for people
-whose clipboard is full of things they would rather not display: it can mask individual
-entries so they render as dots during a screen share, attach notes to entries, and file
-them into folders.
+whose clipboard is full of things they would rather not display: it can
+[mask individual entries so they render as dots during a screen share](/blog/hide-clipboard-secrets-screen-sharing),
+attach notes to entries, and file them into folders.
 
 <InstallCommand />
 
 Press **Ctrl + Shift + D** to open it. The free version keeps 100 entries. Clipmer is
 tested on Ubuntu 24.04.4 and 26.04.1 LTS; on 26.04, auto-paste needs 3.2.1 or later.
-There are `.rpm` and AppImage builds too — see the [install guide](/install) for those,
-and for verifying the download against the published checksums.
+Auto-paste is off by default and is the one thing no clipboard manager can do on Wayland
+by itself — [why your clipboard manager won't paste on Wayland](/blog/clipboard-manager-auto-paste-wayland)
+explains what the helper does. There are `.rpm` and AppImage builds too — see the
+[install guide](/install) for those, and for verifying the download against the published
+checksums.
 
 The honest trade-off: Clipmer is source-available under PolyForm Strict, **not** open
 source, and the folders, notes, and minimal view are paid. Everything above is free
@@ -138,6 +173,39 @@ might — GPaste is the better choice and we would rather you were happy than co
     { name: "To not leak secrets on a call", cells: ["Clipmer", "Per-entry masking, notes, folders"], highlight: true },
   ]}
 />
+
+## How to open clipboard history on Ubuntu (the shortcut)
+
+**Super + V** opens notifications. To see your clipboard history you need one of the tools
+above, and the shortcut depends on which you installed:
+
+<SupportTable
+  headers={["Tool", "Opens with"]}
+  rows={[
+    { name: "Clipboard History", cells: ["Super + Shift + V (default, set in its preferences)"] },
+    { name: "GPaste", cells: ["A custom shortcut running gpaste-client ui"] },
+    { name: "CopyQ", cells: ["A custom shortcut running copyq toggle"] },
+    { name: "Clipmer", cells: ["Ctrl + Shift + D (fallback Ctrl + Shift + B)"], highlight: true },
+  ]}
+/>
+
+GNOME reserves **Super + V** for notifications, so most tools default to something else.
+A shortcut set only inside the app's own preferences usually does nothing on Wayland unless
+the app goes through the desktop's portal or you bind it in desktop settings;
+[clipboard manager shortcut not working on Wayland](/blog/clipboard-shortcut-not-working-wayland)
+covers which. To bind your own, open **Settings → Keyboard → View and Customize Shortcuts →
+Custom Shortcuts**, then add a command:
+
+```bash
+# GPaste
+gpaste-client ui
+
+# CopyQ
+copyq toggle
+```
+
+Extensions set their own shortcut in their preferences instead, since they run inside the
+shell — Clipboard History's default is **Super + Shift + V**.
 
 ## What happened to Pano
 
@@ -176,22 +244,8 @@ GNOME also has a `disable-extension-version-validation` setting that skips the c
 Leave it off: it applies to every extension you have installed, not only the one you want
 back.
 
-## Setting a clipboard history shortcut
-
-GNOME reserves **Super + V** for notifications, so most tools default to something else.
-To bind your own, open **Settings → Keyboard → View and Customize Shortcuts → Custom
-Shortcuts**, then add a command:
-
-```bash
-# GPaste
-gpaste-client ui
-
-# CopyQ
-copyq toggle
-```
-
-Extensions set their own shortcut in their preferences instead, since they run inside the
-shell — Clipboard History's default is **Super + Shift + V**.
+Why this happens every GNOME release, and the current state of each clipboard extension,
+is in [clipboard history stopped working after a GNOME upgrade](/blog/clipboard-extension-stopped-working-gnome-upgrade).
 
 ## One thing worth knowing before you install any of these
 

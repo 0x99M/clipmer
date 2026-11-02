@@ -2,35 +2,23 @@ import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { Footer } from "@/components/sections/footer";
 import { CHANGELOG, type ChangeType } from "@/lib/changelog";
+import { ALTERNATE_TYPES, OG_BASE, canonical } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
+const title = "Changelog — Clipmer";
+const description =
+  "Every Clipmer release, what changed in it, and when it shipped.";
+
 export const metadata: Metadata = {
-  title: "Changelog — Clipmer",
-  description:
-    "Every Clipmer release, what changed in it, and when it shipped.",
-  alternates: {
-    canonical: "https://clipmer.app/changelog",
-    types: { "application/rss+xml": "https://clipmer.app/blog/rss.xml" },
-  },
-  openGraph: {
-    type: "website",
-    url: "https://clipmer.app/changelog",
-    siteName: "Clipmer",
-    title: "Changelog — Clipmer",
-    description:
-      "Every Clipmer release, what changed in it, and when it shipped.",
-    // Declaring `openGraph` replaces the root layout's resolved value, which
-    // drops the app/opengraph-image.tsx file convention — name it explicitly.
-    images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
-  },
+  title,
+  description,
+  alternates: { canonical: canonical("/changelog"), types: ALTERNATE_TYPES },
+  // Declaring `openGraph` replaces the root layout's resolved value, which
+  // drops og:image, og:site_name and og:locale — OG_BASE carries them back in.
+  openGraph: { ...OG_BASE, url: canonical("/changelog"), title, description },
   // Likewise `twitter`: without this the root layout's homepage title and
   // description are inherited and contradict the og: tags on this page.
-  twitter: {
-    card: "summary_large_image",
-    title: "Changelog — Clipmer",
-    description:
-      "Every Clipmer release, what changed in it, and when it shipped.",
-  },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 const TYPE_STYLES: Record<ChangeType, string> = {

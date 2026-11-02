@@ -30,12 +30,26 @@ export const ALTERNATE_TYPES = {
   "application/rss+xml": `${SITE}/blog/rss.xml`,
 };
 
+/** Alt text for the generated card. app/opengraph-image.tsx exports the same string. */
+export const OG_IMAGE_ALT = "Clipmer — secrets-aware clipboard manager for Linux";
+
 /**
  * The generated card from app/opengraph-image.tsx. Next injects this
  * automatically only while a segment leaves `openGraph.images` alone, so any
- * page that declares `openGraph` has to name it explicitly.
+ * page that declares `openGraph` has to name it explicitly. The alt has to
+ * ride along here too: the route file's `alt` export only reaches the head
+ * through that automatic injection, which OG_BASE switches off on every page.
+ * Twitter inherits these images (alt included) wherever a page sets no
+ * `twitter.images` of its own.
  */
-export const OG_IMAGE = [{ url: "/opengraph-image", width: 1200, height: 630 }];
+export const OG_IMAGE = [
+  {
+    url: "/opengraph-image",
+    width: 1200,
+    height: 630,
+    alt: OG_IMAGE_ALT,
+  },
+];
 
 /**
  * Site-wide OpenGraph fields that are not page-specific. Spread first, then

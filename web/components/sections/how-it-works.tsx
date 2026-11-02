@@ -353,7 +353,11 @@ export function HowItWorks() {
 
               {/* Scene */}
               <FadeUp delay={0.3} className={cn(i % 2 !== 0 && "lg:order-1")}>
-                <div className="rounded-xl border border-border bg-card p-4 sm:p-6 transition-all duration-300 hover:border-orange/20 hover:shadow-lg hover:shadow-orange/[0.03]">
+                {/* Decorative: the h3 and p beside it carry the information. */}
+                <div
+                  aria-hidden="true"
+                  className="rounded-xl border border-border bg-card p-4 sm:p-6 transition-all duration-300 hover:border-orange/20 hover:shadow-lg hover:shadow-orange/[0.03]"
+                >
                   <step.scene />
                 </div>
               </FadeUp>

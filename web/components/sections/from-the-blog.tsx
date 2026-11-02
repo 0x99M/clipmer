@@ -6,9 +6,16 @@ import { SORTED_POSTS } from "@/lib/posts";
 /**
  * The posts had no inbound link from anywhere but /blog, which is itself the
  * weakest page on the site. This gives them an edge from the strongest one.
+ *
+ * Posts flagged `featured` in lib/posts.ts come first — the ones Search
+ * Console says actually rank — and the newest fill the remaining slots. Every
+ * new post shares a release date, so plain date order would pick among ties
+ * by array position and never surface the posts that earn the clicks.
  */
-export function FromTheBlog({ limit = 2 }: { limit?: number }) {
-  const posts = SORTED_POSTS.slice(0, limit);
+export function FromTheBlog({ limit = 4 }: { limit?: number }) {
+  const featured = SORTED_POSTS.filter((p) => p.featured);
+  const rest = SORTED_POSTS.filter((p) => !p.featured);
+  const posts = [...featured, ...rest].slice(0, limit);
   if (posts.length === 0) return null;
 
   return (

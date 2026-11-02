@@ -1,4 +1,5 @@
 import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
 
 You have a fresh Ubuntu install and you want to write code on it today. This is the short
 list, in the order you should do it, with the commands to copy.
@@ -103,17 +104,24 @@ the answer.
 
 **Clipboard history.** Ubuntu ships none at all, so everything you copy is destroyed by the
 next thing you copy. This bites hardest when you are moving connection strings and tokens
-between a terminal and a browser, which is most of the day.
+between a terminal and a browser, which is most of the day. It is also the fix for retyping
+the same SSH command ten times a day —
+[stop retyping the same commands and replies on Linux](/blog/reuse-text-snippets-linux).
 
 GNOME needs a Shell extension for this, because the Wayland protocol will not let a normal
-application read the clipboard in the background — the
-[full explanation is here](/blog/clipboard-managers-on-wayland), and the
-[Ubuntu-specific options with install commands are here](/blog/clipboard-history-ubuntu).
+application read the clipboard in the background —
+[clipboard managers on Wayland](/blog/clipboard-managers-on-wayland) explains why, and
+[clipboard history on Ubuntu](/blog/clipboard-history-ubuntu) has the install commands for
+each option.
 
 Ours is [Clipmer](/install): history plus folders, notes, and the ability to mask an entry
-so it shows as dots when you are sharing your screen. If you are on Hyprland or Sway rather
-than stock Ubuntu, `cliphist` is free and does the history part well — our
-[compositor support matrix](/wayland-clipboard-support) will tell you which case you are in.
+so it shows as dots when you are sharing your screen. It installs in one command:
+
+<InstallCommand />
+
+If you are on Hyprland or Sway rather than stock Ubuntu, `cliphist` is free and does the
+history part well — our [compositor support matrix](/wayland-clipboard-support) will tell
+you which case you are in.
 
 ## What to skip
 
@@ -129,5 +137,6 @@ months if it still bothers you.
 ---
 
 That is the whole setup. If you want to know which of these Ubuntu packages are current and
-which are years behind upstream — including the one that is thirty releases old — that is
-the [longer companion piece](/blog/linux-tools-worth-installing).
+which are years behind upstream — including the one that is thirty releases old — the
+longer companion piece is
+[Linux tools worth installing in 2026, and the versions Ubuntu gets wrong](/blog/linux-tools-worth-installing).

@@ -24,15 +24,19 @@ export const metadata: Metadata = {
     url: canonical("/install"),
     title: "Install Clipmer on Linux",
     description:
-      "One command for Ubuntu, Fedora, or any distribution via AppImage — plus the two post-install steps that matter.",
+      "One command for Ubuntu, Fedora, or any distribution via AppImage — plus the four post-install steps that matter.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Install Clipmer on Linux",
     description:
-      "One command for Ubuntu, Fedora, or any distribution via AppImage — plus the two post-install steps that matter.",
+      "One command for Ubuntu, Fedora, or any distribution via AppImage — plus the four post-install steps that matter.",
   },
 };
+
+/** Prose links are underlined at rest, so they read as links without colour alone. */
+const LINK =
+  "text-orange underline decoration-orange/40 underline-offset-[3px] hover:decoration-orange";
 
 function Section({
   title,
@@ -93,14 +97,40 @@ export default function InstallPage() {
                   to open it. Copy a few things first, or the list will be empty.
                 </p>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  On Wayland, Clipmer registers a GNOME keyboard shortcut for this
-                  automatically, because applications cannot claim global hotkeys directly.
+                  On Wayland, Clipmer{" "}
+                  <Link href="/blog/clipboard-shortcut-not-working-wayland" className={LINK}>
+                    registers the shortcut
+                  </Link>{" "}
+                  with GNOME or Plasma for you, because applications cannot claim global
+                  hotkeys directly; on Plasma it takes effect after your next login.
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Change the combination under Settings → Shortcuts → Toggle window — any mix
+                  of Ctrl, Alt, Shift or Super plus a letter, number or function key.
                 </p>
               </div>
             </li>
             <li className="flex gap-4">
               <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-orange/15 text-xs font-semibold text-orange">
                 3
+              </span>
+              <div className="min-w-0">
+                <p className="leading-relaxed">
+                  Turn on Settings → General →{" "}
+                  <Link href="/blog/clipboard-history-after-reboot-linux" className={LINK}>
+                    Start on login
+                  </Link>
+                  .
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Clipmer only records while it is running, so until you turn this on, nothing
+                  you copy after a reboot is captured until you open it again.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-4">
+              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-orange/15 text-xs font-semibold text-orange">
+                4
               </span>
               <div className="min-w-0">
                 <p className="leading-relaxed">
@@ -122,7 +152,7 @@ export default function InstallPage() {
             Every release publishes a{" "}
             <a
               href={CHECKSUMS_URL}
-              className="text-orange hover:underline"
+              className={LINK}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -148,15 +178,19 @@ export default function InstallPage() {
         <Section title="Requirements">
           <ul className="space-y-2 text-muted-foreground">
             <li>
-              <span className="text-foreground">GNOME on X11 or Wayland.</span> Other desktops
-              mostly work, but the auto-paste helper is GNOME-specific.
+              <span className="text-foreground">GNOME or KDE Plasma, on X11 or Wayland.</span>{" "}
+              We build and test on Ubuntu with GNOME; on Plasma the shortcut takes effect after
+              your next login, and auto-paste (a GNOME Shell helper) is not available. Other
+              desktops mostly work for history and search.
             </li>
             <li>
               <span className="text-foreground">x86_64.</span> There is no ARM build yet.
             </li>
             <li>
               <span className="text-foreground">Ubuntu 20.04+ or Fedora 30+</span> for the
-              packaged builds. The AppImage is more forgiving.
+              packaged builds. The AppImage is more forgiving. There is no AUR package, Flatpak,
+              Snap or Nix expression; on Arch, NixOS and anything else not covered by .deb or
+              .rpm, use the AppImage.
             </li>
           </ul>
           <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
@@ -184,12 +218,15 @@ export default function InstallPage() {
           <p className="mt-3 leading-relaxed text-muted-foreground">
             Then quit Clipmer from the tray and open it again — closing the window only
             hides it, so the old version keeps running until you do. If auto-paste is on,
-            log out and back in once as well, since GNOME only loads its helper when your
-            session starts.
+            log out and back in once as well, since GNOME only loads{" "}
+            <Link href="/blog/clipboard-manager-auto-paste-wayland" className={LINK}>
+              the auto-paste helper
+            </Link>{" "}
+            when your session starts.
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
             The{" "}
-            <Link href="/changelog" className="text-orange hover:underline">
+            <Link href="/changelog" className={LINK}>
               changelog
             </Link>{" "}
             lists what each version changed. You are looking at v{VERSION}.
@@ -206,9 +243,11 @@ export default function InstallPage() {
             />
           </div>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Removing the package also removes the auto-paste helper, the keyboard shortcut it
-            registered, and the start-on-login entry. If you used the AppImage, delete the
-            file.
+            Removing the package also removes the auto-paste helper,{" "}
+            <Link href="/blog/clipboard-shortcut-not-working-wayland" className={LINK}>
+              the keyboard shortcut it registered
+            </Link>
+            , and the start-on-login entry. If you used the AppImage, delete the file.
           </p>
         </Section>
 
@@ -217,7 +256,7 @@ export default function InstallPage() {
             <li>
               <Link
                 href="/blog/clipboard-managers-on-wayland"
-                className="text-orange hover:underline"
+                className={LINK}
               >
                 Clipboard managers on Wayland
               </Link>{" "}
@@ -227,14 +266,27 @@ export default function InstallPage() {
             <li>
               <Link
                 href="/blog/clipboard-history-ubuntu"
-                className="text-orange hover:underline"
+                className={LINK}
               >
                 Clipboard history on Ubuntu
               </Link>{" "}
               &mdash; the five options that work, with install commands for each.
             </li>
             <li>
-              <Link href="/changelog" className="text-orange hover:underline">
+              <Link href="/blog/clipboard-shortcut-not-working-wayland" className={LINK}>
+                Clipboard manager shortcut not working on Wayland
+              </Link>{" "}
+              &mdash; how Clipmer registers Ctrl+Shift+D with GNOME and Plasma, and what to
+              check if it does nothing.
+            </li>
+            <li>
+              <Link href="/blog/clipboard-manager-auto-paste-wayland" className={LINK}>
+                Why your clipboard manager won&rsquo;t paste on Wayland
+              </Link>{" "}
+              &mdash; what the auto-paste helper does and why it is off by default.
+            </li>
+            <li>
+              <Link href="/changelog" className={LINK}>
                 Changelog
               </Link>{" "}
               &mdash; what changed in {VERSION} and every release before it.
@@ -249,12 +301,12 @@ export default function InstallPage() {
               href="https://github.com/0x99M/clipmer/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-orange hover:underline"
+              className={LINK}
             >
               GitHub
             </a>{" "}
             or email{" "}
-            <a href="mailto:support@clipmer.app" className="text-orange hover:underline">
+            <a href="mailto:support@clipmer.app" className={LINK}>
               support@clipmer.app
             </a>
             . Telling us your distribution and whether you are on X11 or Wayland saves a

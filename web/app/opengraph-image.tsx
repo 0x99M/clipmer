@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { OG_IMAGE_ALT } from "@/lib/seo";
 
-export const alt = "Clipmer — Secrets-Aware Clipboard Manager for Linux";
+export const alt = OG_IMAGE_ALT;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -75,7 +76,7 @@ export default async function Image() {
             textAlign: "center",
           }}
         >
-          Mask them before you present &middot; 100% offline &middot; No telemetry
+          Clipboard manager for Linux &middot; Mask secrets before you present &middot; 100% offline
         </div>
 
         {/* URL */}
