@@ -1,0 +1,96 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+If you answer customers, students or colleagues, a third of what you write is something
+you've written before: how to reset a password, where the refund policy is, the steps to
+import old data. Each time, you either retype it or find the last time you sent it and
+copy it from there. Keeping those replies one shortcut away saves **about 20 hours a
+year** for someone handling 30 conversations a day. The arithmetic is below.
+
+## Use your helpdesk's macros first
+
+If all your replies go out through one helpdesk — Zendesk, Freshdesk, Help Scout,
+Intercom — it almost certainly has saved replies built in, often called *macros*. They
+can fill in the customer's name and set the ticket status as well, which no clipboard tool
+can. Use them.
+
+The gap is everywhere else. The same answer also goes into email, a team chat, a GitHub
+issue, a forum thread, a sales call's follow-up. Macros live inside one tool; a clipboard
+history works in all of them.
+
+## Saved replies with a clipboard history
+
+A clipboard history already holds every reply you've copied. Making it a reply library
+takes one change of habit: when you write a good answer, copy it once. From then on it's
+in the history and searchable.
+
+Clipmer is ours, so weigh this section accordingly.
+
+<InstallCommand />
+
+Sending a saved reply is three keys:
+
+1. Click into the reply box and press **Ctrl + Shift + D**.
+2. **Type a word from the reply** — `refund`, `import`, `reset`. Search covers the whole
+   text, not only the first line, so a word from the middle of a long answer finds it.
+3. **Enter**. With **Auto-paste on select** on, which works on GNOME, the reply is pasted
+   into the box; elsewhere you press Ctrl+V.
+
+Using a reply moves it to the top of the list, so the answers you give most stay nearest.
+Multi-line replies keep their line breaks.
+
+## Keeping replies for good
+
+The free version keeps your last 100 copies. A reply you use every day never falls off,
+because each use moves it back to the top. A reply you use once a month does: a hundred
+copies later, it's gone.
+
+Clipmer Pro, a one-time $9, keeps them permanently:
+
+- **Folders.** File a reply from its **⋯** menu with **Add to folder** — a *Replies*
+  folder, or one per product. Filed entries are exempt from the history limit and from
+  **Clear history**.
+- **Folder tabs from the keyboard.** In the open window, **→** and **←** switch folders,
+  so a saved reply is **Ctrl + Shift + D**, **→**, **↓**, **Enter**.
+- **Notes.** Add a note such as *refund, EU customers* to an entry, and press **Tab** in
+  the search box to search notes instead of content. Useful for replies that don't
+  contain the word you'd search for.
+
+<Callout type="note" title="Replies with details in them">
+  A saved reply is fixed text. If yours need a name or an order number filled in every
+  time, keep a placeholder like ORDER in the text and replace it before sending, or use a
+  text expander with real placeholders.
+  [Snippet tools compared](/blog/reuse-text-snippets-linux).
+</Callout>
+
+## The estimate
+
+Finding a previous reply and copying it, or retyping it, takes 30 seconds or more; picking
+it from the history takes about 5. The saving is taken as **30 seconds a reply**, and a
+working year as **230 days**.
+
+<SupportTable
+  headers={["Workload", "Conversations a day", "Using a saved reply", "Per day", "Per year"]}
+  rows={[
+    { name: "Part-time support", cells: ["10", "3", "1½ min", "about 6 hours"] },
+    { name: "Full-time support", cells: ["30", "10", "5 min", "about 19 hours"] },
+    { name: "High volume", cells: ["60", "20", "10 min", "about 38 hours"] },
+  ]}
+  caption="30 seconds saved per reply × replies a day × 230 working days."
+/>
+
+These are estimates, not measurements: one in three conversations using a standard answer
+is an assumption, and your ratio may be higher or lower. Retyping also costs more than
+time — the copy-pasted answer is the one you already checked for typos and wrong links.
+
+## Starting a library in a week
+
+You don't need to write a library up front. For one week, every time you write an answer
+you'll probably give again, copy it once after sending. By Friday the answers you give
+most are in the history, ranked by how often you use them. File the ones worth keeping,
+and delete the drafts.
+
+If you also move pieces of information from one place to another — a customer's details
+from an email into a form, say — [copying several things at once](/blog/copy-multiple-items-linux)
+covers that.

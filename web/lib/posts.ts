@@ -36,6 +36,72 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "ubuntu-productivity-tips",
+    title: "Ubuntu productivity tips: nine keyboard habits that save about 25 hours a year",
+    seoTitle: "Ubuntu Productivity Tips That Save 25 Hours a Year",
+    metaDescription:
+      "Nine Ubuntu habits, mostly built-in GNOME shortcuts, and the time each saves: about 25 hours a year in all. The working is shown, so use your own numbers.",
+    description:
+      "Nine keyboard habits for Ubuntu 26.04 and GNOME 50, eight of them already on your machine, each with an honest estimate of the time it saves: launching by typing, Super + number for the dock, Alt + ` between windows of one app, tiling, workspaces, screenshots, Ctrl + L in Files, a custom shortcut, and a clipboard history. About 25 hours a year in total, with the arithmetic shown.",
+    date: "2026-11-07",
+    tags: ["Ubuntu", "Productivity", "GNOME", "Linux"],
+    readingMinutes: 6,
+    related: ["copy-multiple-items-linux", "canned-responses-linux", "clipboard-history-ubuntu"],
+    toc: [
+      { id: "the-estimate-and-how-it-was-made", title: "The estimate, and how it was made" },
+      { id: "1-launch-apps-by-typing", title: "1. Launch apps by typing" },
+      { id: "2-super-1-9-for-the-apps-in-your-dock", title: "2. Super + 1–9 for the apps in your dock" },
+      { id: "3-alt-between-windows-of-the-same-app", title: "3. Alt + ` between windows of the same app" },
+      { id: "4-super-and-super-to-tile", title: "4. Super + ← and Super + → to tile" },
+      { id: "5-workspaces-from-the-keyboard", title: "5. Workspaces from the keyboard" },
+      { id: "6-print-for-screenshots", title: "6. Print for screenshots" },
+      { id: "7-ctrl-l-in-files", title: "7. Ctrl + L in Files" },
+      { id: "8-one-custom-shortcut-for-the-thing-you-open-every-day", title: "8. One custom shortcut for the thing you open every day" },
+      { id: "9-a-clipboard-history", title: "9. A clipboard history" },
+      { id: "building-the-habits", title: "Building the habits" },
+    ],
+  },
+  {
+    slug: "copy-multiple-items-linux",
+    title: "How to copy multiple items at once on Linux, and get about 5 hours a year back",
+    seoTitle: "Copy Multiple Items at Once on Linux: 5 Hours a Year",
+    metaDescription:
+      "Linux pastes only your last copy. The built-in way to carry two things, and how to copy many first and paste later: about 5 hours a year. Math included.",
+    description:
+      "Linux pastes only the last thing you copied, so filling a form from an email means a round trip per field. The built-in primary selection carries a second item; a clipboard history carries all of them, so you can copy every piece first and fill the form in one pass. With the estimate: about 5 hours a year at five transfers a day.",
+    date: "2026-11-07",
+    tags: ["Clipboard", "Productivity", "Linux"],
+    readingMinutes: 4,
+    related: ["get-back-overwritten-clipboard-linux", "ubuntu-productivity-tips", "canned-responses-linux"],
+    toc: [
+      { id: "why-linux-pastes-only-the-last-thing-you-copied", title: "Why Linux pastes only the last thing you copied" },
+      { id: "the-built-in-trick-two-things-at-once", title: "The built-in trick: two things at once" },
+      { id: "more-than-two-copy-everything-first", title: "More than two: copy everything first" },
+      { id: "the-estimate", title: "The estimate" },
+      { id: "where-else-it-fits", title: "Where else it fits" },
+    ],
+  },
+  {
+    slug: "canned-responses-linux",
+    title: "Canned responses on Linux: saved replies worth about 20 hours a year",
+    seoTitle: "Canned Responses on Linux: 20 Hours a Year Back",
+    metaDescription:
+      "Saved replies that work in every app on Linux, not just your helpdesk: three keys per reply, about 20 hours a year at 30 conversations a day. Math included.",
+    description:
+      "Helpdesk macros only work inside the helpdesk; the same answers also go into email, chat, GitHub and forums. How to keep saved replies one shortcut away in every app on Linux with a clipboard history, how to keep the rare ones for good, where fixed text falls short, and the estimate: about 20 hours a year at 30 conversations a day.",
+    date: "2026-11-07",
+    tags: ["Clipboard", "Productivity", "Linux"],
+    readingMinutes: 4,
+    related: ["reuse-text-snippets-linux", "copy-multiple-items-linux", "ubuntu-productivity-tips"],
+    toc: [
+      { id: "use-your-helpdesks-macros-first", title: "Use your helpdesk's macros first" },
+      { id: "saved-replies-with-a-clipboard-history", title: "Saved replies with a clipboard history" },
+      { id: "keeping-replies-for-good", title: "Keeping replies for good" },
+      { id: "the-estimate", title: "The estimate" },
+      { id: "starting-a-library-in-a-week", title: "Starting a library in a week" },
+    ],
+  },
+  {
     slug: "clipboard-extension-stopped-working-gnome-upgrade",
     title: "Clipboard extension stopped working after a GNOME upgrade? Why it happens every six months, and what to do",
     seoTitle: "Clipboard Indicator Broken on GNOME 51: What to Do",
@@ -185,6 +251,7 @@ export const POSTS: Post[] = [
     description:
       "Linux keeps one clipboard item, so a new copy replaces the old one for good. But the primary selection, the app you copied from, your shell history and KDE's built-in history can each still hold what you lost. Here is where to look, in the order that matters, and how to make it the last time.",
     date: "2026-11-02",
+    updated: "2026-11-07",
     tags: ["Clipboard", "Linux", "GNOME"],
     readingMinutes: 5,
     related: ["clipboard-empty-after-closing-app-linux", "kde-plasma-clipboard-history-not-working", "clipboard-history-ubuntu"],
@@ -376,6 +443,7 @@ export const POSTS: Post[] = [
     description:
       "Shell history, aliases, editor snippets, text expanders like espanso and a clipboard history each solve part of retyping the same commands, addresses and replies. Where each one stops, and how to use a clipboard history as a snippet library that keeps the things you reuse.",
     date: "2026-11-02",
+    updated: "2026-11-07",
     tags: ["Productivity", "Linux", "Clipboard"],
     readingMinutes: 4,
     related: ["hide-clipboard-secrets-screen-sharing", "get-back-overwritten-clipboard-linux", "clipboard-history-after-reboot-linux"],
@@ -637,6 +705,12 @@ export const POST_CONTENT: Record<
     import("@/content/blog/clipboard-managers-on-wayland.mdx"),
   "clipboard-history-ubuntu": () =>
     import("@/content/blog/clipboard-history-ubuntu.mdx"),
+  "ubuntu-productivity-tips": () =>
+    import("@/content/blog/ubuntu-productivity-tips.mdx"),
+  "copy-multiple-items-linux": () =>
+    import("@/content/blog/copy-multiple-items-linux.mdx"),
+  "canned-responses-linux": () =>
+    import("@/content/blog/canned-responses-linux.mdx"),
 };
 
 /** Newest first. */

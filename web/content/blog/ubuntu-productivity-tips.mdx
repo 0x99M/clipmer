@@ -1,0 +1,142 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+Most productivity advice for Ubuntu is a list of apps to install. This one is mostly
+keyboard habits that are already on your machine, each with an honest estimate of the time
+it saves. Added up, the nine below come to **about 25 hours a year** for someone at a
+desk all day. The working comes first, so you can swap in your own numbers.
+
+Every shortcut here is a default on Ubuntu 26.04 LTS with GNOME 50, read from the system's
+own settings schemas. Most are unchanged on 24.04.
+
+## The estimate, and how it was made
+
+Each habit gets three numbers: how often a typical desk worker does the thing, how many
+seconds the habit saves each time compared with the mouse route, and the product of the
+two. A working year is taken as **230 days**: 260 weekdays, minus holidays and leave.
+
+<SupportTable
+  headers={["Habit", "Times a day", "Seconds saved each", "Per day"]}
+  rows={[
+    { name: "1. Launch apps by typing", cells: ["10", "3", "30 s"] },
+    { name: "2. Super + 1–9 for dock apps", cells: ["15", "2", "30 s"] },
+    { name: "3. Alt + ` between windows of one app", cells: ["20", "2", "40 s"] },
+    { name: "4. Super + ← / → to tile", cells: ["6", "5", "30 s"] },
+    { name: "5. Workspaces from the keyboard", cells: ["10", "2", "20 s"] },
+    { name: "6. Print for screenshots", cells: ["2", "10", "20 s"] },
+    { name: "7. Ctrl + L in Files", cells: ["4", "5", "20 s"] },
+    { name: "8. One custom shortcut", cells: ["5", "4", "20 s"] },
+    { name: "9. Clipboard history", cells: ["9", "15–30", "195 s"], highlight: true },
+  ]}
+  caption="Total: 405 seconds a day, about 6¾ minutes. Over 230 working days that is just under 26 hours, rounded down to 25 in the title."
+/>
+
+These are estimates, not measurements. Nobody timed a panel of users; the seconds are what
+the mouse route costs when you do it at a normal pace, and the counts are deliberately
+middling. If you live in two apps all day, habit 3 is worth more and habit 1 less. The
+point of writing the numbers down is that you can disagree with a specific one.
+
+## 1. Launch apps by typing
+
+Press **Super**, type the first letters of the app, press **Enter**. The overview searches
+apps, settings panels and files as you type, so `term` finds Terminal and `blu` finds the
+Bluetooth settings panel. Reaching for the app grid with **Super + A** and scrolling is the slow
+route this replaces.
+
+## 2. Super + 1–9 for the apps in your dock
+
+The Ubuntu Dock numbers its pinned apps from the top. **Super + 1** opens or focuses the
+first, **Super + 2** the second, and so on. Pin the five apps you use most, in a fixed
+order, and you stop looking for them.
+
+## 3. Alt + ` between windows of the same app
+
+**Alt + Tab** switches between *applications*. **Alt + `** — the key above Tab — switches
+between windows *of the current application*: two browser windows, three terminals, the
+document and its export. It's the shortcut people most often don't know exists, and the
+one that replaces the most Alt+Tab-then-squint.
+
+## 4. Super + ← and Super + → to tile
+
+**Super + ←** puts the focused window on the left half of the screen, **Super + →** on the
+right. A reference on one side and the thing you are writing on the other takes two key
+presses instead of two drags and two resizes. Press the same key again to restore the
+window.
+
+## 5. Workspaces from the keyboard
+
+**Super + Page Down** and **Super + Page Up** move to the next and previous workspace;
+**Ctrl + Alt + → / ←** do the same. Add **Shift** to take the focused window with you.
+One workspace for communication and one for the work itself means the chat window stops
+covering the editor, and switching back is a key press rather than minimising three things.
+
+## 6. Print for screenshots
+
+**Print** opens GNOME's screenshot tool with an area already selectable. **Shift + Print**
+captures the whole screen and **Alt + Print** the focused window, both without any dialog.
+Every screenshot is saved to `~/Pictures/Screenshots` *and* put on the clipboard, so you
+can paste it straight into a chat or a bug report. **Ctrl + Shift + Alt + R** starts a
+screen recording.
+
+## 7. Ctrl + L in Files
+
+In the Files app, **Ctrl + L** turns the breadcrumb bar into a text field. Type or paste
+a path and press Enter. Typing `/` or `~` does the same. For a folder six levels deep that
+you already know the path to, it beats clicking through every level.
+
+## 8. One custom shortcut for the thing you open every day
+
+**Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts** lets you bind
+any command to a key. Give one to the script, folder or app you open several times a day
+and has no shortcut of its own: `nautilus ~/Projects/current`, a VPN toggle, a notes file.
+One is enough to start; most people who add one add three more within a month.
+
+**Ctrl + Alt + T**, which opens a terminal, is the built-in example of the same idea.
+
+## 9. A clipboard history
+
+This is the biggest number in the table, and the only habit that needs something
+installed: Ubuntu keeps one clipboard item, and the next copy replaces it. Two things go
+wrong because of that, several times a day:
+
+- **You need something you copied earlier.** A link from an hour ago, a value you copied
+  before the one you just pasted. Without a history, you go back to wherever it came from
+  and find it again. Four times a day at about 30 seconds is two minutes.
+- **You retype things you've copied many times.** An address, a command, a standard
+  reply. Five times a day at 15 seconds is another minute and a quarter.
+
+A clipboard history keeps every copy, and searching it takes a few letters.
+[Clipboard history on Ubuntu](/blog/clipboard-history-ubuntu) compares the options,
+including the GNOME extensions; this section shows ours.
+
+Clipmer is ours, so weigh this section accordingly.
+
+<InstallCommand />
+
+1. **Ctrl + Shift + D** opens the history over whatever you are doing.
+2. **Type a few letters** of what you copied. The list filters as you type.
+3. **Enter** copies it back. With **Auto-paste on select** switched on, which works on
+   GNOME, it also pastes into the window you came from; elsewhere you press Ctrl+V.
+
+The free version keeps your last 100 copies. Two workflows built on it have their own
+posts, each with its own estimate:
+[copying several things at once](/blog/copy-multiple-items-linux) to fill a form in one
+trip, and [saved replies](/blog/canned-responses-linux) for anyone who answers the same
+questions every day.
+
+<Callout type="note" title="Without the clipboard history">
+  Habits 1 to 8 come to 210 seconds a day, about 13 hours a year, with nothing installed.
+  If you only take one thing from this post, take Alt + `.
+</Callout>
+
+## Building the habits
+
+A shortcut saves nothing until you stop reaching for the mouse, and that takes about a
+week per habit. Two things make it stick:
+
+- **One at a time.** Pick the habit that matches the thing you do most, use only that one
+  for a week, then add the next. Learning nine at once means learning none.
+- **Catch yourself, don't plan.** The moment you notice your hand on the way to the mouse
+  for one of these, stop and press the keys instead. It feels slower for two days and then
+  it isn't.

@@ -1,0 +1,108 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+An email has a name, a company, an email address and a VAT number in it, and all four
+have to go into a form. The usual way is four round trips: switch to the email, find the
+next piece, copy it, switch back, find the field, paste. Linux pastes only the last thing
+you copied, so you can't collect all four first.
+
+You can, with two different tools: one already built in, which holds two things, and a
+clipboard history, which holds as many as you like. Working this way saves **about five
+hours a year** for someone who does it a few times a day; the estimate is worked through
+below.
+
+## Why Linux pastes only the last thing you copied
+
+**Ctrl + C** writes to the *clipboard*, and there is one of it. The next copy replaces the
+last, and nothing on a stock Ubuntu, Fedora or Mint install keeps the old one. Windows has
+**Win + V** for this; on those Linux desktops it is a separate tool you install.
+
+There is, however, a second slot most people never use.
+
+## The built-in trick: two things at once
+
+Linux has a **primary selection** alongside the clipboard. Highlighting text with the mouse
+writes to it, and a **middle-click** pastes it. The two are independent, so you can carry
+two things at once:
+
+1. Select the first piece and press **Ctrl + C**. It goes to the clipboard.
+2. Highlight the second piece. Don't copy it; highlighting is enough.
+3. In the form, **Ctrl + V** pastes the first, and **middle-click** pastes the second.
+
+This works on GNOME, KDE Plasma and the wlroots compositors, on Wayland and X11, in most
+applications. On a touchpad, a three-finger tap usually acts as the middle button.
+
+It stops at two. And the primary selection is fragile: highlighting *anything* replaces
+it, including selecting the contents of a form field before you paste. For more than two
+pieces, you need a history.
+
+## More than two: copy everything first
+
+With a clipboard history every copy is kept, so the workflow turns around: collect all the
+pieces from the source in one pass, then fill the whole form in one pass.
+
+**Step 1, in the email.** Select the name, **Ctrl + C**. Select the company, **Ctrl + C**.
+The email address, the VAT number: the same. You never leave the email, so you never lose
+your place in it.
+
+**Step 2, in the form.** Click the first field, open the history, pick the piece, and
+repeat for each field. You never go back to the email.
+
+Clipmer is ours, so weigh this section accordingly. With it, step 2 is three keys per
+field:
+
+<InstallCommand />
+
+1. **Ctrl + Shift + D** opens the history over the form.
+2. **Type a few letters** of the piece you want — `maya`, `labs`, `@`, `SE55`. Search
+   matches anywhere in an entry, ignoring case.
+3. **Enter** puts it back on the clipboard and closes the window. With **Auto-paste on
+   select** on, which works on GNOME, it also pastes into the field; elsewhere, Ctrl+V.
+
+The piece you just used moves to the top of the list, so the history stays in the order
+you actually use things. The free version keeps your last 100 copies, far more than any
+form needs.
+
+<Callout type="note" title="Pasting into a terminal">
+  Auto-paste presses Ctrl+V, and most terminals paste with Ctrl+Shift+V. In a terminal,
+  choose the entry and press Ctrl+Shift+V yourself.
+  [What auto-paste does and where it works](/blog/clipboard-manager-auto-paste-wayland).
+</Callout>
+
+## The estimate
+
+Each piece of information moved the old way costs a switch to the source, finding your
+place in it again, a copy, a switch back and finding the field. Collecting first removes
+the switch and the re-finding for every piece but the first, and opening the history and
+typing a few letters costs a little of that back. The net saving is taken as **4 seconds
+a piece**. A working year is **230 days**.
+
+<SupportTable
+  headers={["How often", "Transfers a day", "Pieces each", "Per day", "Per year"]}
+  rows={[
+    { name: "Light", cells: ["2", "4", "32 s", "about 2 hours"] },
+    { name: "Typical", cells: ["5", "4", "80 s", "about 5 hours"] },
+    { name: "Heavy (admin, support, sales ops)", cells: ["12", "4", "192 s", "about 12 hours"] },
+  ]}
+  caption="4 seconds saved per piece × pieces × transfers × 230 working days."
+/>
+
+This is an estimate, not a measurement. The clock time is also the smaller part of the
+gain: every switch back to the source is a chance to lose your train of thought, or to
+paste the thing you copied before last. Collecting first removes those chances too, and
+the table doesn't count them.
+
+## Where else it fits
+
+The same pattern works anywhere the pieces come from one place and go to another:
+
+- **Writing an update from several tabs.** A link from one, a number from another, a quote
+  from the third, then write the message once and paste each piece where it belongs.
+- **Filing a bug report.** The error message, your system details and the URL, collected
+  while you reproduce the bug, pasted when you file it.
+- **Moving a contact or an order between two systems** that don't talk to each other.
+
+If you send the same text over and over rather than different pieces once,
+[saved replies](/blog/canned-responses-linux) is the post for you. For the keyboard
+habits around this one, see [Ubuntu productivity tips](/blog/ubuntu-productivity-tips).
