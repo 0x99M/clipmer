@@ -320,6 +320,7 @@ function hideWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   persistBounds();
   mainWindow.hide();
+  lastHiddenAt = Date.now();
 }
 
 function toggleWindow() {
@@ -367,6 +368,82 @@ function createTray() {
 
 function startClipboardPolling() {
   pollingInterval = setInterval(checkClipboard, POLL_MS);
+}
+
+// ─── Memory ceiling ─────────────────────────────────────────────────────────────
+
+// Chromium's X11 clipboard code leaks native memory on every read that
+// transfers data: about two bytes per byte of clipboard text, per read, never
+// freed. Reproduced on Electron 35.7.5 through 45.2.3 with a bare
+// clipboard.readText() loop; the JS heap stays flat, it is all PartitionAlloc.
+// Polling twice a second therefore grows this process for as long as it runs —
+// ~9 KB/s with 2 KB of text sitting on the clipboard, 458 MB after five days.
+//
+// Electron exposes no clipboard-change event to wait on instead, so the leak is
+// bounded rather than avoided: past the ceiling, restart — but only while the
+// window has been hidden for a minute, so nobody is mid-paste. Nothing is lost:
+// history is flushed on quit, and lastClipboardText is restored from history[0]
+// on launch, so the text still on the clipboard is not recorded twice.
+//
+// The dev build can lower the ceiling to exercise the restart path quickly.
+const MEMORY_CEILING_MB =
+  (profile.isDev && Number(process.env.CLIPMER_MEMORY_CEILING_MB)) || 256;
+const MEMORY_CHECK_MS = 60 * 1000;
+const MEMORY_RESTART_IDLE_MS = 60 * 1000;
+let lastHiddenAt = 0;
+
+function privateMemoryKb() {
+  try {
+    const status = fs.readFileSync('/proc/self/status', 'utf8');
+    return Number(/^RssAnon:\s+(\d+)/m.exec(status)[1]);
+  } catch {
+    return 0;
+  }
+}
+
+// How to start this build again once it has exited. An AppImage's payload does
+// not outlive the process: with FUSE it is a mount that is unmounted on exit,
+// and without FUSE (no libfuse2, e.g. stock Ubuntu 22.04+) the runtime extracts
+// to $TMPDIR/appimage_extracted_<hash> and deletes that directory on exit. So
+// relaunch the .AppImage file itself rather than execPath.
+//
+// The runtime sets $APPDIR to wherever the payload lives, in both modes; only
+// trust $APPIMAGE when this binary is really inside it, because both variables
+// are inherited by anything started from a shell that an AppImage launched.
+function relaunchOptions() {
+  const { APPIMAGE, APPDIR } = process.env;
+  if (!APPIMAGE || !APPDIR || !process.execPath.startsWith(APPDIR + path.sep)) {
+    return undefined;
+  }
+  const args = process.argv.slice(1);
+  if (path.basename(APPDIR).startsWith('.mount_')) {
+    return { execPath: APPIMAGE, args };
+  }
+  // Extracted: the next run must extract too, and it would extract into the
+  // same <hash> directory the old runtime is busy deleting the moment we exit.
+  // Give that deletion a head start.
+  process.env.APPIMAGE_EXTRACT_AND_RUN = '1';
+  return {
+    execPath: '/bin/sh',
+    args: ['-c', 'sleep 3; exec "$0" "$@"', APPIMAGE, ...args],
+  };
+}
+
+function restartToReleaseMemory() {
+  app.relaunch(relaunchOptions());
+  app.isQuitting = true;
+  app.quit();
+}
+
+function startMemoryWatchdog() {
+  setInterval(() => {
+    const kb = privateMemoryKb();
+    if (kb < MEMORY_CEILING_MB * 1024) return;
+    if (mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible()) return;
+    if (Date.now() - lastHiddenAt < MEMORY_RESTART_IDLE_MS) return;
+    console.log(`Restarting to release memory: ${Math.round(kb / 1024)} MB private, ceiling ${MEMORY_CEILING_MB} MB`);
+    restartToReleaseMemory();
+  }, MEMORY_CHECK_MS);
 }
 
 // electron-store 8 re-reads, re-parses and rewrites the entire file on every
@@ -1841,6 +1918,7 @@ app.whenReady().then(() => {
   // rejects the extension must degrade to "that feature is off", never to
   // "the app silently stopped recording anything".
   startClipboardPolling();
+  startMemoryWatchdog();
 
   for (const [label, step] of [
     ['legacy shortcut cleanup', cleanupLegacyShortcut],
@@ -1864,6 +1942,15 @@ app.whenReady().then(() => {
 app.on('web-contents-created', (_event, contents) => {
   contents.on('will-navigate', (e) => e.preventDefault());
   contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+});
+
+// Every quit is a real quit, not just the tray's. The window's close handler
+// turns a close into a hide unless this is set, and SIGTERM (logout, shutdown,
+// systemd, `kill`) reaches it as an ordinary quit — so without this the app
+// refused to exit, never flushed the debounced history write, and was left to
+// be SIGKILLed.
+app.on('before-quit', () => {
+  app.isQuitting = true;
 });
 
 app.on('will-quit', () => {

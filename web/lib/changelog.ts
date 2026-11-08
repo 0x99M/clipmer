@@ -25,6 +25,21 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.6.1",
+    date: "2026-11-08",
+    highlight: "Memory use stays low however long Clipmer runs",
+    changes: [
+      {
+        type: "fixed",
+        text: "Clipmer used more memory the longer it ran: tens of megabytes an hour with a longer text on the clipboard, and several hundred after a few days. The leak is in Chromium's clipboard code, which Clipmer is built on, and every check for a new copy added to it. Clipmer now restarts itself in the background once it passes 256 MB, and only when its window has been closed for at least a minute. Your history, folders and settings are untouched, nothing is recorded twice, and the shortcut works again within a second or two.",
+      },
+      {
+        type: "fixed",
+        text: "Clipmer only quit from its own tray menu and ignored every other request to close, so logging out or shutting down had to force it, and a copy made in the last half second could be lost. It now quits cleanly whenever it is asked to.",
+      },
+    ],
+  },
+  {
     version: "3.6.0",
     date: "2026-11-02",
     highlight: "Bring your history from CopyQ, and switch folders from the keyboard",
