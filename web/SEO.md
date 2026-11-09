@@ -5,6 +5,8 @@ writing this down is that search work pays out in months, and without a fixed
 baseline and a fixed metric it is impossible to tell six months later whether
 anything worked.
 
+Title tests (one title change per page, read on clicks) are logged in `TITLE-TESTS.md`.
+
 ## Baseline — 8 August 2026
 
 From Search Console, property `sc-domain:clipmer.app`:
@@ -191,6 +193,53 @@ DuckDuckGo count against 12/27, and check whether Clipboard Indicator has
 shipped a GNOME 51 build — if it has, the GNOME-upgrade post's "Right now"
 section and both Fedora tables need the one-paragraph refresh they are written
 to take.
+
+## Live SERP check — 3 November 2026 (repeat monthly, next early December)
+
+A spot check, not a metric: one signed-out Google search per query from the
+owner's machine (English, no `gl`/`pws` parameters — adding them scrambled
+the results). Position counts plain web results only, in order (AI Overview,
+Reddit clusters and video blocks are not counted); three result pages read,
+about 28 results. Search Console stays the number to track; this shows
+*which page* ranks and whether the AI Overview names Clipmer.
+
+| Query | Pos. | Ranking page | In AI Overview |
+|---|---:|---|:-:|
+| clipmer | 1 | `/` | yes |
+| clipmer linux | 1 | `/` | yes |
+| ubuntu 26.04 clipboard history | 1 | `/blog/clipboard-history-ubuntu` | yes |
+| best clipboard manager wayland | 4 | `/blog/best-clipboard-manager-wayland` | |
+| copyq alternatives | 4 | `/blog/copyq-alternatives` | |
+| wayland clipboard manager | 5 | `/blog/best-clipboard-manager-wayland` | |
+| niri clipboard manager | 6 | `/blog/best-clipboard-manager-wayland` | |
+| clipboard history ubuntu 24.04 | 7 | `/blog/clipboard-history-ubuntu` | |
+| clipboard manager passwords linux | 7 | `/` | yes |
+| wayland clipboard history | 11 | `/blog/best-clipboard-manager-wayland` | |
+| clipboard history ubuntu | 14 | `/blog/clipboard-history-ubuntu` | |
+| clipboard manager linux | — | | |
+| best clipboard manager linux | — | | |
+| clipboard history fedora | — | (post published 2 Nov) | |
+| clipboard history linux mint | — | (post published 2 Nov) | |
+| xclip not working wayland | — | (post published 2 Nov) | |
+| clear clipboard linux | — | (post published 2 Nov) | |
+| clipboard indicator not working gnome | — | (post published 2 Nov) | |
+| gnome clipboard history shortcut | — | | |
+| wl-copy wl-paste | — | | |
+
+Read next month against this: the six 2 Nov posts should have entered (if
+still absent, check URL Inspection for crawled-not-indexed);
+`clipboard history ubuntu` at 14 versus 1 for the 26.04 variant is the one to
+watch — if it has not moved, try a title that leads with the head phrase
+rather than the version numbers. `clipboard manager linux` staying absent is
+expected (see "Things deliberately not done").
+
+Method (Playwright in the owner's browser, one query at a time, 3–5.5 s
+pause between page loads, stop on any `/sorry/` or captcha): load
+`https://www.google.com/search?q=<query>&hl=en[&start=10|20]`, collect
+`#search a h3` in order, take each result's `cite` as its URL, stop at the
+first `clipmer.app`; on page 1 also test whether "clipmer" appears in the text
+before "Web results" (the AI Overview). Use the same 20 queries, adding new
+ones below the list rather than editing it, so months stay comparable.
 
 ## No analytics
 
