@@ -241,6 +241,37 @@ first `clipmer.app`; on page 1 also test whether "clipmer" appears in the text
 before "Web results" (the AI Overview). Use the same 20 queries, adding new
 ones below the list rather than editing it, so months stay comparable.
 
+## Screenshots and a performance baseline — 15 November 2026
+
+**Screenshots.** Three captures of the real 3.6.1 window
+(`public/screenshots/`, rendered by `components/screenshot.tsx`): the history
+with one hidden entry, a search for `ssh`, and a Pro folder with notes. They
+come from the shipped renderer and preload at 2x, with made-up entries answered
+over IPC, so no real clipboard is in them; every caption says the entries are
+examples and the folders one says Pro. Placed on the home page (new section
+after how-it-works) and in four posts: the Ubuntu guide's Clipmer option, the
+screen-sharing post, the Win+V post and the snippets post. Those four had
+`updated` bumped under the honest-dates rule. Not placed in the Wayland guide,
+the explainer or the CopyQ post: they are title tests in flight
+(`TITLE-TESTS.md`) and stay untouched until read. Recapture rather than edit
+if the window changes.
+
+**Performance baseline, before the screenshots and before any redesign.** The
+PageSpeed Insights API was over its shared daily quota, so this is a lab run in
+Chromium instead: 412×823, 4× CPU throttle, 150 ms latency, 1.6 Mbps down,
+cold cache, two runs each, live site.
+
+| Page | TTFB | FCP = LCP | CLS | Transfer |
+|---|---|---|---|---|
+| `/` | 324–563 ms | 1.66–2.89 s | 0 | 347 KB, 25 requests |
+| `/blog/clipboard-history-ubuntu` | 238–312 ms | 1.43–1.60 s | 0 | 369 KB, 32 requests |
+| `/blog/hide-clipboard-secrets-screen-sharing` | 226–232 ms | 1.10–1.17 s | 0 | 363 KB, 32 requests |
+
+The screenshots load lazily below the fold through `next/image`, so they should
+not move LCP. Re-run the same measurement (or PageSpeed Insights, once the quota
+allows) after this deploy and before any redesign ships; a redesign that moves
+mobile LCP past 2.5 s or CLS above 0 does not ship.
+
 ## No analytics
 
 `app/privacy/page.tsx` states the site "does not use cookies or third-party
@@ -249,7 +280,11 @@ Adding Google Analytics, Plausible or anything similar would contradict a
 published legal page and needs a legal review, not a technical decision.
 
 Search Console needs no script and no cookie, and is the only tool that reports
-actual query data. That is the whole stack.
+actual query data. Bing Webmaster Tools and Ahrefs Webmaster Tools verify the
+same way (Search Console import or a DNS TXT record), so they can be added
+without a script either. A third-party badge or widget script is audited before
+it goes on the site; Proof of Traction's failed on 12 November 2026 because it
+reports every page view.
 
 ## Guard
 
@@ -321,11 +356,10 @@ is fine.
   fixed in `ec2b2e6`.
 - **Targeting `linux clipboard manager`.** Held by It's FOSS, Tecmint and
   OMG!Ubuntu. Out of reach well beyond 12 months on a domain with no links.
-- **Per-post screenshots and a homepage video strip.** No real screenshot of
-  the app exists in the repo; the 3D marketing renders in Downloads draw type
-  badges and times the shipped UI does not have, and shipping them as
-  "screenshots" would be a false picture. Needs captures from the shipped
-  build first (see the owner list under the second review).
+- **A homepage video strip.** Real screenshots now exist (see "Screenshots and
+  a performance baseline" above); the 3D marketing renders in Downloads still
+  must not be used, because they draw type badges and times the shipped UI does
+  not have.
 - **A homepage comparison table.** The CopyQ post already carries the table;
   a second copy on the home page is the duplication pattern this file warns
   about, for 89 impressions at position 20.

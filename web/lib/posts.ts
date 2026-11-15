@@ -295,6 +295,7 @@ export const POSTS: Post[] = [
     description:
       "Pressing Super+V on Ubuntu opens GNOME's notification list, and Ubuntu has no clipboard history at all. One gsettings command frees the key without losing the notification shortcut, and a clipboard manager goes behind it. Plus an honest comparison with Windows' Win+V, including the things Linux doesn't match.",
     date: "2026-11-02",
+    updated: "2026-11-15",
     tags: ["Ubuntu", "GNOME", "Clipboard"],
     readingMinutes: 4,
     related: ["clipboard-history-ubuntu", "clipboard-shortcut-not-working-wayland", "clipboard-manager-auto-paste-wayland"],
@@ -381,6 +382,7 @@ export const POSTS: Post[] = [
     description:
       "Open your clipboard history during a screen share and everyone sees every password, token and address you copied today. Habits that help with any tool, how hiding individual entries works in Clipmer — masked in the list, out of search, behind Reveal in the viewer — and, just as plainly, what hiding does not protect.",
     date: "2026-11-02",
+    updated: "2026-11-15",
     tags: ["Security", "Clipboard", "Linux"],
     readingMinutes: 5,
     related: ["auditing-our-own-clipboard-manager", "clipboard-manager-saving-passwords-linux", "clear-clipboard-linux"],
@@ -443,7 +445,7 @@ export const POSTS: Post[] = [
     description:
       "Shell history, aliases, editor snippets, text expanders like espanso and a clipboard history each solve part of retyping the same commands, addresses and replies. Where each one stops, and how to use a clipboard history as a snippet library that keeps the things you reuse.",
     date: "2026-11-02",
-    updated: "2026-11-07",
+    updated: "2026-11-15",
     tags: ["Productivity", "Linux", "Clipboard"],
     readingMinutes: 4,
     related: ["hide-clipboard-secrets-screen-sharing", "get-back-overwritten-clipboard-linux", "clipboard-history-after-reboot-linux"],
@@ -629,7 +631,7 @@ export const POSTS: Post[] = [
     description:
       "Ubuntu ships no clipboard history. Four options that work on both Ubuntu 24.04 and 26.04 LTS — Clipboard History, GPaste, CopyQ, and Clipmer — with install commands checked on each release, what happened to Pano, and what to do when an extension stops loading after the upgrade.",
     date: "2026-08-01",
-    updated: "2026-11-02",
+    updated: "2026-11-15",
     tags: ["Ubuntu", "GNOME", "Clipboard"],
     readingMinutes: 8,
     related: ["win-v-clipboard-history-linux", "clipboard-extension-stopped-working-gnome-upgrade", "clipboard-history-linux-mint"],

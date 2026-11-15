@@ -7,22 +7,28 @@ commands, API keys, and connection strings — Clipmer lets you mask them before
 screen share, annotate them with notes, and file them into folders, all from a
 tray-based popup that never leaves your machine.
 
-**Ubuntu · GNOME · Wayland**
+**GNOME or KDE Plasma · Wayland or X11 · tested on Ubuntu 24.04 and 26.04**
+
+<p align="center">
+  <img src="web/public/screenshots/clipmer-clipboard-history.png" width="420" alt="The Clipmer window listing recent copies, with one hidden entry shown as a row of dots">
+  <br>
+  <sub>Clipmer 3.6.1. The entries are examples.</sub>
+</p>
 
 ## Features
 
 - Masked entries — stay copyable, but unreadable on screen
-- Folders for grouping SSH commands, credentials, and snippets
-- Clipboard history up to 200 entries, deduplicated
-- Pinned items that survive restarts
-- Instant search across content and notes
-- Inline notes attached to any entry
-- Auto-paste on Wayland via GNOME Shell extension
+- Text clipboard history, deduplicated: the last 100 entries free, 200 with Pro
+- Instant search across content
+- Auto-paste on GNOME via a small Shell extension (off by default)
 - Keyboard-first navigation (arrows, Enter, Esc, Tab)
 - Dark & light themes with custom accent color
 - Adjustable font size (10–18px)
-- Minimal view — distraction-free floating UI
 - Global shortcut `Ctrl+Shift+D` (configurable)
+
+**Pro** ($9 once) adds folders for grouping SSH commands, credentials and
+snippets (filed entries never fall off the history), notes on any entry with
+note search, the minimal view, 200 entries and encrypted backup.
 
 ## Install
 

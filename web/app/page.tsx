@@ -11,6 +11,7 @@ import { SiteNav } from "@/components/site-nav";
 import { Hero } from "@/components/sections/hero";
 import { Features } from "@/components/sections/features";
 import { HowItWorks } from "@/components/sections/how-it-works";
+import { Screenshots } from "@/components/sections/screenshots";
 import { DownloadSection } from "@/components/sections/download";
 import { FromTheBlog } from "@/components/sections/from-the-blog";
 import { Footer } from "@/components/sections/footer";
@@ -87,6 +88,7 @@ export default function Home() {
       <Hero />
       <Features />
       <HowItWorks />
+      <Screenshots />
       <FromTheBlog />
       <DownloadSection />
       <Footer />
