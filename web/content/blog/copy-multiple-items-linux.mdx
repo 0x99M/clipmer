@@ -2,15 +2,16 @@ import { SupportTable } from "@/components/blog/support-table";
 import { Callout } from "@/components/blog/callout";
 import { InstallCommand } from "@/components/blog/install-command";
 
-An email has a name, a company, an email address and a VAT number in it, and all four
-have to go into a form. The usual way is four round trips: switch to the email, find the
-next piece, copy it, switch back, find the field, paste. Linux pastes only the last thing
-you copied, so you can't collect all four first.
+
+An email has a name, an email address and an order number in it, and all three have to go
+into a web form. The usual way is three round trips: switch to the email, find the next
+piece, copy it, switch back, find the field, paste. Linux pastes only the last thing you
+copied, so you can't collect all three first.
 
 You can, with two different tools: one already built in, which holds two things, and a
-clipboard history, which holds as many as you like. Working this way saves **about five
-hours a year** for someone who does it a few times a day; the estimate is worked through
-below.
+clipboard history, which holds as many as you like and lets you paste them one by one.
+Working this way saves **about five hours a year** for someone who does it a few times a
+day; the estimate is worked through below.
 
 ## Why Linux pastes only the last thing you copied
 
@@ -30,8 +31,22 @@ two things at once:
 2. Highlight the second piece. Don't copy it; highlighting is enough.
 3. In the form, **Ctrl + V** pastes the first, and **middle-click** pastes the second.
 
-This works on GNOME, KDE Plasma and the wlroots compositors, on Wayland and X11, in most
-applications. On a touchpad, a three-finger tap usually acts as the middle button.
+On a touchpad, a three-finger tap usually acts as the middle button.
+
+<Callout type="warn" title="GNOME 50 switched middle-click paste off">
+  Since GNOME 50, which is what Ubuntu 26.04 LTS and Fedora 44 run, the setting that lets
+  apps paste the primary selection on a middle-click is **off by default**. GNOME
+  [changed the default](https://gitlab.gnome.org/GNOME/gsettings-desktop-schemas/-/commit/4278209e6a506dfc795afbf7c75043d64cf6c521)
+  in January 2026; GTK apps follow it, and so does Chromium from version 144. On Ubuntu
+  24.04 (GNOME 46) it is still on. To switch it back on:
+
+  ```bash
+  gsettings set org.gnome.desktop.interface gtk-enable-primary-paste true
+  ```
+
+  Firefox has its own `middlemouse.paste` preference and may not follow the GNOME setting.
+  {/* TEST: 26.04 middle-click in Text Editor, Firefox, Chrome before/after the command; 24.04 without it. */}
+</Callout>
 
 It stops at two. And the primary selection is fragile: highlighting *anything* replaces
 it, including selecting the contents of a form field before you paste. For more than two
@@ -42,33 +57,101 @@ pieces, you need a history.
 With a clipboard history every copy is kept, so the workflow turns around: collect all the
 pieces from the source in one pass, then fill the whole form in one pass.
 
-**Step 1, in the email.** Select the name, **Ctrl + C**. Select the company, **Ctrl + C**.
-The email address, the VAT number: the same. You never leave the email, so you never lose
-your place in it.
+**Step 1, in the email.** Select each piece and press **Ctrl + C**. You never leave the
+email, so you never lose your place in it.
 
-**Step 2, in the form.** Click the first field, open the history, pick the piece, and
-repeat for each field. You never go back to the email.
+**Step 2, in the form.** Click the first field, open the history, pick the piece, paste.
+Repeat for each field. You never go back to the email.
 
-Clipmer is ours, so weigh this section accordingly. With it, step 2 is three keys per
-field:
+Any clipboard history does this; [which tool to use](#which-tool-to-use-for-it) compares
+four of them. The example below uses Clipmer.
+
+## A worked example: an email into a web form
+
+Clipmer is ours, so weigh this section accordingly.
 
 <InstallCommand />
 
-1. **Ctrl + Shift + D** opens the history over the form.
-2. **Type a few letters** of the piece you want — `maya`, `labs`, `@`, `SE55`. Search
-   matches anywhere in an entry, ignoring case.
-3. **Enter** puts it back on the clipboard and closes the window. With **Auto-paste on
-   select** on, which works on GNOME, it also pastes into the field; elsewhere, Ctrl+V.
+The email says:
 
-The piece you just used moves to the top of the list, so the history stays in the order
-you actually use things. The free version keeps your last 100 copies, far more than any
-form needs.
+```text
+Name: Sam Rivera
+Email: orders@example.com
+Phone: 555-0142
+```
+
+**In the email:** select `Sam Rivera`, **Ctrl + C**. Select `orders@example.com`,
+**Ctrl + C**. Select `555-0142`, **Ctrl + C**. Three copies, and the clipboard now holds
+only the phone number, which is fine.
+
+**In the web form:**
+
+1. Click the **Name** field. Press **Ctrl + Shift + D**; the history opens over the form.
+2. Type `sam`. Search matches anywhere in an entry, ignoring case, so the name is the only
+   match.
+3. Press **Enter**. The name goes on the clipboard and the window closes. Press
+   **Ctrl + V**.
+4. Click **Email**, **Ctrl + Shift + D**, type `orders`, **Enter**, **Ctrl + V**.
+5. Click **Phone**, **Ctrl + Shift + D**, type `555`, **Enter**, **Ctrl + V**.
+
+{/* TEST: the five steps in a Firefox form on 24.04 and 26.04, auto-paste off; typing jumps to search; one match each.
+SCREENSHOT TO ADD: Clipmer over a Firefox web form, `orders` in the search box, `orders@example.com` selected; example entries, 2x, dark. */}
+
+Searching is what makes this work. The piece you just used moves to the top of the list,
+so after the first paste the order is no longer the order you copied in; a few letters
+find each piece wherever it is.
+
+**Skipping Ctrl + V.** Clipmer can paste for you: turn on **Settings → General →
+Auto-paste on select**, and Enter pastes into the field you came from. It is off by
+default, works on GNOME only, through a small helper extension that needs one logout the
+first time, and it presses Ctrl+V. Elsewhere, press Ctrl+V yourself.
+[What auto-paste does and where it works](/blog/clipboard-manager-auto-paste-wayland).
+{/* TEST: auto-paste on, same steps in Firefox, 26.04 GNOME. */}
 
 <Callout type="note" title="Pasting into a terminal">
   Auto-paste presses Ctrl+V, and most terminals paste with Ctrl+Shift+V. In a terminal,
   choose the entry and press Ctrl+Shift+V yourself.
-  [What auto-paste does and where it works](/blog/clipboard-manager-auto-paste-wayland).
 </Callout>
+
+The free version shows your last 100 copies, far more than any form needs. Clipmer is an
+Electron app, so it is heavier than a GNOME extension; it records text only, runs on
+x86_64, and is source-available under PolyForm Strict 1.0.0, not open source. Folders,
+notes and the minimal view are part of [Pro](/pro), which is paid. The
+[install page](/install) has the `.rpm` and AppImage builds.
+
+## Which tool to use for it
+
+All four keep every copy, so all four do the job. They differ in how you open them, how you
+find the piece, and whether choosing it also pastes it.
+
+<SupportTable
+  headers={["", "Install on Ubuntu", "Opens with", "Finding a piece", "Choosing it also pastes?", "Records highlighted text?"]}
+  rows={[
+    { name: "Clipboard History extension", cells: ["extensions.gnome.org (v51 on 24.04, v54 on 26.04)", "Super + Shift + V", "/ to search; Ctrl + N for the Nth entry", "Yes, on by default (it presses Shift + Insert)", "Only if you turn it on"] },
+    { name: "GPaste", cells: ["apt: gpaste-2 and gnome-shell-extension-gpaste (45 on 24.04, 45.3 on 26.04)", "Ctrl + Alt + H (menu), Ctrl + Alt + G (window)", "Search in the window", "No: it goes on the clipboard, then Ctrl + V", "Only if you turn it on"] },
+    { name: "CopyQ", cells: ["apt: copyq (7.1.0 on 24.04, 13.0.0 on 26.04)", "A shortcut you add for copyq toggle", "Type to filter, Enter", "Option on by default, but CopyQ's docs list pasting among what doesn't work on Wayland for these versions", "Only if you turn it on"] },
+    { name: "Clipmer", cells: ["Download (.deb, .rpm, AppImage)", "Ctrl + Shift + D", "Type to search, Enter", "Off by default; GNOME only, presses Ctrl + V", "No"], highlight: true },
+  ]}
+  caption="Read from each project's own repository, settings schema and docs, extensions.gnome.org and packages.ubuntu.com on 16 November 2026. Clipmer from its own source code."
+/>
+
+- **[Clipboard History](https://extensions.gnome.org/extension/4839/clipboard-history/)**
+  is the lightest option on GNOME and the only one here that pastes by default. Its
+  [README](https://github.com/SUPERCILEX/gnome-clipboard-history) says it is "now in
+  maintenance mode as it is being replaced by Ringboard".
+  {/* TEST: choosing an entry pastes into a Firefox field on 26.04. */}
+- **[GPaste](https://github.com/Keruspe/GPaste)** puts the piece back on the clipboard
+  and leaves the paste to you. Ubuntu packages an older release than upstream's 51.3;
+  [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu) has the install steps.
+- **[CopyQ](https://github.com/hluk/CopyQ)** has "Paste to current window" switched on by
+  default, but the [known issues](https://github.com/hluk/CopyQ/blob/v13.0.0/docs/known-issues.rst)
+  for the versions Ubuntu ships list pasting among what does not work on Wayland, which is
+  the only session Ubuntu 26.04 offers. Its upstream release is 17.0.0.
+  {/* TEST: CopyQ 13.0.0 from apt on 26.04 — does Enter paste into a Firefox field? */}
+- **Clipmer** is the one to pick if the things you copy include passwords or keys you
+  would rather not show on a shared screen: it can
+  [hide individual entries](/blog/hide-clipboard-secrets-screen-sharing). For filling a
+  form alone, it offers nothing the free tools don't.
 
 ## The estimate
 
@@ -103,6 +186,26 @@ The same pattern works anywhere the pieces come from one place and go to another
   while you reproduce the bug, pasted when you file it.
 - **Moving a contact or an order between two systems** that don't talk to each other.
 
-If you send the same text over and over rather than different pieces once,
-[saved replies](/blog/canned-responses-linux) is the post for you. For the keyboard
-habits around this one, see [Ubuntu productivity tips](/blog/ubuntu-productivity-tips).
+## When to use something else
+
+- **Only ever two pieces?** The primary selection is free and already there; on Ubuntu
+  26.04, switch middle-click paste back on first (above).
+- **The same text every day, not different pieces once?** That is a snippet, not a
+  transfer: [saved replies](/blog/canned-responses-linux) and
+  [reusing text snippets](/blog/reuse-text-snippets-linux) cover it, including when a text
+  expander is the better tool.
+- **The same form fields every time** (your own name, address, phone)? Your browser's
+  autofill does that without any clipboard.
+- **On KDE Plasma?** Klipper is already running: **Meta + V** opens it.
+- **On Sway, Hyprland or niri?** Clipmer and the GNOME extensions don't fit;
+  [the best clipboard manager for Wayland](/blog/best-clipboard-manager-wayland) has the
+  pick for each compositor.
+- **Copying images?** Clipmer keeps text only.
+
+For the keyboard habits around this one, see
+[Ubuntu productivity tips](/blog/ubuntu-productivity-tips).
+
+<Callout type="note" title="Update log">
+  16 November 2026: added the tool comparison, a worked example and "when to use something
+  else", and the GNOME 50 change to middle-click paste. 7 November 2026: first published.
+</Callout>

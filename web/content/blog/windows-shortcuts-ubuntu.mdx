@@ -1,0 +1,180 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+
+The Windows key is called **Super** on Ubuntu, and most of what you pressed it with on
+Windows carries over: **Super + L** locks the screen, **Super + D** shows the desktop,
+**Super + Left** and **Super + Right** snap a window to half the screen. A handful don't,
+and those are the ones people search for.
+
+Everything below is the default on both current LTS releases, Ubuntu 24.04 (GNOME 46) and
+Ubuntu 26.04 (GNOME 50), in the standard Ubuntu desktop. The 26.04 defaults were read from
+the installed settings schemas, and the 24.04 ones from GNOME's 46 schema files and
+Ubuntu's 24.04 settings package; the two match for every shortcut in this table.
+
+## The short answer
+
+- **Win + Shift + S** (snip a region) → **Print**, the Print Screen key. It opens GNOME's
+  screenshot tool.
+- **Win + .** (emoji) → **Ctrl + .** or **Ctrl + ;** inside a text field of most apps.
+- **Win + V** (clipboard history) → nothing. **Super + V** opens the notification list,
+  because Ubuntu has no clipboard history. You add one, and you can put it on Super + V.
+- **Win + E** (File Explorer) → nothing by default. One setting adds it.
+- **Ctrl + Alt + Delete** → the log-out dialog, not a task manager.
+
+## The three everyone asks about
+
+### Win + Shift + S: the Print key
+
+On Windows, Win + Shift + S lets you select a region of the screen and capture it to the
+clipboard. On Ubuntu that is the **Print** key on its own. It opens a screenshot
+tool where you drag a region, or pick the whole screen or a window, and capture.
+{/* TEST + VERIFY (GNOME help): where the capture goes — clipboard and ~/Pictures/Screenshots — on 24.04 and 26.04. */}
+
+Two more go straight to a file without the tool: **Shift + Print** takes the whole screen
+and **Alt + Print** takes the active window. For video, **Ctrl + Shift + Alt + R** opens the
+same tool in screen-recording mode.
+
+### Win + . : the emoji panel
+
+Windows opens its emoji panel with Win + . or Win + ;. On Ubuntu, apps built with GTK,
+GNOME's own toolkit, open an emoji chooser with **Ctrl + .** or **Ctrl + ;** while you are
+typing in a text field; GTK's documentation lists both as the default. Apps that aren't
+built with GTK, browsers among them, may not have it.
+{/* TEST: Ctrl + . in GNOME Text Editor, Firefox and Chrome, on 24.04 and 26.04. */}
+
+Ubuntu's input-method framework, IBus, also binds **Super + .** to an emoji picker by
+default, though whether it opens depends on your input-method setup.
+{/* TEST: Super + . with the default English keyboard on 24.04 and 26.04. */}
+
+When neither works, the **Characters** app (open the overview, type "characters") lets you
+search for an emoji and copy it. Both 24.04 and 26.04 include it in the default install.
+
+### Win + V: there is no clipboard history
+
+Win + V opens Windows' clipboard history. Ubuntu has none, in 24.04 or 26.04, and
+**Super + V** opens GNOME's notification list instead (so does **Super + M**). So this one
+is two steps: install a clipboard history, then give it a shortcut.
+[Win+V on Linux](/blog/win-v-clipboard-history-linux) has both: the one command that frees
+Super + V without losing the notification shortcut, and a comparison of what you do and
+don't get compared with Windows.
+
+Clipmer is ours, so weigh this section accordingly. It is one of the options, and opens with
+**Ctrl + Shift + D** until you move it to Super + V:
+
+<InstallCommand />
+
+It is an Electron app, heavier than a GNOME extension, keeps text only, runs on x86_64, and
+is source-available under PolyForm Strict 1.0.0, not open source. The free version shows
+your last 100 copies. The GNOME Clipboard History extension, GPaste and CopyQ are free
+software alternatives; [clipboard history on Ubuntu](/blog/clipboard-history-ubuntu)
+compares all four.
+
+## The full table
+
+<SupportTable
+  headers={["Windows", "What it does there", "Ubuntu 24.04 and 26.04", "Notes"]}
+  rows={[
+    { name: "Win", cells: ["Start menu", "Super", "Opens the overview: type an app's name and press Enter"] },
+    { name: "Win + V", cells: ["Clipboard history", "No equivalent", "Super + V opens notifications; add a clipboard history (above)"] },
+    { name: "Win + . or Win + ;", cells: ["Emoji panel", "Ctrl + . or Ctrl + ; in a text field", "GTK apps; see above"] },
+    { name: "Win + Shift + S", cells: ["Snip a region to the clipboard", "Print", "Opens the screenshot tool"] },
+    { name: "Win + Print Screen", cells: ["Full-screen screenshot to a file", "Shift + Print", "Alt + Print for one window"] },
+    { name: "Win + E", cells: ["File Explorer", "No default", "Add one: see below"] },
+    { name: "Win + D", cells: ["Show and hide the desktop", "Super + D", "Ubuntu also binds Ctrl + Super + D and Ctrl + Alt + D"] },
+    { name: "Win + M", cells: ["Minimise all windows", "No exact equivalent", "Super + D is the closest"] },
+    { name: "Win + L", cells: ["Lock", "Super + L", ""] },
+    { name: "Win + Tab", cells: ["Task View", "Super", "The overview shows every window and the workspaces"] },
+    { name: "Alt + Tab", cells: ["Switch windows", "Alt + Tab", "Super + Tab switches between apps instead"] },
+    { name: "Alt + F4", cells: ["Close the window", "Alt + F4", ""] },
+    { name: "Win + Left / Right", cells: ["Snap to half the screen", "Super + Left / Right", ""] },
+    { name: "Win + Up / Down", cells: ["Maximise / restore", "Super + Up / Down", ""] },
+    { name: "Win + 1 … 9", cells: ["Open the nth taskbar app", "Super + 1 … 9", "Counts the apps in the dock"] },
+    { name: "Win + Ctrl + Left / Right", cells: ["Switch virtual desktop", "Super + Page Up / Page Down, or Ctrl + Alt + Left / Right", "GNOME calls them workspaces"] },
+    { name: "Win + Ctrl + D", cells: ["New virtual desktop", "Not needed", "GNOME adds an empty workspace automatically"] },
+    { name: "Win + Shift + Left / Right", cells: ["Move window to the other monitor", "Super + Shift + Left / Right", ""] },
+    { name: "Win + R", cells: ["Run dialog", "Alt + F2", ""] },
+    { name: "Win + I", cells: ["Settings", "No default", "Super, then type \"settings\""] },
+    { name: "Win + A", cells: ["Quick settings (action center)", "Super + S", "Wi-Fi, sound, Bluetooth, dark style"] },
+    { name: "Win + N", cells: ["Notifications and calendar", "Super + V or Super + M", ""] },
+    { name: "Win + P", cells: ["Choose a display mode", "Super + P", ""] },
+    { name: "Ctrl + Shift + Esc", cells: ["Task Manager", "No default", "System Monitor on 24.04, Resources on 26.04: open it from the overview"] },
+    { name: "Ctrl + Alt + Delete", cells: ["Security screen", "Ctrl + Alt + Delete", "Opens the log-out dialog"] },
+    { name: "Win + H", cells: ["Voice dictation", "No default shortcut", ""] },
+  ]}
+  caption="Windows descriptions from Microsoft's 'Keyboard shortcuts in Windows' page; Ubuntu defaults from the GNOME 46 and 50 settings schemas and Ubuntu's settings overrides, all read on 16 November 2026."
+/>
+
+Sources: Microsoft's
+[Keyboard shortcuts in Windows](https://support.microsoft.com/en-us/windows/keyboard-shortcuts-in-windows-dcc61a57-8ff0-cffe-9796-cb9706c75eec);
+GNOME's schema files for
+[window keys](https://gitlab.gnome.org/GNOME/gsettings-desktop-schemas/-/raw/46.1/schemas/org.gnome.desktop.wm.keybindings.gschema.xml.in),
+[GNOME Shell](https://gitlab.gnome.org/GNOME/gnome-shell/-/raw/46.0/data/org.gnome.shell.gschema.xml.in)
+and [media keys](https://gitlab.gnome.org/GNOME/gnome-settings-daemon/-/raw/46.0/data/org.gnome.settings-daemon.plugins.media-keys.gschema.xml.in);
+Ubuntu's [24.04 settings overrides](https://git.launchpad.net/ubuntu/+source/ubuntu-settings/plain/debian/ubuntu-settings.gsettings-override?h=ubuntu/noble-updates);
+and GTK's documentation for the [emoji chooser](https://docs.gtk.org/gtk4/signal.Text.insert-emoji.html).
+
+{/* TEST: every Ubuntu row on a fresh 24.04 and 26.04 install; spot-check the Microsoft wording (read via a summariser). */}
+
+<Callout type="note" title="The task manager">
+  Ubuntu 24.04's default install includes GNOME System Monitor; 26.04's includes
+  Resources instead. Press Super and type "monitor" or "resources".
+</Callout>
+
+## Shortcuts with no equivalent, and how to add one
+
+GNOME lets you bind any key combination to a command. Open **Settings → Keyboard → View and
+Customize Shortcuts → Custom Shortcuts**, add one, give it a name, a command and a key.
+{/* TEST: menu path on 24.04 and 26.04. */}
+
+<SupportTable
+  headers={["To get", "Command", "Suggested key"]}
+  rows={[
+    { name: "Win + E (Files)", cells: ["nautilus --new-window", "Super + E"] },
+    { name: "Win + I (Settings)", cells: ["gnome-control-center", "Super + I"] },
+    { name: "Ctrl + Shift + Esc (task manager)", cells: ["gnome-system-monitor on 24.04, resources on 26.04", "Ctrl + Shift + Esc"] },
+  ]}
+  caption="If a suggested key does nothing, something else already uses it: pick another."
+/>
+{/* TEST: each command opens the app on 24.04 and 26.04, and each key is free. */}
+
+For **Win + E**, GNOME also has a ready-made **Home folder** shortcut in the **Launchers**
+group of the same settings page, unset by default; giving it a key does the same thing
+without a custom command.
+{/* TEST: the Launchers group and its Home folder entry, on both releases. */}
+
+GNOME does not warn you when a key you pick from outside its Settings app collides with
+one of its own, so if a new shortcut does nothing, check that list first.
+
+## Shortcuts Ubuntu has that Windows doesn't
+
+A few worth learning in your first week:
+
+- **Ctrl + Alt + T** opens a terminal.
+- **Super + Tab** switches between apps, while **Alt + Tab** switches between windows.
+- **Super + H** hides the current window.
+- **Super + A** opens the full app grid.
+- **Super + Ctrl + 1 … 9** opens a *new* window of the nth dock app, rather than switching
+  to the one that is open.
+
+{/* TEST: each of these five on 24.04 and 26.04; Super + Ctrl + 1-9 was read from the 26.04 schema only. */}
+
+[Ubuntu productivity tips](/blog/ubuntu-productivity-tips) goes further into the ones that
+save the most time, including **Alt + `** between windows of the same app.
+
+## When this table doesn't apply
+
+- **Kubuntu or another KDE Plasma desktop.** Plasma has its own shortcuts, and some of
+  them are much closer to Windows: **Meta + V**, for one, already opens a clipboard history.
+  This table is for the GNOME desktop that standard Ubuntu ships.
+- **You changed a shortcut, or an extension did.** The table lists defaults. Settings →
+  Keyboard shows what yours are now.
+- **A Mac-style keyboard or a laptop without a Print key.** The screenshot tool is also in
+  the quick settings menu (**Super + S**).
+  {/* TEST: screenshot button in quick settings on both releases. */}
+
+<Callout type="note" title="Update log">
+  16 November 2026: first published. Windows shortcuts from Microsoft's page and Ubuntu
+  defaults from the GNOME and Ubuntu settings schemas, read the same day.
+</Callout>

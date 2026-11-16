@@ -16,6 +16,8 @@ close something else.
   selection is separate from Ctrl+C, and it may still hold it.
 - **Is the app you copied from still open?** Go back to it. The text is usually still
   sitting where you copied it from, or one Ctrl+Z away.
+- **Was it an API key or token shown only once?** The provider can't show it again;
+  [make a new one](/blog/lost-api-key-shown-once), after checking the places below.
 - **Was it a command?** Your shell history has it; we
   [compared shell history, aliases and clipboard history](/blog/reuse-text-snippets-linux#the-tools-you-already-have-and-where-each-one-stops)
   for the cases it doesn't cover.
@@ -42,7 +44,11 @@ selecting text on this page.
 
 <Callout type="note" title="It works on Wayland too">
   The primary selection is not an X11 leftover. GNOME, KDE Plasma and the wlroots
-  compositors all support it on Wayland, and middle-click paste is on by default in GNOME.
+  compositors all support it on Wayland. Middle-click paste is on by default in GNOME 46
+  (Ubuntu 24.04), but GNOME 50 (Ubuntu 26.04, Fedora 44)
+  [switched it off by default](https://gitlab.gnome.org/GNOME/gsettings-desktop-schemas/-/commit/4278209e6a506dfc795afbf7c75043d64cf6c521).
+  To turn it back on: `gsettings set org.gnome.desktop.interface gtk-enable-primary-paste true`.
+  Firefox has its own setting and may not follow GNOME's.
 </Callout>
 
 ## Go back to where you copied it from

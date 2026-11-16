@@ -1,0 +1,184 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+
+You created an API key, the page showed it once, and before you pasted it anywhere you
+copied something else. The clipboard now holds the other thing, and the provider won't
+show you the key again.
+
+## The short answer
+
+**It can't be recovered from the provider. Create a new key and delete or deactivate the
+old one.** That is not a workaround; it is what the providers tell you to do. AWS puts it
+plainly: "If you lose your secret access key, you must delete the access key and create a
+new one." Stripe: "If you lose a key, rotate or delete it and create another."
+
+A lost key that you never pasted anywhere is not a leak, so there is no emergency. But a
+key that exists and that nobody can find is still a working credential, so don't leave it
+active.
+
+Before you make the new one, spend a minute on the places below. If the key turns up, you
+can still save it properly, though replacing it anyway is the safer habit.
+
+## Look in these places first
+
+- **The page that showed it.** If the tab with the key is still open and you haven't
+  navigated away, it may still be on screen. Copy it from there.
+- **The primary selection.** If you *highlighted* the key before copying over it, and
+  what replaced it came from a Copy button, the highlighted text may still be there.
+  Middle-click into an empty text field. On Ubuntu 26.04, GNOME 50 switched middle-click
+  paste off by default, so first run
+  `gsettings set org.gnome.desktop.interface gtk-enable-primary-paste true`.
+  {/* TEST: highlight text, press a website's Copy button, middle-click into Firefox and
+  GNOME Text Editor, on 24.04 as is and on 26.04 after the command; on 26.04 confirm the
+  command run after the fact still pastes what was highlighted before it. */}
+- **Wherever you pasted it.** A `.env` file, a config file, a terminal command, a chat
+  message to yourself. A CI secret or a secrets manager may not let you read a value
+  back once it is saved.
+- **A clipboard history, if one was already running.** On KDE Plasma, press **Meta + V**:
+  Plasma keeps a clipboard history by default. On GNOME there is none unless you
+  installed one before you copied the key.
+  [What else you can still get back](/blog/get-back-overwritten-clipboard-linux) goes
+  through each of these in more detail.
+
+If none of those has it, it's gone. Move on to the new key.
+
+## What each provider says
+
+Follow the provider's own page, not a summary of it: these pages change, and the button
+names with them.
+
+<SupportTable
+  headers={["Provider", "Shown again later?", "What the docs say to do", "Official page"]}
+  rows={[
+    { name: "AWS IAM access keys", cells: ["No: \"The secret access key can be retrieved only at the time you create it.\"", "Delete the key and create a new one; when rotating, create the second key first and deactivate the old one rather than deleting it straight away", "docs.aws.amazon.com: Manage access keys for IAM users"] },
+    { name: "Stripe secret keys", cells: ["Live keys you create: no. Sandbox keys: always visible", "Rotate or delete the key and create another; a rotated key's old and new values both work for up to 7 days", "docs.stripe.com/keys"] },
+    { name: "GitHub personal access tokens", cells: ["Not stated in GitHub's docs", "Generate a new token; delete the one you no longer need", "docs.github.com: Managing your personal access tokens"] },
+  ]}
+  caption="Quotes read from each provider's documentation on 16 November 2026. Links below."
+/>
+
+- AWS: [Manage access keys for IAM users](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+  and [Update access keys](https://docs.aws.amazon.com/IAM/latest/UserGuide/id-credentials-access-keys-update.html).
+- Stripe: [API keys](https://docs.stripe.com/keys).
+- GitHub: [Managing your personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
+
+For any other provider, search its documentation for "rotate" or "revoke": the answer is
+the same shape everywhere, a new key and the old one switched off.
+
+Stripe has one exception worth knowing: in live mode, keys Stripe created for you can be
+revealed again, but "If you create a secret key yourself, you can't reveal it after
+you've seen it once."
+
+## Replace it without breaking anything
+
+If the lost key was brand new, nothing uses it yet: create a new one, save it (next
+section), and delete the lost one.
+
+If you are replacing a key that something already depends on, the order matters, and AWS
+describes the safe one: "While the first access key is still active, create a second
+access key." Then:
+
+1. Create the new key and **save it before you do anything else**. AWS's rotation page
+   calls the moment it is shown "your only opportunity to save your secret access key".
+2. Put the new key everywhere the old one was used.
+3. **Deactivate** the old key rather than deleting it, if the provider allows that. AWS
+   recommends exactly this, so you can switch it back on if something breaks.
+4. Once nothing has failed for a while, delete the old key.
+
+AWS allows "a maximum of two access keys per user", so if you already have two, you have
+to delete one before you can create the replacement.
+
+## Where the new key should live
+
+Not in the clipboard, and not in a clipboard history. Both are built to be convenient,
+which is the opposite of what a credential needs.
+
+- **For you, as a person:** a password manager entry, next to the login for that
+  service. You can find it again, it is encrypted, and it syncs or backs up the way
+  your passwords already do.
+- **For code that runs somewhere else:** a secrets manager. AWS describes Secrets Manager
+  as helping you "manage, retrieve, and rotate database credentials, application
+  credentials, OAuth tokens, API keys, and other secrets throughout their lifecycles", and
+  GitHub's [Actions secrets](https://docs.github.com/en/actions/concepts/security/secrets)
+  "allow you to store sensitive information in your organization, repository, or
+  repository environments". See [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html).
+- **For local development:** a `.env` file that is listed in `.gitignore` before you
+  write the key into it.
+
+In examples, a placeholder like `sk_test_EXAMPLE_4242` or `EXAMPLE_NOT_A_REAL_TOKEN` is
+fine to copy around. A real key is not.
+
+## What a clipboard history can and can't do
+
+A clipboard history would have caught this one: it records each copy as you make it, so
+the key would still be in the list after you copied over it. That is the case for having
+one. The limits matter just as much:
+
+- **It only has what it saw.** It records copies made while it is running, after you
+  installed it. It can't find a key copied before that.
+- **It only has the clipboard you copied to.** Clipmer records **Ctrl + C** copies and Copy
+  buttons, which both write the clipboard. It does not record the primary selection, so
+  text you only highlighted is not in it.
+  {/* TEST: press the Copy button next to a newly created key and confirm Clipmer records it, on 26.04. */}
+- **Older copies fall off.** Clipmer's free version shows your last 100 copies; Pro shows
+  200. A key copied a busy week ago may already be past the end of the list.
+- **Text only.** Clipmer keeps text, which is what a key is, but not images.
+- **It is not a safe place to keep the key.** Clipmer's history is a plain-text file at
+  `~/.config/clipmer/clipmer-data.json`. It is not encrypted. Any program running as you
+  can read it.
+
+So treat it as a safety net for the minutes between copying a key and saving it properly,
+never as the place a key lives. Once the key is in your password manager or secrets
+manager, delete the entry from the history: in Clipmer, open its **⋯** menu, choose
+**Delete**, and click again to confirm.
+
+Clipmer is ours, so weigh this section accordingly.
+
+<InstallCommand />
+
+Open it with **Ctrl + Shift + D**. Clipmer runs on x86_64 Linux and is tested on Ubuntu
+with GNOME; it is an Electron app, so it is heavier than a GNOME extension or CopyQ. It is
+source-available under PolyForm Strict 1.0.0, not open source. The `.rpm` and AppImage
+builds are on the [install page](/install).
+
+<Callout type="warn" title="Password managers' hint is not read">
+  When a password manager copies a secret, it can mark it with a hint
+  (`x-kde-passwordManagerHint`) so clipboard managers skip it. Clipmer doesn't read that
+  hint, so a key copied from a password manager is recorded like anything else.
+  [Clipboard managers that save passwords](/blog/clipboard-manager-saving-passwords-linux)
+  lists which tools do read it.
+</Callout>
+
+## Keeping it off a shared screen
+
+The other way a clipboard history hurts you with keys is on a call. Open the history while
+sharing your screen and everyone sees the key you copied this morning.
+
+In Clipmer, open the entry's **⋯** menu and choose **Hide**. The entry then shows as a
+fixed row of ten dots, is left out of search, and opens masked in the full-content viewer
+until you press **Reveal**. Choosing it still copies the real key. Hiding is a display
+setting, not encryption: the key is still plain text in the history file.
+[Screen sharing with a clipboard manager](/blog/hide-clipboard-secrets-screen-sharing)
+covers the habits that help with any tool, and what hiding does not protect.
+
+If a real key was visible on a recorded call or a stream, treat it as leaked and replace
+it as above. Blurring the recording later does not un-share it.
+
+## When to use something else
+
+- **You are on KDE Plasma.** Klipper is already running and already keeps a history.
+  [KDE Plasma clipboard history not working?](/blog/kde-plasma-clipboard-history-not-working)
+  if it isn't.
+- **You want secrets kept out of the history automatically.** Klipper, CopyQ, GPaste 51.1,
+  Clipboard History and cliphist skip entries marked with the password-manager hint;
+  Clipmer does not. The details, and which password managers set the hint, are in
+  [clipboard managers that save passwords](/blog/clipboard-manager-saving-passwords-linux).
+- **You want no history at all.** Then the habit is the fix: paste a new key into its
+  final place before you copy anything else.
+
+<Callout type="note" title="Update log">
+  16 November 2026: first published. Provider quotes read from AWS, Stripe and GitHub
+  documentation the same day.
+</Callout>

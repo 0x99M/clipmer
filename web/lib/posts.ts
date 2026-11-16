@@ -36,6 +36,50 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "lost-api-key-shown-once",
+    title: "The API key was shown once and you copied over it: what now",
+    seoTitle: "Lost an API Key That Was Shown Once? Make a New One",
+    metaDescription:
+      "A key shown once can't be shown again: not by AWS, not by Stripe. Where it might still be, how to replace it safely, and where it should live next time.",
+    description:
+      "You created an API key, the page showed it once, and before you saved it you copied something else. The provider can't show it again, so the fix is a new key. But first check the few places it may still be, then replace it without breaking what uses it, and put the new one somewhere better than the clipboard.",
+    date: "2026-11-16",
+    tags: ["Security", "Clipboard", "Linux"],
+    readingMinutes: 6,
+    related: ["hide-clipboard-secrets-screen-sharing", "clipboard-manager-saving-passwords-linux", "get-back-overwritten-clipboard-linux"],
+    toc: [
+      { id: "the-short-answer", title: "The short answer" },
+      { id: "look-in-these-places-first", title: "Look in these places first" },
+      { id: "what-each-provider-says", title: "What each provider says" },
+      { id: "replace-it-without-breaking-anything", title: "Replace it without breaking anything" },
+      { id: "where-the-new-key-should-live", title: "Where the new key should live" },
+      { id: "what-a-clipboard-history-can-and-cant-do", title: "What a clipboard history can and can't do" },
+      { id: "keeping-it-off-a-shared-screen", title: "Keeping it off a shared screen" },
+      { id: "when-to-use-something-else", title: "When to use something else" },
+    ],
+  },
+  {
+    slug: "windows-shortcuts-ubuntu",
+    title: "Windows shortcuts on Ubuntu: what Win+V, Win+. and Win+Shift+S become",
+    seoTitle: "Windows Shortcuts on Ubuntu: The Equivalents Table",
+    metaDescription:
+      "Win+Shift+S is Print, Win+L is Super+L, Win+V has no equivalent until you add one. Every common Windows shortcut on Ubuntu 24.04 and 26.04, in one table.",
+    description:
+      "Just switched from Windows? The Windows key is Super on Ubuntu, and most shortcuts carry over with it: Super+L locks, Super+D shows the desktop, Super+Left and Right snap windows. A few don't: Win+Shift+S is the Print key, the emoji panel is Ctrl+. in most apps, and Super+V opens notifications because Ubuntu has no clipboard history. Every common shortcut mapped for Ubuntu 24.04 and 26.04, with the ones that have no equivalent and how to add them.",
+    date: "2026-11-16",
+    tags: ["Ubuntu", "GNOME", "Productivity"],
+    readingMinutes: 6,
+    related: ["win-v-clipboard-history-linux", "ubuntu-productivity-tips", "clipboard-history-ubuntu"],
+    toc: [
+      { id: "the-short-answer", title: "The short answer" },
+      { id: "the-three-everyone-asks-about", title: "The three everyone asks about" },
+      { id: "the-full-table", title: "The full table" },
+      { id: "shortcuts-with-no-equivalent-and-how-to-add-one", title: "Shortcuts with no equivalent, and how to add one" },
+      { id: "shortcuts-ubuntu-has-that-windows-doesnt", title: "Shortcuts Ubuntu has that Windows doesn't" },
+      { id: "when-this-table-doesnt-apply", title: "When this table doesn't apply" },
+    ],
+  },
+  {
     slug: "ubuntu-productivity-tips",
     title: "Ubuntu productivity tips: nine keyboard habits that save about 25 hours a year",
     seoTitle: "Ubuntu Productivity Tips That Save 25 Hours a Year",
@@ -44,6 +88,7 @@ export const POSTS: Post[] = [
     description:
       "Nine keyboard habits for Ubuntu 26.04 and GNOME 50, eight of them already on your machine, each with an honest estimate of the time it saves: launching by typing, Super + number for the dock, Alt + ` between windows of one app, tiling, workspaces, screenshots, Ctrl + L in Files, a custom shortcut, and a clipboard history. About 25 hours a year in total, with the arithmetic shown.",
     date: "2026-11-07",
+    updated: "2026-11-16",
     tags: ["Ubuntu", "Productivity", "GNOME", "Linux"],
     readingMinutes: 6,
     related: ["copy-multiple-items-linux", "canned-responses-linux", "clipboard-history-ubuntu"],
@@ -66,19 +111,23 @@ export const POSTS: Post[] = [
     title: "How to copy multiple items at once on Linux, and get about 5 hours a year back",
     seoTitle: "Copy Multiple Items at Once on Linux: 5 Hours a Year",
     metaDescription:
-      "Linux pastes only your last copy. The built-in way to carry two things, and how to copy many first and paste later: about 5 hours a year. Math included.",
+      "Linux pastes only your last copy. Copy several things, then paste them one by one: the built-in way to carry two, four tools for more, and the time it saves.",
     description:
-      "Linux pastes only the last thing you copied, so filling a form from an email means a round trip per field. The built-in primary selection carries a second item; a clipboard history carries all of them, so you can copy every piece first and fill the form in one pass. With the estimate: about 5 hours a year at five transfers a day.",
+      "Linux pastes only the last thing you copied, so filling a form from an email means a round trip per field. The primary selection carries a second item, though GNOME 50 switched its middle-click paste off by default; a clipboard history carries all of them, so you can copy every piece first and paste them one by one. The four tools that do it on Ubuntu, compared, and the estimate: about 5 hours a year.",
     date: "2026-11-07",
+    updated: "2026-11-16",
     tags: ["Clipboard", "Productivity", "Linux"],
-    readingMinutes: 4,
+    readingMinutes: 7,
     related: ["get-back-overwritten-clipboard-linux", "ubuntu-productivity-tips", "canned-responses-linux"],
     toc: [
       { id: "why-linux-pastes-only-the-last-thing-you-copied", title: "Why Linux pastes only the last thing you copied" },
       { id: "the-built-in-trick-two-things-at-once", title: "The built-in trick: two things at once" },
       { id: "more-than-two-copy-everything-first", title: "More than two: copy everything first" },
+      { id: "a-worked-example-an-email-into-a-web-form", title: "A worked example: an email into a web form" },
+      { id: "which-tool-to-use-for-it", title: "Which tool to use for it" },
       { id: "the-estimate", title: "The estimate" },
       { id: "where-else-it-fits", title: "Where else it fits" },
+      { id: "when-to-use-something-else", title: "When to use something else" },
     ],
   },
   {
@@ -159,6 +208,7 @@ export const POSTS: Post[] = [
     description:
       "A password copied from Bitwarden or KeePassXC on Linux is recorded by your clipboard manager before the password manager’s clear timer runs. The hint that keeps it out, x-kde-passwordManagerHint, is set by the KeePassXC and Bitwarden desktop apps but not by the Bitwarden browser extension, keepassxc-cli or GTK 4 apps, and honoured by Klipper, CopyQ, GPaste 51.1, Clipboard History and cliphist but not by Clipboard Indicator or Clipmer. What each gap means, what Clipmer does with the entry instead, and the habits that work with any tool.",
     date: "2026-11-02",
+    updated: "2026-11-16",
     tags: ["Clipboard", "Security", "Linux"],
     readingMinutes: 8,
     related: ["hide-clipboard-secrets-screen-sharing", "clear-clipboard-linux", "auditing-our-own-clipboard-manager"],
@@ -251,7 +301,7 @@ export const POSTS: Post[] = [
     description:
       "Linux keeps one clipboard item, so a new copy replaces the old one for good. But the primary selection, the app you copied from, your shell history and KDE's built-in history can each still hold what you lost. Here is where to look, in the order that matters, and how to make it the last time.",
     date: "2026-11-02",
-    updated: "2026-11-07",
+    updated: "2026-11-16",
     tags: ["Clipboard", "Linux", "GNOME"],
     readingMinutes: 5,
     related: ["clipboard-empty-after-closing-app-linux", "kde-plasma-clipboard-history-not-working", "clipboard-history-ubuntu"],
@@ -295,7 +345,7 @@ export const POSTS: Post[] = [
     description:
       "Pressing Super+V on Ubuntu opens GNOME's notification list, and Ubuntu has no clipboard history at all. One gsettings command frees the key without losing the notification shortcut, and a clipboard manager goes behind it. Plus an honest comparison with Windows' Win+V, including the things Linux doesn't match.",
     date: "2026-11-02",
-    updated: "2026-11-15",
+    updated: "2026-11-16",
     tags: ["Ubuntu", "GNOME", "Clipboard"],
     readingMinutes: 4,
     related: ["clipboard-history-ubuntu", "clipboard-shortcut-not-working-wayland", "clipboard-manager-auto-paste-wayland"],
@@ -382,7 +432,7 @@ export const POSTS: Post[] = [
     description:
       "Open your clipboard history during a screen share and everyone sees every password, token and address you copied today. Habits that help with any tool, how hiding individual entries works in Clipmer — masked in the list, out of search, behind Reveal in the viewer — and, just as plainly, what hiding does not protect.",
     date: "2026-11-02",
-    updated: "2026-11-15",
+    updated: "2026-11-16",
     tags: ["Security", "Clipboard", "Linux"],
     readingMinutes: 5,
     related: ["auditing-our-own-clipboard-manager", "clipboard-manager-saving-passwords-linux", "clear-clipboard-linux"],
@@ -631,7 +681,7 @@ export const POSTS: Post[] = [
     description:
       "Ubuntu ships no clipboard history. Four options that work on both Ubuntu 24.04 and 26.04 LTS — Clipboard History, GPaste, CopyQ, and Clipmer — with install commands checked on each release, what happened to Pano, and what to do when an extension stops loading after the upgrade.",
     date: "2026-08-01",
-    updated: "2026-11-15",
+    updated: "2026-11-16",
     tags: ["Ubuntu", "GNOME", "Clipboard"],
     readingMinutes: 8,
     related: ["win-v-clipboard-history-linux", "clipboard-extension-stopped-working-gnome-upgrade", "clipboard-history-linux-mint"],
@@ -713,6 +763,10 @@ export const POST_CONTENT: Record<
     import("@/content/blog/copy-multiple-items-linux.mdx"),
   "canned-responses-linux": () =>
     import("@/content/blog/canned-responses-linux.mdx"),
+  "lost-api-key-shown-once": () =>
+    import("@/content/blog/lost-api-key-shown-once.mdx"),
+  "windows-shortcuts-ubuntu": () =>
+    import("@/content/blog/windows-shortcuts-ubuntu.mdx"),
 };
 
 /** Newest first. */

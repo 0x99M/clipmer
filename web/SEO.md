@@ -187,7 +187,9 @@ its impressions are question-led); that "Pano is unmaintained" is a fresh angle
 (three indexed posts already say so); that DuckDuckGo lists only 10 of 27 (it
 is 12); that every GitHub release has the same one-line body (nine do).
 
-**Next review: mid-December 2026.** Compare per-page CTR for the Wayland and
+**Next review: mid-December 2026.** Read Bing's indexed count and Ahrefs'
+referring domains and Site Audit health into this file as their first
+baselines. Compare per-page CTR for the Wayland and
 Ubuntu guides against the table above, the six new posts against zero, the
 DuckDuckGo count against 12/27, and check whether Clipboard Indicator has
 shipped a GNOME 51 build — if it has, the GNOME-upgrade post's "Right now"
@@ -267,10 +269,34 @@ cold cache, two runs each, live site.
 | `/blog/clipboard-history-ubuntu` | 238–312 ms | 1.43–1.60 s | 0 | 369 KB, 32 requests |
 | `/blog/hide-clipboard-secrets-screen-sharing` | 226–232 ms | 1.10–1.17 s | 0 | 363 KB, 32 requests |
 
+After the screenshots went live (`76a4e56`, same method, same day): `/` 1.27–1.31 s,
+355 KB; the Ubuntu guide 1.09–1.20 s, 386 KB; the screen-sharing post 1.08–1.11 s,
+380 KB; CLS 0 on all three, no console errors. The lazy images add about 8–17 KB to a
+cold load and do not move LCP. The faster times are run-to-run noise, not a gain.
+
 The screenshots load lazily below the fold through `next/image`, so they should
 not move LCP. Re-run the same measurement (or PageSpeed Insights, once the quota
 allows) after this deploy and before any redesign ships; a redesign that moves
 mobile LCP past 2.5 s or CLS above 0 does not ship.
+
+## Webmaster tools — 15 November 2026
+
+The owner's free SEO stack, and what each tool is for here. None needs a script,
+cookie or tag on the site: the webmaster tools verify by Search Console import (or
+a DNS record on Cloudflare), and the rest are research tools used off-site.
+
+| Tool | State | Read it for |
+|---|---|---|
+| Google Search Console | In use since 2026; the metric above | Queries, pages, indexing reasons, links. Still the only number that is the metric. |
+| Bing Webmaster Tools | Added 15 Nov 2026 by Search Console import; "data processing, up to 48 hours" that day | Bing's index count (DuckDuckGo shows Bing's results), IndexNow receipts, Bing's own queries and keyword volumes. The sitemap entry and the first IndexNow receipts still have to be confirmed there. |
+| Ahrefs Webmaster Tools | Imported from Search Console 15 Nov 2026 (owner reported; meant to cover clipmer.app, shadowkit.app and dotpane.com) | Referring domains and backlinks, and Site Audit issues. First reading, Site Explorer 15 Nov 2026: DR 4.3, 781 referring domains (979 all time), about 1K backlinks (1.3K all time), 0 organic keywords. A DR of 4.3 with 781 domains means almost all of them are low-value or automated sites (scrapers, "site worth" pages and the like), so the count is not evidence of earned links; the quality breakdown is still to be read. Ahrefs' daily history (performance export, 15 Nov): first referring domain 18 Apr 2026, 33 by 12 Jun, then 33 → 241 in the rest of June and 405 by end of July, down to 358 by 11 Sep, up again from 12 Sep, +168 in one day on 28 Sep, peak 803 on 29 Sep, 781 since. One-day jumps of that size are batches of automated sites, not people linking. Confirmed in the Referring domains table: every domain in the top 23 by DR (DR 49-62) carries Ahrefs' SPAM label and is a link farm (`*.shop`/`*.store` names like `seoexpress.*`, `link-baron-*`, `thebacklinks.shop`, each linking to 300-1,000+ unrelated sites), first seen on the June and September jump dates. The owner reports that every one of the 781 carries the SPAM label, so Ahrefs' count of real referring domains on 15 Nov 2026 is zero. Google ignores such links; no disavow. Cross-check with Search Console → Links → Top linking sites, Google's own list. Earning the first real links (AlternativeTo, AUR, curated lists) is the open item. Organic columns are zero on every day. Ahrefs' 0 organic keywords reflects its small keyword database for a new site; Search Console is the source. Its "Traffic Analytics" panel is a paid add-on that needs a script on the site, so never install it (no-tracking rule) and never quote its numbers. The first audit's results are not recorded yet. |
+| Google Keyword Planner | Not set up | Volume ranges to size a post idea before writing it. Without ad spend it shows wide bands, enough to rank ideas. It does not reopen `linux clipboard manager` (see "Things deliberately not done"). |
+| AnswerThePublic, AlsoAsked | Not run yet | The questions people type, for a post's H2s and for sections a ranking post is missing. Plain question headings only: FAQ markup is deprecated (see below). Start with the tracked queries. Never on the three title-test pages before their reads. |
+| PageSpeed Insights | Keyless API often answers 429 | Spot checks; the baseline above was taken in Chromium instead. "No data" for Core Web Vitals is a traffic floor, not a fault. Before and after any redesign. |
+
+Asked of the owner on 15 November 2026, not yet received: the Indexing → Pages
+counts with "All submitted pages" selected, and the URL lists for
+"Crawled - currently not indexed" and "Discovered - currently not indexed".
 
 ## No analytics
 
@@ -281,8 +307,8 @@ published legal page and needs a legal review, not a technical decision.
 
 Search Console needs no script and no cookie, and is the only tool that reports
 actual query data. Bing Webmaster Tools and Ahrefs Webmaster Tools verify the
-same way (Search Console import or a DNS TXT record), so they can be added
-without a script either. A third-party badge or widget script is audited before
+same way (Search Console import), and were added on 15 November 2026 without
+touching the site (see "Webmaster tools" above). A third-party badge or widget script is audited before
 it goes on the site; Proof of Traction's failed on 12 November 2026 because it
 reports every page view.
 
