@@ -43,6 +43,18 @@ export function Footer() {
             <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
             <span>&copy; 0x99M</span>
           </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Our other app:{" "}
+            <a
+              href="https://shadowkit.app/"
+              target="_blank"
+              rel="noopener"
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Shadowkit
+            </a>
+            : habits, money and notes on Android, and network use, reminders and focus on Linux, free. Offline, no account.
+          </p>
         </div>
       </div>
     </footer>
