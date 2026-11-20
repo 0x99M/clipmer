@@ -182,7 +182,7 @@ function SearchScene() {
   );
 }
 
-/* ---- Step 3: Press Enter, pasted ---- */
+/* ---- Step 3: ↓ and Enter, pasted ---- */
 function PasteScene() {
   return (
     <div className="space-y-3">
@@ -311,9 +311,9 @@ const steps = [
   },
   {
     number: "3",
-    title: "Enter pastes it",
+    title: "↓ and Enter, then paste",
     subtitle: "Back where you were",
-    description: "Clipmer disappears and the text lands in the app you came from. No alt-tab, no reformat, no rewrite. You're back in flow.",
+    description: "Press ↓ to pick the match (or click it) and Enter. Clipmer closes with it on your clipboard, back in the app you came from: Ctrl+V pastes it. On GNOME, turn on auto-paste and Enter pastes it for you.",
     scene: PasteScene,
   },
 ];
@@ -326,8 +326,8 @@ export function HowItWorks() {
         <FadeUp>
           <div className="text-center mb-16 lg:mb-24">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Three keystrokes:{" "}
-              <span className="text-orange">Ctrl+C, Ctrl+Shift+D, Enter.</span>
+              Copy, find, paste:{" "}
+              <span className="text-orange">Ctrl+C, Ctrl+Shift+D, ↓ Enter.</span>
             </h2>
             <p className="mt-4 text-muted-foreground text-lg">
               Install it once. You&apos;ll forget it&apos;s there — until the day you need a copy from an hour ago.

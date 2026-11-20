@@ -89,10 +89,13 @@ only the phone number, which is fine.
 1. Click the **Name** field. Press **Ctrl + Shift + D**; the history opens over the form.
 2. Type `sam`. Search matches anywhere in an entry, ignoring case, so the name is the only
    match.
-3. Press **Enter**. The name goes on the clipboard and the window closes. Press
-   **Ctrl + V**.
-4. Click **Email**, **Ctrl + Shift + D**, type `orders`, **Enter**, **Ctrl + V**.
-5. Click **Phone**, **Ctrl + Shift + D**, type `555`, **Enter**, **Ctrl + V**.
+3. Press **↓** to select it, then **Enter** (or click it). Typing clears the selection, so
+   Enter on its own does nothing yet. The name goes on the clipboard and the window
+   closes. Press **Ctrl + V**.
+4. Click **Email**, **Ctrl + Shift + D**, type `orders`, **↓**, **Enter**, **Ctrl + V**.
+5. Click **Phone**, **Ctrl + Shift + D**, type `555`, **↓**, **Enter**, **Ctrl + V**.
+
+**Esc** closes the window without choosing anything.
 
 {/* TEST: the five steps in a Firefox form on 24.04 and 26.04, auto-paste off; typing jumps to search; one match each.
 SCREENSHOT TO ADD: Clipmer over a Firefox web form, `orders` in the search box, `orders@example.com` selected; example entries, 2x, dark. */}
@@ -130,7 +133,7 @@ find the piece, and whether choosing it also pastes it.
     { name: "Clipboard History extension", cells: ["extensions.gnome.org (v51 on 24.04, v54 on 26.04)", "Super + Shift + V", "/ to search; Ctrl + N for the Nth entry", "Yes, on by default (it presses Shift + Insert)", "Only if you turn it on"] },
     { name: "GPaste", cells: ["apt: gpaste-2 and gnome-shell-extension-gpaste (45 on 24.04, 45.3 on 26.04)", "Ctrl + Alt + H (menu), Ctrl + Alt + G (window)", "Search in the window", "No: it goes on the clipboard, then Ctrl + V", "Only if you turn it on"] },
     { name: "CopyQ", cells: ["apt: copyq (7.1.0 on 24.04, 13.0.0 on 26.04)", "A shortcut you add for copyq toggle", "Type to filter, Enter", "Option on by default, but CopyQ's docs list pasting among what doesn't work on Wayland for these versions", "Only if you turn it on"] },
-    { name: "Clipmer", cells: ["Download (.deb, .rpm, AppImage)", "Ctrl + Shift + D", "Type to search, Enter", "Off by default; GNOME only, presses Ctrl + V", "No"], highlight: true },
+    { name: "Clipmer", cells: ["Download (.deb, .rpm, AppImage)", "Ctrl + Shift + D", "Type to search, ↓, Enter", "Off by default; GNOME only, presses Ctrl + V", "No"], highlight: true },
   ]}
   caption="Read from each project's own repository, settings schema and docs, extensions.gnome.org and packages.ubuntu.com on 16 November 2026. Clipmer from its own source code."
 />
@@ -206,6 +209,7 @@ For the keyboard habits around this one, see
 [Ubuntu productivity tips](/blog/ubuntu-productivity-tips).
 
 <Callout type="note" title="Update log">
-  16 November 2026: added the tool comparison, a worked example and "when to use something
+  20 November 2026: the steps now press ↓ before Enter, because typing in the search
+  clears the selection. 16 November 2026: added the tool comparison, a worked example and "when to use something
   else", and the GNOME 50 change to middle-click paste. 7 November 2026: first published.
 </Callout>

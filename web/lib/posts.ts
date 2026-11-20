@@ -88,7 +88,7 @@ export const POSTS: Post[] = [
     description:
       "Nine keyboard habits for Ubuntu 26.04 and GNOME 50, eight of them already on your machine, each with an honest estimate of the time it saves: launching by typing, Super + number for the dock, Alt + ` between windows of one app, tiling, workspaces, screenshots, Ctrl + L in Files, a custom shortcut, and a clipboard history. About 25 hours a year in total, with the arithmetic shown.",
     date: "2026-11-07",
-    updated: "2026-11-16",
+    updated: "2026-11-20",
     tags: ["Ubuntu", "Productivity", "GNOME", "Linux"],
     readingMinutes: 6,
     related: ["copy-multiple-items-linux", "canned-responses-linux", "clipboard-history-ubuntu"],
@@ -115,7 +115,7 @@ export const POSTS: Post[] = [
     description:
       "Linux pastes only the last thing you copied, so filling a form from an email means a round trip per field. The primary selection carries a second item, though GNOME 50 switched its middle-click paste off by default; a clipboard history carries all of them, so you can copy every piece first and paste them one by one. The four tools that do it on Ubuntu, compared, and the estimate: about 5 hours a year.",
     date: "2026-11-07",
-    updated: "2026-11-16",
+    updated: "2026-11-20",
     tags: ["Clipboard", "Productivity", "Linux"],
     readingMinutes: 7,
     related: ["get-back-overwritten-clipboard-linux", "ubuntu-productivity-tips", "canned-responses-linux"],
@@ -139,6 +139,7 @@ export const POSTS: Post[] = [
     description:
       "Helpdesk macros only work inside the helpdesk; the same answers also go into email, chat, GitHub and forums. How to keep saved replies one shortcut away in every app on Linux with a clipboard history, how to keep the rare ones for good, where fixed text falls short, and the estimate: about 20 hours a year at 30 conversations a day.",
     date: "2026-11-07",
+    updated: "2026-11-20",
     tags: ["Clipboard", "Productivity", "Linux"],
     readingMinutes: 4,
     related: ["reuse-text-snippets-linux", "copy-multiple-items-linux", "ubuntu-productivity-tips"],
@@ -301,7 +302,7 @@ export const POSTS: Post[] = [
     description:
       "Linux keeps one clipboard item, so a new copy replaces the old one for good. But the primary selection, the app you copied from, your shell history and KDE's built-in history can each still hold what you lost. Here is where to look, in the order that matters, and how to make it the last time.",
     date: "2026-11-02",
-    updated: "2026-11-16",
+    updated: "2026-11-20",
     tags: ["Clipboard", "Linux", "GNOME"],
     readingMinutes: 5,
     related: ["clipboard-empty-after-closing-app-linux", "kde-plasma-clipboard-history-not-working", "clipboard-history-ubuntu"],
@@ -324,6 +325,7 @@ export const POSTS: Post[] = [
     description:
       "On Linux, copying doesn't move your text anywhere: the app you copied from serves it on paste, so closing that app can empty the clipboard. GNOME's compositor and KDE's Klipper quietly save it; Sway, Hyprland and the other wlroots compositors don't. How to tell which you have, the fix for each, and how to keep more than the last copy.",
     date: "2026-11-02",
+    updated: "2026-11-20",
     tags: ["Clipboard", "Wayland", "Linux"],
     readingMinutes: 5,
     related: ["get-back-overwritten-clipboard-linux", "clipboard-managers-on-wayland", "best-clipboard-manager-wayland"],

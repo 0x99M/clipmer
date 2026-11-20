@@ -21,7 +21,7 @@ const LATEST_RELEASE = CHANGELOG[0].date;
 const LATEST_POST = SORTED_POSTS[0].updated ?? SORTED_POSTS[0].date;
 
 const STATIC_PAGES = [
-  { path: "", lastModified: "2026-11-15", changeFrequency: "monthly", priority: 1 },
+  { path: "", lastModified: "2026-11-20", changeFrequency: "monthly", priority: 1 },
   { path: "/install", lastModified: LATEST_RELEASE, changeFrequency: "monthly", priority: 0.9 },
   { path: "/pro", lastModified: "2026-11-02", changeFrequency: "monthly", priority: 0.9 },
   { path: "/blog", lastModified: LATEST_POST, changeFrequency: "weekly", priority: 0.8 },
