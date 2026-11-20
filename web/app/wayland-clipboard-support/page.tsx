@@ -58,8 +58,11 @@ export const metadata: Metadata = {
 
 // A compatibility matrix with a stated source and a verification date is a
 // Dataset, and saying so is more honest than dressing a lookup table up as an
-// Article. Publisher is referenced by @id rather than restated — the
-// Organization node is defined once, on the homepage.
+// Article. creator and publisher carry the homepage Organization's @id, but
+// also its type and name: Google's Dataset check doesn't follow an @id to
+// another page, and flagged the bare references as "Invalid object type".
+const ORG = { "@type": "Organization", "@id": ORG_ID, name: "Clipmer", url: canonical() };
+
 const schema = {
   "@context": "https://schema.org",
   "@type": "Dataset",
@@ -71,9 +74,10 @@ const schema = {
   // <time> elements below keep VERIFIED_ON because they say "read from the
   // registry on", and that date is only true when the cells were re-read.
   dateModified: MATRIX_LASTMOD,
-  creator: { "@id": ORG_ID },
-  publisher: { "@id": ORG_ID },
+  creator: ORG,
+  publisher: ORG,
   isAccessibleForFree: true,
+  license: "https://creativecommons.org/licenses/by/4.0/",
   keywords: [
     "Wayland",
     "clipboard manager",
@@ -300,6 +304,18 @@ export default function WaylandClipboardSupportPage() {
               </li>
             ))}
           </ul>
+          <p className="mt-6 text-sm text-muted-foreground">
+            You can reuse this table under{" "}
+            <a
+              href="https://creativecommons.org/licenses/by/4.0/"
+              target="_blank"
+              rel="noopener noreferrer license"
+              className="underline decoration-border underline-offset-4 transition-colors hover:decoration-orange"
+            >
+              CC BY 4.0
+            </a>
+            : credit Clipmer and link back to this page.
+          </p>
         </section>
 
         {/* ── Product, kept at the bottom and kept honest ─────────────── */}

@@ -23,7 +23,7 @@ export const VERIFIED_ON = "2026-08-17";
  * it to make the page look fresh. 2026-10-31 is commit 6f96f1c, which rewrote
  * the Mutter and KWin caveats around the wl-clipboard 2.2.1 / 2.3.0 split.
  */
-export const CONTENT_UPDATED = "2026-11-02";
+export const CONTENT_UPDATED = "2026-11-20";
 
 /**
  * What the sitemap and the Dataset's dateModified report: whichever of the two
