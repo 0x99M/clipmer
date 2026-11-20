@@ -1,24 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { Check, X, Zap, Shield, Lock } from "lucide-react";
-import { initializePaddle, type Paddle } from "@paddle/paddle-js";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Footer } from "@/components/sections/footer";
 import { SiteNav } from "@/components/site-nav";
-
-const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
-const PADDLE_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRICE_ID;
-const PADDLE_ENV = (process.env.NEXT_PUBLIC_PADDLE_ENV || "sandbox") as
-  | "sandbox"
-  | "production";
-// Master switch for the Buy Pro button. Default off → "Coming soon".
-// Set NEXT_PUBLIC_BUY_PRO_ENABLED=true to go live (requires the Paddle
-// credentials above).
-const BUY_PRO_ENABLED = process.env.NEXT_PUBLIC_BUY_PRO_ENABLED === "true";
+// Master switch for the Buy Pro button: NEXT_PUBLIC_BUY_PRO_ENABLED=true plus
+// the Paddle variables, else "Coming soon". Paying happens on /checkout.
+import { CHECKOUT_READY } from "@/lib/paddle-config";
 
 const features = [
   { name: "Clipboard history", free: "100 entries", pro: "200 entries" },
@@ -90,36 +81,7 @@ function Reveal({
 }
 
 export default function ProPage() {
-  const paddleRef = useRef<Paddle | null>(null);
-  const paddleReady = BUY_PRO_ENABLED && PADDLE_CLIENT_TOKEN && PADDLE_PRICE_ID;
-
-  useEffect(() => {
-    if (!paddleReady) return;
-    initializePaddle({
-      environment: PADDLE_ENV,
-      token: PADDLE_CLIENT_TOKEN!,
-      checkout: {
-        settings: {
-          theme: "dark",
-          variant: "one-page",
-        },
-      },
-    }).then((p) => {
-      if (p) paddleRef.current = p;
-    });
-  }, [paddleReady]);
-
-  const openCheckout = () => {
-    if (!paddleRef.current || !PADDLE_PRICE_ID) return;
-    paddleRef.current.Checkout.open({
-      items: [{ priceId: PADDLE_PRICE_ID, quantity: 1 }],
-      settings: {
-        theme: "dark",
-        variant: "one-page",
-        successUrl: `${window.location.origin}/thank-you`,
-      },
-    });
-  };
+  const paddleReady = CHECKOUT_READY;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -196,15 +158,17 @@ export default function ProPage() {
                 </p>
 
                 {paddleReady ? (
-                  <button
-                    onClick={openCheckout}
+                  // A plain <a>, not next/link: /checkout's CSP header (the
+                  // only route that allows Paddle) comes with its document.
+                  <a
+                    href="/checkout"
                     className={cn(
                       buttonVariants({ size: "lg" }),
                       "w-full h-12 text-base bg-orange text-white hover:bg-orange-hover cursor-pointer transition-colors"
                     )}
                   >
                     Get Clipmer Pro
-                  </button>
+                  </a>
                 ) : (
                   <button
                     disabled

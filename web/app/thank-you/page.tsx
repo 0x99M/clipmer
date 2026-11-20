@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, Mail, KeyRound, Settings2 } from "lucide-react";
+import { CheckCircle2, Mail, KeyRound, Settings2, FolderPlus } from "lucide-react";
 import { Footer } from "@/components/sections/footer";
+import { STATEMENT_NAME } from "@/lib/checkout";
+
+// Where Paddle sends a buyer after paying, from Clipmer's /checkout or from
+// the shared payment page (dotpane.com/pay) that Paddle's emails use. Nothing
+// here depends on how the buyer got here: the licence is sent by the webhook
+// (app/api/paddle-webhook) whichever page took the payment.
 
 export const metadata: Metadata = {
   title: "Thank you — Clipmer Pro",
@@ -13,7 +19,7 @@ const steps = [
   {
     icon: Mail,
     title: "Check your inbox",
-    desc: "We've sent your license key to the email you used at checkout. It usually arrives within a minute — check spam if you don't see it.",
+    desc: "Your license key comes from support@clipmer.app to the email you used at checkout, usually within a minute — check spam if you don't see it. Paddle sends the receipt separately.",
   },
   {
     icon: Settings2,
@@ -70,6 +76,39 @@ export default function ThankYouPage() {
             </li>
           ))}
         </ol>
+
+        {/* First thing to try */}
+        <section className="mb-10 rounded-xl border border-orange/30 bg-orange/[0.06] p-6">
+          <div className="mb-3 flex items-center gap-2.5">
+            <FolderPlus className="size-5 text-orange" aria-hidden />
+            <h2 className="font-semibold">The first thing to try: a folder</h2>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Copy something you paste every week &mdash; a command, an address,
+            a reply. In Clipmer, open that entry&apos;s <strong className="text-foreground">&#8943;</strong>{" "}
+            menu, choose <strong className="text-foreground">Add to folder</strong>, then{" "}
+            <strong className="text-foreground">New folder&hellip;</strong>. Entries in a
+            folder stay until you delete them, however much you copy after.
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+            Don&apos;t have Clipmer on this machine yet?{" "}
+            <Link href="/install" className="text-orange hover:underline">
+              Install it
+            </Link>
+            ; the same key works on every Linux machine you own.
+          </p>
+        </section>
+
+        {/* Statement */}
+        <p className="mb-10 text-sm text-muted-foreground leading-relaxed">
+          Paddle is our merchant of record, so your card statement will say{" "}
+          <span className="font-mono text-foreground">{STATEMENT_NAME}</span>. Refunds
+          are available for 14 days: see the{" "}
+          <Link href="/refund" className="text-orange hover:underline">
+            refund policy
+          </Link>
+          .
+        </p>
 
         {/* Troubleshooting */}
         <div className="rounded-xl border border-border bg-card/50 p-6 mb-10">

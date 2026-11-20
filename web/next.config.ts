@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
+import { CHECKOUT_PATH, checkoutCsp } from "./lib/checkout";
 
 const nextConfig: NextConfig = {
   // Blog prose lives in content/blog/*.mdx and is imported by
@@ -18,6 +19,30 @@ const nextConfig: NextConfig = {
   // assets and the server agree on the id. Undefined locally, which simply
   // leaves the feature off.
   deploymentId: process.env.RAILWAY_GIT_COMMIT_SHA,
+
+  // Paddle's emails used to link to /pro?_ptxn=…, the old default payment
+  // link. The checkout lives at /checkout now, and Paddle.js opens ?_ptxn=
+  // there by itself; the query string is carried over.
+  async redirects() {
+    return [
+      {
+        source: "/pro",
+        has: [{ type: "query", key: "_ptxn" }],
+        destination: "/checkout",
+        permanent: false,
+      },
+    ];
+  },
+
+  // /checkout is the only route that loads a third-party script, so it alone
+  // gets a Content-Security-Policy: Paddle.js from its CDN, Paddle's checkout
+  // frame and the requests, styles and images Paddle.js makes from its own
+  // hosts. Every other route is served exactly as before. 'unsafe-inline' is
+  // for Next's inline bootstrap scripts; dev adds 'unsafe-eval' for React's
+  // error overlays (node_modules/next/dist/docs, "Content Security Policy").
+  async headers() {
+    return [{ source: CHECKOUT_PATH, headers: [{ key: "Content-Security-Policy", value: checkoutCsp(process.env.NODE_ENV === "development") }] }];
+  },
 };
 
 // No remark/rehype plugins: Turbopack can only accept plugins as strings, and
