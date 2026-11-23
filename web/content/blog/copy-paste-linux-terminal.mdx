@@ -1,0 +1,143 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+In the Linux terminal, **Ctrl + Shift + C** copies and **Ctrl + Shift + V** pastes. That is
+the default in Ubuntu's terminal, whether yours is Ptyxis (Ubuntu 26.04) or GNOME Terminal
+(24.04), and in Konsole, kitty, Alacritty and the VS Code terminal. Right-click → Copy and
+Paste work too. There is also a second, faster way that has nothing to do with the
+keyboard: highlight text and it is already copied; click the middle mouse button and it is
+pasted.
+
+The rest of this page explains why plain Ctrl+C and Ctrl+V do something else in a
+terminal, how to copy a command's output without touching the mouse, and what happens when
+you paste several lines at once.
+
+## The shortcuts in each terminal
+
+<SupportTable
+  headers={["Terminal", "Copy", "Paste", "Paste highlighted text"]}
+  rows={[
+    { name: "Ptyxis (Ubuntu 25.10 and later)", cells: ["Ctrl+Shift+C", "Ctrl+Shift+V", "Shift+Insert"] },
+    { name: "GNOME Terminal (Ubuntu 24.04)", cells: ["Ctrl+Shift+C", "Ctrl+Shift+V", "Shift+Insert"] },
+    { name: "Konsole (KDE)", cells: ["Ctrl+Shift+C", "Ctrl+Shift+V or Shift+Insert", "Ctrl+Shift+Insert"] },
+    { name: "kitty", cells: ["Ctrl+Shift+C", "Ctrl+Shift+V", "Ctrl+Shift+S or Shift+Insert"] },
+    { name: "Alacritty", cells: ["Ctrl+Shift+C", "Ctrl+Shift+V", "Shift+Insert"] },
+    { name: "VS Code terminal", cells: ["Ctrl+Shift+C", "Ctrl+Shift+V", "Shift+Insert"] },
+  ]}
+  caption="Default shortcuts, checked on 23 November 2026 against each project's source or documentation. Ptyxis and GNOME Terminal get Shift+Insert from VTE, the terminal widget both are built on. The last column is explained under “Highlight and middle-click” below."
+/>
+
+GNOME Terminal's own help says it in one line: "The standard keyboard shortcuts, such as
+Ctrl C, cannot be used to copy and paste text."
+
+## Why Ctrl+C and Ctrl+V don't work in a terminal
+
+A terminal passes the keys you press to the program running inside it, and two of those
+keys already had jobs long before graphical desktops existed.
+
+- **Ctrl + C interrupts.** It sends the running program an interrupt signal, which is how
+  you stop a command that is taking too long, a `ping` that never ends, or a server you
+  started in the foreground. If Ctrl+C copied instead, there would be no quick way to stop
+  anything, so terminals leave it alone and put copy on Ctrl+Shift+C.
+- **Ctrl + V inserts the next key literally.** In bash, Ubuntu's default shell, Ctrl+V is
+  bound to `quoted-insert`: it waits for the next key and types it as a raw character. Press
+  Ctrl+V, then Enter, and you get `^M` on the line instead of a paste. That is why Ctrl+V
+  seems to do nothing at first and then does something odd. zsh binds Ctrl+V the same way.
+  The exception is fish, which binds Ctrl+V to paste from the clipboard and Ctrl+X to copy
+  the command line, so in fish plain Ctrl+V does paste.
+
+## Highlight and middle-click: the second clipboard
+
+Linux has two places copied text can live. The **clipboard** is what Ctrl+Shift+C and
+Ctrl+Shift+V use, the same one every other app uses. The **primary selection** holds
+whatever you last highlighted, anywhere: select text with the mouse and it is in the primary
+selection, no keys needed. Click the **middle button** (or press the scroll wheel) to paste
+it where the pointer is.
+
+This works in and out of the terminal: highlight a path in the file manager or a command on
+a web page, then middle-click in the terminal. The two are separate, so highlighting
+something doesn't overwrite what you copied with Ctrl+Shift+C, and the other way round.
+
+From the keyboard, **Shift + Insert** pastes the highlighted text in Ptyxis, GNOME
+Terminal, kitty, Alacritty and the VS Code terminal. Konsole has it the other way round:
+there Shift+Insert pastes the clipboard and **Ctrl + Shift + Insert** pastes the highlighted
+text. In VTE terminals (Ptyxis, GNOME Terminal), Ctrl+Insert also copies.
+
+Double-click selects a word and triple-click selects the whole line, which makes the
+primary selection quick for copying a file name or a full command out of the scrollback.
+
+## Copy a command's output without the mouse
+
+Selecting thirty lines of output with the mouse is slow and easy to get wrong. Send the
+output to the clipboard instead:
+
+```bash
+# Wayland (Ubuntu's default session)
+ip addr | wl-copy
+wl-paste > notes.txt
+
+# X11
+ip addr | xclip -selection clipboard
+xclip -selection clipboard -o > notes.txt
+```
+
+`wl-copy` and `wl-paste` come from the `wl-clipboard` package, which Ubuntu 26.04 doesn't
+install by default: `sudo apt install wl-clipboard`. To copy a file's contents, use
+`wl-copy < file.txt`. If you aren't sure which session you are in,
+`echo $XDG_SESSION_TYPE` prints `wayland` or `x11`, and if `xclip` seems to copy but nothing
+pastes, [xclip on Wayland](/blog/xclip-not-working-wayland) explains why and has the
+flag-by-flag translation.
+
+## Pasting several lines at once
+
+Pasting a block of commands into the terminal used to run each line the moment it arrived,
+including the ones you hadn't read yet. Bash 5.1 changed that by turning on
+*bracketed paste* by default, and Ubuntu 24.04 ships bash 5.2, 26.04 bash 5.3. The terminal
+marks where pasted text starts and ends, bash puts all of it on the command line, and nothing
+runs until you press Enter, even if the text ends in a new line.
+
+That protects you from running something by accident, not from running something you
+didn't mean to copy. A web page can put different text on the clipboard than what you
+highlighted, so read a pasted command before pressing Enter, especially one with `sudo` or
+`curl … | sh` in it.
+
+## Make Ctrl+V paste in the terminal
+
+If your fingers won't learn Ctrl+Shift+V, you can change the shortcut. Keep Ctrl+C as it
+is, because a terminal that copies on Ctrl+C can't stop a running program.
+
+- **Ptyxis** (Ubuntu 26.04): main menu → **Preferences** → **Shortcuts** → **Paste from
+  Clipboard**, then press the new keys.
+- **GNOME Terminal** (Ubuntu 24.04): main menu → **Preferences** → **Shortcuts**, make sure
+  **Enable shortcuts** is on, click **Paste** and press the new keys.
+
+Once Ctrl+V pastes, bash's `quoted-insert` is still on Ctrl+Q, so nothing is lost.
+
+## Pasting from a clipboard history into the terminal
+
+A terminal session is where a clipboard history earns its place: the long `rsync` you ran
+last week, the container ID from ten minutes ago, the SSH command for the other server.
+Each of them was copied at some point; with a history, you search for it instead of
+scrolling back through old terminals or retyping it.
+
+Clipmer is ours, so weigh this section accordingly.
+
+<InstallCommand />
+
+1. In the terminal, press **Ctrl + Shift + D** to open the history.
+2. Type part of the command (`rsync`, `ssh`, a host name), then **↓** and **Enter**.
+   Typing clears the selection, so ↓ picks the first match.
+3. Back in the terminal, press **Ctrl + Shift + V**.
+
+<Callout type="note" title="Leave auto-paste for other apps">
+  Clipmer's optional auto-paste, which works on GNOME and is off by default, presses
+  Ctrl+V for you. In a terminal Ctrl+V is bash's `quoted-insert`, not paste, so in a
+  terminal choose the entry and press Ctrl+Shift+V yourself.
+</Callout>
+
+Clipmer keeps text only, which suits a terminal: what comes back is exactly the characters
+you copied. The free version shows your last 100 entries, Pro your last 200. A token you
+copied once can be hidden from its **⋯** menu, which turns it into a row of dots and leaves
+it out of search but still pastes it (more in
+[keeping secrets off a shared screen](/blog/hide-clipboard-secrets-screen-sharing)).

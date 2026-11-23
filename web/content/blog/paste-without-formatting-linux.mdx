@@ -1,0 +1,121 @@
+import { SupportTable } from "@/components/blog/support-table";
+import { Callout } from "@/components/blog/callout";
+import { InstallCommand } from "@/components/blog/install-command";
+
+To paste without formatting on Linux, press **Ctrl + Shift + V** instead of Ctrl+V. That
+works in Chrome, Firefox, Google Docs and Thunderbird, and usually in web apps running in
+those browsers.
+LibreOffice is the exception: there Ctrl+Shift+V opens the Paste Special dialog, and the
+one-step shortcut is **Ctrl + Alt + Shift + V**.
+
+For apps with no such shortcut, there are two ways round it: paste into a plain-text editor
+first, or strip the formatting off the clipboard itself with one command. Both are below,
+after the reason the formatting comes along in the first place.
+
+## Why the formatting comes along
+
+When you copy from a web page, a document or an email, the app doesn't put one thing on
+the clipboard. It offers several versions of the same selection, usually an HTML one with
+the fonts, colours, links and table layout, and a plain-text one. The app you paste into
+picks the richest version it understands, so a word processor or an email editor takes the
+HTML and you get the 18-point blue heading along with the words.
+
+Pasting without formatting simply asks for the plain-text version instead. Nothing is
+"removed": the plain version was on the clipboard all along.
+
+You can see the versions for yourself in a terminal, after copying something from a web
+page:
+
+```bash
+wl-paste --list-types                         # Wayland
+xclip -selection clipboard -o -t TARGETS      # X11
+```
+
+## The shortcut, app by app
+
+<SupportTable
+  headers={["App", "Paste without formatting", "Where it's documented"]}
+  rows={[
+    { name: "Google Chrome, Chromium", cells: ["Ctrl+Shift+V", "Chromium's editing code (\"PasteAndMatchStyle\"); Google's shortcut page doesn't list it"] },
+    { name: "Firefox", cells: ["Ctrl+Shift+V", "Mozilla's keyboard shortcuts page: \"Paste (as plain text)\""] },
+    { name: "Google Docs", cells: ["Ctrl+Shift+V", "Docs keyboard shortcuts: \"Paste without formatting\""] },
+    { name: "Thunderbird (writing an email)", cells: ["Ctrl+Shift+V", "Thunderbird keyboard shortcuts: \"Paste without formatting\""] },
+    { name: "LibreOffice Writer, Calc, Impress", cells: ["Ctrl+Alt+Shift+V", "LibreOffice general shortcuts: \"Pastes unformatted text\""] },
+    { name: "Gmail and other web apps", cells: ["Ctrl+Shift+V, from the browser", "Not in Gmail's own list; it is Chrome's or Firefox's shortcut at work"] },
+  ]}
+  caption="Checked on 23 November 2026. In Chrome the shortcut pastes plain text that takes on the style around the cursor."
+/>
+
+## LibreOffice: two shortcuts
+
+LibreOffice gives you a choice rather than a single plain paste:
+
+- **Ctrl + Alt + Shift + V** pastes unformatted text straight away. It takes on the
+  formatting of wherever the cursor is, which is usually what you want.
+- **Ctrl + Shift + V** opens **Paste Special**, which lists every version on the clipboard
+  (HTML, RTF, unformatted text and so on). Choose **Unformatted text** for the same result,
+  or another format when you want part of the formatting.
+
+The same menu is under **Edit → Paste Special** in Writer, Calc and Impress.
+
+There is no setting that makes plain Ctrl+V paste unformatted; the request is still open as
+LibreOffice bug 91620. You can make the change yourself in **Tools → Customize → Keyboard** by giving Ctrl+V to
+the **Paste Unformatted Text** command.
+
+## Apps with no plain-paste shortcut
+
+Not every app has one, and a shortcut that differs per app is easy to forget. Two methods
+work everywhere.
+
+**Paste into a plain-text editor first.** Paste into Text Editor (or any editor that only
+does plain text), select it all, copy it again and paste where you wanted it. A plain-text
+editor has nowhere to keep the formatting, so the second copy is plain. Clumsy, but it needs
+nothing installed.
+
+**Replace the clipboard with its plain-text version.** One command reads the plain-text
+version of whatever is on the clipboard and copies it back, so the clipboard holds nothing
+else:
+
+```bash
+# Wayland (Ubuntu's default session); needs: sudo apt install wl-clipboard
+wl-paste --no-newline --type text | wl-copy
+
+# X11
+xclip -selection clipboard -o -t UTF8_STRING | xclip -selection clipboard
+```
+
+After that, an ordinary Ctrl+V pastes plain text in every app, because there is no other
+version left to pick. We checked the X11 line on a private test display: afterwards the
+clipboard offers only `UTF8_STRING`, which is plain text, and accented characters survive.
+`-t UTF8_STRING` matters: without it xclip asks for the older `STRING` type, which is
+Latin-1.
+
+## Plain text every time, from a clipboard history
+
+The methods above all fix one paste at a time. If you'd rather never paste formatting by
+accident, a clipboard history that keeps only text does it as a side effect.
+
+Clipmer is ours, so weigh this section accordingly.
+
+<InstallCommand />
+
+Clipmer stores only the plain-text version of what you copy, and when you choose an entry,
+it puts that text back on the clipboard as plain text and nothing else. So anything you
+paste from the history arrives without formatting, wherever you paste it:
+
+1. Copy as usual with **Ctrl + C**.
+2. Press **Ctrl + Shift + D**, then **↓** and **Enter** to choose the newest entry. For an
+   older one, type a word from it first, then ↓ and Enter.
+3. Press **Ctrl + V**. The clipboard now holds plain text only.
+
+<Callout type="note" title="Text only, both ways">
+  The same design means Clipmer can't help when you *want* the formatting: it never stores
+  HTML, images or files. If you need a rich copy from earlier, a text-only history won't
+  have it.
+</Callout>
+
+With **Auto-paste on select** switched on, which works on GNOME and is off by default,
+step 3 happens by itself.
+
+If text is all you copy, [copying several items at once](/blog/copy-multiple-items-linux)
+and [reusing the same snippets](/blog/reuse-text-snippets-linux) work the same way.

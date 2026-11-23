@@ -36,6 +36,48 @@ export type Post = {
 
 export const POSTS: Post[] = [
   {
+    slug: "copy-paste-linux-terminal",
+    title: "How to copy and paste in the Linux terminal (and why Ctrl+V doesn't)",
+    seoTitle: "Copy and Paste in the Linux Terminal: Every Shortcut",
+    metaDescription:
+      "Ctrl+Shift+C copies, Ctrl+Shift+V pastes in Ubuntu's terminal, Konsole, kitty and Alacritty. Why Ctrl+V doesn't, middle-click paste, copying output.",
+    description:
+      "In the Linux terminal, Ctrl+Shift+C copies and Ctrl+Shift+V pastes: in Ptyxis and GNOME Terminal on Ubuntu, Konsole, kitty, Alacritty and the VS Code terminal. Plain Ctrl+C stops the running command and Ctrl+V types the next key literally, which is why they seem broken. The shortcuts for each terminal, highlight-and-middle-click, Shift+Insert, piping output to the clipboard, what bash does with a multi-line paste, and how to make Ctrl+V paste if you want it to.",
+    date: "2026-11-23",
+    tags: ["Linux", "Ubuntu", "Clipboard", "Productivity"],
+    readingMinutes: 5,
+    related: ["xclip-not-working-wayland", "windows-shortcuts-ubuntu", "copy-multiple-items-linux"],
+    toc: [
+      { id: "the-shortcuts-in-each-terminal", title: "The shortcuts in each terminal" },
+      { id: "why-ctrl-c-and-ctrl-v-dont-work-in-a-terminal", title: "Why Ctrl+C and Ctrl+V don't work in a terminal" },
+      { id: "highlight-and-middle-click-the-second-clipboard", title: "Highlight and middle-click: the second clipboard" },
+      { id: "copy-a-commands-output-without-the-mouse", title: "Copy a command's output without the mouse" },
+      { id: "pasting-several-lines-at-once", title: "Pasting several lines at once" },
+      { id: "make-ctrl-v-paste-in-the-terminal", title: "Make Ctrl+V paste in the terminal" },
+      { id: "pasting-from-a-clipboard-history-into-the-terminal", title: "Pasting from a clipboard history into the terminal" },
+    ],
+  },
+  {
+    slug: "paste-without-formatting-linux",
+    title: "Paste without formatting on Linux: the shortcut in every app",
+    seoTitle: "Paste Without Formatting on Linux, App by App",
+    metaDescription:
+      "Ctrl+Shift+V pastes plain text in Chrome, Firefox, Google Docs and Thunderbird; LibreOffice uses Ctrl+Alt+Shift+V. Plus a fix for apps with no shortcut.",
+    description:
+      "Ctrl+Shift+V pastes plain text in Chrome, Firefox, Google Docs and Thunderbird. LibreOffice is different: Ctrl+Alt+Shift+V pastes unformatted text and Ctrl+Shift+V opens Paste Special. Why formatting comes along at all, the shortcut app by app with where each is documented, how to make it the default in LibreOffice, and a one-line command that strips the formatting off the clipboard for apps with no shortcut.",
+    date: "2026-11-23",
+    tags: ["Linux", "Clipboard", "Productivity"],
+    readingMinutes: 4,
+    related: ["copy-multiple-items-linux", "clipboard-empty-after-closing-app-linux", "windows-shortcuts-ubuntu"],
+    toc: [
+      { id: "why-the-formatting-comes-along", title: "Why the formatting comes along" },
+      { id: "the-shortcut-app-by-app", title: "The shortcut, app by app" },
+      { id: "libreoffice-two-shortcuts", title: "LibreOffice: two shortcuts" },
+      { id: "apps-with-no-plain-paste-shortcut", title: "Apps with no plain-paste shortcut" },
+      { id: "plain-text-every-time-from-a-clipboard-history", title: "Plain text every time, from a clipboard history" },
+    ],
+  },
+  {
     slug: "lost-api-key-shown-once",
     title: "The API key was shown once and you copied over it: what now",
     seoTitle: "Lost an API Key That Was Shown Once? Make a New One",
@@ -769,6 +811,10 @@ export const POST_CONTENT: Record<
     import("@/content/blog/lost-api-key-shown-once.mdx"),
   "windows-shortcuts-ubuntu": () =>
     import("@/content/blog/windows-shortcuts-ubuntu.mdx"),
+  "copy-paste-linux-terminal": () =>
+    import("@/content/blog/copy-paste-linux-terminal.mdx"),
+  "paste-without-formatting-linux": () =>
+    import("@/content/blog/paste-without-formatting-linux.mdx"),
 };
 
 /** Newest first. */
