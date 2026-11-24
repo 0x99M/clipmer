@@ -725,7 +725,7 @@ export const POSTS: Post[] = [
     description:
       "Ubuntu ships no clipboard history. Four options that work on both Ubuntu 24.04 and 26.04 LTS — Clipboard History, GPaste, CopyQ, and Clipmer — with install commands checked on each release, what happened to Pano, and what to do when an extension stops loading after the upgrade.",
     date: "2026-08-01",
-    updated: "2026-11-16",
+    updated: "2026-11-24",
     tags: ["Ubuntu", "GNOME", "Clipboard"],
     readingMinutes: 8,
     related: ["win-v-clipboard-history-linux", "clipboard-extension-stopped-working-gnome-upgrade", "clipboard-history-linux-mint"],
