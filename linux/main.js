@@ -14,6 +14,7 @@ const {
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const { spawn } = require('child_process');
 const Store = require('electron-store');
 const license = require('./license');
 const backup = require('./backup');
@@ -410,27 +411,42 @@ function privateMemoryKb() {
 // The runtime sets $APPDIR to wherever the payload lives, in both modes; only
 // trust $APPIMAGE when this binary is really inside it, because both variables
 // are inherited by anything started from a shell that an AppImage launched.
-function relaunchOptions() {
+//
+// Electron's app.relaunch() can't be used for an AppImage. It hands the restart
+// to a helper process that is this same binary, so with FUSE the helper runs
+// from the mount, and the mount disappears the moment we exit, taking the
+// helper with it before it starts anything: Clipmer just quit. Instead, start
+// a shell from outside the payload that waits for this process to exit and
+// then runs the .AppImage file, which goes through AppRun again (and so gets
+// --no-sandbox again where the system needs it).
+function appImageRelaunch() {
   const { APPIMAGE, APPDIR } = process.env;
   if (!APPIMAGE || !APPDIR || !process.execPath.startsWith(APPDIR + path.sep)) {
-    return undefined;
+    return null;
   }
-  const args = process.argv.slice(1);
-  if (path.basename(APPDIR).startsWith('.mount_')) {
-    return { execPath: APPIMAGE, args };
-  }
+  const env = { ...process.env };
   // Extracted: the next run must extract too, and it would extract into the
   // same <hash> directory the old runtime is busy deleting the moment we exit.
   // Give that deletion a head start.
-  process.env.APPIMAGE_EXTRACT_AND_RUN = '1';
-  return {
-    execPath: '/bin/sh',
-    args: ['-c', 'sleep 3; exec "$0" "$@"', APPIMAGE, ...args],
+  const extracted = !path.basename(APPDIR).startsWith('.mount_');
+  if (extracted) env.APPIMAGE_EXTRACT_AND_RUN = '1';
+  const delay = extracted ? 3 : 0;
+  const script =
+    `while kill -0 ${process.pid} 2>/dev/null; do sleep 1; done; ` +
+    `sleep ${delay}; exec "$0" "$@"`;
+  return () => {
+    spawn('/bin/sh', ['-c', script, APPIMAGE, ...process.argv.slice(1)], {
+      detached: true,
+      stdio: 'ignore',
+      env,
+    }).unref();
   };
 }
 
 function restartToReleaseMemory() {
-  app.relaunch(relaunchOptions());
+  const relaunchAppImage = appImageRelaunch();
+  if (relaunchAppImage) relaunchAppImage();
+  else app.relaunch();
   app.isQuitting = true;
   app.quit();
 }

@@ -25,6 +25,25 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.6.3",
+    date: "2026-11-25",
+    highlight: "The AppImage starts on current Ubuntu",
+    changes: [
+      {
+        type: "fixed",
+        text: "On stock Ubuntu 22.04 and later the AppImage didn't start at all, because it needed libfuse2, which these versions don't install. It now uses the newer AppImage runtime, which works with the FUSE 3 they already have.",
+      },
+      {
+        type: "fixed",
+        text: "On Ubuntu 24.04 and later, the AppImage only started from its menu entry. Started from a terminal, by double-clicking it or at login, it closed at once. Ubuntu blocks the security sandbox the AppImage uses there, and only the menu entry switched the sandbox off. The AppImage now checks every time it starts and switches the sandbox off only where the system blocks it. The .deb and .rpm are unchanged and keep their sandbox.",
+      },
+      {
+        type: "fixed",
+        text: "When the AppImage restarted itself in the background to release memory, it could quit instead of starting again. It now always comes back.",
+      },
+    ],
+  },
+  {
     version: "3.6.2",
     date: "2026-11-25",
     highlight: "The free list now says when older entries are saved",

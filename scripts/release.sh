@@ -70,6 +70,30 @@ for f in "$DEB" "$APPIMAGE" "$RPM"; do
 done
 [[ $missing -eq 1 ]] && echo "Run electron-builder first." && exit 1
 
+# ── AppImage has Clipmer's AppRun, the deb/rpm don't ──────────────────
+# linux/build/appimage-apprun.js gives the AppImage an AppRun that adds
+# --no-sandbox where user namespaces are blocked (Ubuntu 24.04+). Without it
+# the AppImage aborts at startup there. It must stay out of the deb and rpm,
+# which keep their setuid sandbox. `npm run build` gets both right; a single
+# `electron-builder --linux AppImage deb rpm` run is refused by the hook.
+APPRUN_DIR=$(mktemp -d)
+( cd "$APPRUN_DIR" && "$APPIMAGE" --appimage-extract AppRun >/dev/null )
+if ! grep -q CLIPMER_APPRUN "$APPRUN_DIR/squashfs-root/AppRun" 2>/dev/null; then
+  rm -rf "$APPRUN_DIR"
+  echo "ERROR: $APPIMAGE has electron-builder's AppRun, not Clipmer's (see linux/build/appimage-apprun.js)"
+  exit 1
+fi
+rm -rf "$APPRUN_DIR"
+if dpkg-deb -c "$DEB" | grep -q '/AppRun$'; then
+  echo "ERROR: $DEB contains an AppRun. Build the AppImage in its own run (npm run build)."
+  exit 1
+fi
+if command -v rpm >/dev/null && rpm -qlp "$RPM" 2>/dev/null | grep -q '/AppRun$'; then
+  echo "ERROR: $RPM contains an AppRun. Build the AppImage in its own run (npm run build)."
+  exit 1
+fi
+echo "AppImage has Clipmer's AppRun; deb and rpm don't."
+
 echo "Found:"
 echo "  .deb      $(du -h "$DEB" | cut -f1)  $DEB"
 echo "  AppImage  $(du -h "$APPIMAGE" | cut -f1)  $APPIMAGE"

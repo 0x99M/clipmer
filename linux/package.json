@@ -1,6 +1,6 @@
 {
   "name": "clipmer",
-  "version": "3.6.2",
+  "version": "3.6.3",
   "description": "Secrets-aware clipboard manager for Linux",
   "author": {
     "name": "Mustafa",
@@ -11,8 +11,8 @@
   "scripts": {
     "start": "electron . --no-sandbox",
     "dev": "CLIPMER_PROFILE=dev electron . --no-sandbox",
-    "build": "electron-builder --linux AppImage deb rpm",
-    "build:dev": "electron-builder --linux --config build/dev-build.js"
+    "build": "electron-builder --linux deb rpm && node build/build-appimage.js --linux AppImage",
+    "build:dev": "node build/build-appimage.js --linux --config build/dev-build.js"
   },
   "dependencies": {
     "electron-store": "8.2.0"
@@ -28,6 +28,10 @@
       "**/*",
       "!assets/make-icons.py"
     ],
+    "toolsets": {
+      "appimage": "1.0.2"
+    },
+    "afterPack": "build/appimage-apprun.js",
     "linux": {
       "target": [
         "AppImage",
