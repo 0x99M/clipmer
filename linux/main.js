@@ -569,6 +569,12 @@ ipcMain.handle('get-app-version', () => app.getVersion());
 
 ipcMain.handle('get-history', () => getVisibleHistory());
 
+// How many saved entries the free tier keeps but doesn't show. A count only:
+// the entries themselves never reach a free renderer.
+ipcMain.handle('get-older-entry-count', () =>
+  license.isPro() ? 0 : Math.max(0, clipboardHistory.length - FREE_HISTORY_LIMIT)
+);
+
 // Takes an id, never a caller-supplied object. Trusting the renderer's copy of
 // the entry meant a stale one could be written back: addEntry() only reuses a
 // record on exact content match, so a resurrected entry got a fresh UUID, an

@@ -25,6 +25,25 @@ export type Release = {
  */
 export const CHANGELOG: Release[] = [
   {
+    version: "3.6.2",
+    date: "2026-11-25",
+    highlight: "The free list now says when older entries are saved",
+    changes: [
+      {
+        type: "changed",
+        text: "The free version shows your newest 100 entries but saves up to 200, and the list used to stop at 100 without saying so. Its end now says how many older entries are saved and that Clipmer Pro shows them. Nothing is deleted either way.",
+      },
+      {
+        type: "added",
+        text: "In the free version, the ⋯ menu on an entry now has an Add a note item that explains what notes do and links to Clipmer Pro. Notes were a Pro feature with nothing in the free version to say they existed. With Pro nothing changes: you write notes straight under each entry.",
+      },
+      {
+        type: "added",
+        text: "The AppImage now carries AppStream metadata, so software catalogs that list AppImages can show Clipmer's description and screenshots.",
+      },
+    ],
+  },
+  {
     version: "3.6.1",
     date: "2026-11-08",
     highlight: "Memory use stays low however long Clipmer runs",

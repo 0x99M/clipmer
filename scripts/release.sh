@@ -20,6 +20,22 @@ if ! grep -q "version: \"$VERSION\"" "$CHANGELOG_TS"; then
 fi
 echo "Changelog entry for $VERSION found."
 
+# ── Require an AppStream release entry ────────────────────────────────
+# The AppImage ships linux/build/app.clipmer.Clipmer.appdata.xml, which the
+# AppImage catalog reads. Its <releases> list goes stale the same way.
+APPDATA_XML="$REPO_ROOT/linux/build/app.clipmer.Clipmer.appdata.xml"
+if ! grep -q "<release version=\"$VERSION\"" "$APPDATA_XML"; then
+  echo "ERROR: No <release version=\"$VERSION\"> in linux/build/app.clipmer.Clipmer.appdata.xml"
+  echo "Add it at the top of <releases>, with the date from web/lib/changelog.ts, then re-run."
+  exit 1
+fi
+if command -v appstreamcli >/dev/null && ! appstreamcli validate --no-net "$APPDATA_XML" >/dev/null; then
+  echo "ERROR: appstreamcli validate failed on $APPDATA_XML"
+  echo "Run: appstreamcli validate --explain $APPDATA_XML"
+  exit 1
+fi
+echo "AppStream release entry for $VERSION found."
+
 # ── Refuse hybrid download URLs ───────────────────────────────────────
 # A /releases/latest/download/<pinned filename> URL is a floating alias aimed at
 # a pinned name. Publishing a release moves `latest` immediately, so the already

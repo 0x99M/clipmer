@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Clipmer
+Exec=AppRun --no-sandbox %U
+Terminal=false
+Type=Application
+Icon=clipmer
+StartupWMClass=Clipmer
+Comment=Secrets-aware clipboard manager for Linux
+Categories=Utility;

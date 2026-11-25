@@ -1,6 +1,6 @@
 {
   "name": "clipmer",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "description": "Secrets-aware clipboard manager for Linux",
   "author": {
     "name": "Mustafa",
@@ -35,7 +35,17 @@
         "rpm"
       ],
       "icon": "assets/icons/",
-      "category": "Utility"
+      "category": "Utility",
+      "extraFiles": [
+        {
+          "from": "build/app.clipmer.Clipmer.appdata.xml",
+          "to": "usr/share/metainfo/app.clipmer.Clipmer.appdata.xml"
+        },
+        {
+          "from": "build/clipmer.desktop",
+          "to": "usr/share/applications/clipmer.desktop"
+        }
+      ]
     },
     "deb": {
       "depends": [

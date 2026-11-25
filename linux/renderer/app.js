@@ -36,7 +36,10 @@ let viewerEntry = null;
 let viewerRevealed = false;
 let entryMenuOpen = false;
 let entryMenuTarget = null;
-let entryMenuView = 'main'; // 'main' | 'folders'
+let entryMenuView = 'main'; // 'main' | 'folders' | 'notes'
+// Saved entries the free tier keeps but doesn't show (main stores up to 200
+// and shows the newest 100). Only the count reaches the renderer.
+let olderSavedCount = 0;
 let backupOverlayOpen = false;
 let backupOverlayMode = null; // 'export' | 'import'
 let backupPendingPath = null;
@@ -906,6 +909,49 @@ function render(entries) {
   if (countEl) {
     countEl.textContent = sourceData.length > 0 ? `${sourceData.length} items` : '';
   }
+
+  syncOlderEntriesHint();
+  refreshOlderSavedCount();
+}
+
+// The free list ends at 100 entries while older ones are still saved. Say so
+// at the true end of the list, rather than letting it stop without a word.
+function syncOlderEntriesHint() {
+  listEl.querySelector('.older-entries-hint')?.remove();
+  if (proActive || searchActive || activeFilter !== 'all') return;
+  if (olderSavedCount <= 0) return;
+  if (!listEl.querySelector('.history-entry')) return;
+  if (listEl.querySelector('.load-more')) return; // not at the end yet
+
+  const n = olderSavedCount;
+  const hint = document.createElement('div');
+  hint.className = 'older-entries-hint';
+  const text = document.createElement('div');
+  text.textContent =
+    `${n} older ${n === 1 ? 'entry is' : 'entries are'} saved but not shown. ` +
+    `The free version shows your newest 100; Clipmer Pro shows ${n === 1 ? 'it' : 'them'} too.`;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'folders-upgrade-btn';
+  btn.textContent = 'Get Clipmer Pro';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.open('https://clipmer.app/pro', '_blank');
+  });
+  hint.appendChild(text);
+  hint.appendChild(btn);
+  listEl.appendChild(hint);
+}
+
+async function refreshOlderSavedCount() {
+  if (proActive) {
+    olderSavedCount = 0;
+    return;
+  }
+  const n = await window.clipboardManager.getOlderEntryCount();
+  if (n === olderSavedCount) return;
+  olderSavedCount = n;
+  syncOlderEntriesHint();
 }
 
 function expandVisible(entries) {
@@ -1801,6 +1847,27 @@ function renderEntryActionsMenu(menu, entry) {
   });
   menu.appendChild(addBtn);
 
+  // Notes are written inline on each row, which a free user never sees, so
+  // without this item nothing tells them notes exist.
+  if (!proActive) {
+    const noteBtn = document.createElement('button');
+    noteBtn.className = 'entry-menu-item';
+    noteBtn.innerHTML =
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>' +
+      '</svg><span>Add a note</span>';
+    const badge = document.createElement('span');
+    badge.className = 'pro-badge';
+    badge.textContent = 'PRO';
+    badge.style.marginLeft = 'auto';
+    noteBtn.appendChild(badge);
+    noteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      renderNotesUpgradeMenu(menu, entry);
+    });
+    menu.appendChild(noteBtn);
+  }
+
   // View
   const viewBtn = document.createElement('button');
   viewBtn.className = 'entry-menu-item';
@@ -1858,6 +1925,34 @@ function renderEntryActionsMenu(menu, entry) {
     selectedIndex = -1;
   });
   menu.appendChild(deleteBtn);
+}
+
+function renderNotesUpgradeMenu(menu, entry) {
+  entryMenuView = 'notes';
+  menu.innerHTML = '';
+
+  const back = document.createElement('button');
+  back.className = 'entry-menu-item entry-menu-back';
+  back.innerHTML =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<polyline points="15 18 9 12 15 6"></polyline>' +
+    '</svg><span>Actions</span>';
+  back.addEventListener('click', (e) => {
+    e.stopPropagation();
+    renderEntryActionsMenu(menu, entry);
+  });
+  menu.appendChild(back);
+
+  const upgrade = document.createElement('div');
+  upgrade.className = 'entry-menu-upgrade';
+  upgrade.innerHTML =
+    '<div style="margin-bottom:6px">Add a note to any entry, and press Tab to search your notes.</div>' +
+    '<button class="folders-upgrade-btn" style="padding:6px 14px;font-size:var(--font-size-xs)">Get Clipmer Pro</button>';
+  upgrade.querySelector('.folders-upgrade-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.open('https://clipmer.app/pro', '_blank');
+  });
+  menu.appendChild(upgrade);
 }
 
 function renderFolderPickerMenu(menu, entry) {

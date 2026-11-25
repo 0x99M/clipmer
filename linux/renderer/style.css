@@ -1853,3 +1853,27 @@ body.folders-open #folder-tabs {
   color: var(--accent);
   background: var(--accent-muted);
 }
+
+/* ─── Older entries hint (free tier, end of list) ───────────────────────── */
+
+.older-entries-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  /* The bottom margin lets the hint scroll clear of the floating ⋯ button
+     (#fab, fixed 12px from the bottom), which otherwise sits on top of it. */
+  margin: 6px 0 60px;
+  padding: 12px 16px;
+  border: 1px dashed var(--border-default);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.older-entries-hint .folders-upgrade-btn {
+  padding: 6px 14px;
+  font-size: var(--font-size-xs);
+}
