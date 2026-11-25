@@ -5,7 +5,7 @@
  * strings across components — which is how the blog install commands silently
  * went stale at 3.1.0.
  */
-export const VERSION = "3.6.2";
+export const VERSION = "3.6.3";
 export const TAG = `v${VERSION}`;
 
 const BASE = `https://github.com/0x99M/clipmer/releases/download/${TAG}`;
@@ -38,7 +38,7 @@ export const SUPPORTED_ARCH = "x86_64";
  * Published releases, v2.0.6 through the current tag. Hardcoded for the same
  * reason DOWNLOADS is, and refreshed by the same script — see below.
  */
-export const RELEASE_COUNT = 20;
+export const RELEASE_COUNT = 21;
 
 /**
  * GitHub release asset download counts.
@@ -57,11 +57,11 @@ export const RELEASE_COUNT = 20;
 export const DOWNLOADS = {
   /** Bump whenever the counts below are refreshed. */
   measuredOn: "2026-11-25",
-  total: 296,
+  total: 304,
   /** Ordered by count, so the line reads as a ranking. */
   byFormat: [
-    { label: ".deb", count: 152 },
-    { label: "AppImage", count: 87 },
-    { label: ".rpm", count: 57 },
+    { label: ".deb", count: 154 },
+    { label: "AppImage", count: 91 },
+    { label: ".rpm", count: 59 },
   ],
 } as const;
